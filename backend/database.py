@@ -6,6 +6,12 @@ from typing import Optional, Dict, Any, List
 from bson import ObjectId
 import dotenv
 
+try:
+    import certifi
+    CA_FILE = certifi.where()
+except Exception:
+    CA_FILE = None
+
 # Load environment configuration
 _curr_dir = os.path.dirname(os.path.abspath(__file__))
 dotenv.load_dotenv(os.path.join(_curr_dir, ".env"))
@@ -17,8 +23,29 @@ MONGODB_URL = os.environ.get(
     "mongodb+srv://kasiram5473_db_user:fYFogOohovmKvoo7@cluster0.xjmr7ob.mongodb.net/"
 )
 
+def create_mongo_client() -> MongoClient:
+    """Creates a resilient MongoDB client with TLS certificate authority and timeout handling."""
+    kwargs: Dict[str, Any] = {
+        "serverSelectionTimeoutMS": 10000,
+        "connectTimeoutMS": 10000,
+        "socketTimeoutMS": 20000,
+        "retryWrites": True,
+    }
+    if CA_FILE:
+        kwargs["tlsCAFile"] = CA_FILE
+
+    # If explicitly requested, allow relaxed TLS certificate checks
+    if os.environ.get("MONGODB_TLS_ALLOW_INVALID", "false").lower() in ("true", "1", "yes"):
+        kwargs["tlsAllowInvalidCertificates"] = True
+
+    try:
+        return MongoClient(MONGODB_URL, **kwargs)
+    except Exception as e:
+        print(f"[DATABASE WARNING] Initial MongoClient initialization notice: {e}")
+        return MongoClient(MONGODB_URL, serverSelectionTimeoutMS=10000)
+
 # Connect to MongoDB Atlas cluster
-client: MongoClient = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=8000)
+client: MongoClient = create_mongo_client()
 
 DB_NAME = "aicte_fdr_db"
 db: Database = client[DB_NAME]

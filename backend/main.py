@@ -16,7 +16,7 @@ dotenv.load_dotenv()
 
 try:
     from .database import (
-        get_db, db, institutions_col, fdr_instruments_col,
+        get_db, db, client, institutions_col, fdr_instruments_col,
         audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs
     )
     from .models import (
@@ -76,7 +76,7 @@ try:
     )
 except ImportError:
     from database import (
-        get_db, db, institutions_col, fdr_instruments_col,
+        get_db, db, client, institutions_col, fdr_instruments_col,
         audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs
     )
     from models import (
@@ -158,8 +158,46 @@ def on_startup():
     """Initializes static asset folders, generates synthetic FDRs, and seeds MongoDB database."""
     os.makedirs(STATIC_DIR, exist_ok=True)
     os.makedirs(SAMPLE_FDRS_DIR, exist_ok=True)
-    generate_all_samples()
-    seed_database(force=False)
+    try:
+        generate_all_samples()
+    except Exception as e:
+        print(f"[STARTUP WARNING] Synthetic FDR certificate generation notice: {e}")
+
+    try:
+        seed_database(force=False)
+        print("[DATABASE] MongoDB connection verified and initialized successfully.")
+    except Exception as e:
+        print(f"[STARTUP WARNING] MongoDB seeding deferred during startup: {e}")
+        print("[STARTUP NOTICE] If running on Render or cloud, ensure '0.0.0.0/0' is whitelisted in MongoDB Atlas Network Access.")
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    """Health check endpoint for Render / cloud monitoring services."""
+    db_status = "CONNECTED"
+    details = "Atlas connection operational"
+    try:
+        client.admin.command("ping")
+    except Exception as e:
+        db_status = "DISCONNECTED"
+        details = str(e)
+
+    return {
+        "status": "HEALTHY",
+        "service": "TrustLedger AICTE Regulatory Portal",
+        "database": db_status,
+        "details": details,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
+@app.post("/api/admin/seed")
+def admin_seed_database(force: bool = False):
+    """Admin endpoint to trigger or re-run database seeding on demand."""
+    try:
+        seed_database(force=force)
+        return {"status": "SUCCESS", "message": f"Database seeded successfully (force={force})"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database seeding failed: {str(e)}")
 
 @app.get("/")
 def root():
