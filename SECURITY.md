@@ -17,5 +17,5 @@
    - OpenCV Error Level Analysis (ELA) identifies digital image doctoring (Photoshop manipulation).
    - Perceptual Hashing (`imagehash.phash`) detects duplicate scan attacks across different colleges.
 
-## Reporting a Vulnerability
-If you discover a security vulnerability, please submit an advisory directly to the project maintainers rather than opening a public issue.
+## Evaluation & Security Audit
+This prototype was developed as a submission for Smart India Hackathon (Problem Statement ID: SIH26265). All cryptographic signing routines, SHA-256 ledger validation algorithms, and forensic scanning modules are self-contained within the evaluation environment.

@@ -1,93 +1,128 @@
 # TrustLedger — AICTE Centralized Security Deposit / FDR Management Portal
 
-[![SIH Problem Statement](https://img.shields.io/badge/SIH%202024%2F2025-SIH26265-orange.svg?style=for-the-badge)](https://www.sih.gov.in/)
-[![Organization](https://img.shields.io/badge/Organization-AICTE%20Regulation%20Bureau-1e3a8a.svg?style=for-the-badge)](https://www.aicte-india.org/)
-[![GIGW Compliance](https://img.shields.io/badge/Standard-GIGW%203.0%20Compliant-green.svg?style=for-the-badge)](https://guidelines.india.gov.in/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20v2.0-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript-61dafb.svg?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas%20Cloud-47a248.svg?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](./LICENSE)
-
-> **Official Prototype for Problem Statement SIH26265**: Centralized Security Deposit / Fixed Deposit Receipt (FDR) Management, Anti-Fraud Pixel Forensics, Bank CBS Verification Gateway, Git-Style DAG Lineage Tracking, and 4-Gate Statutory Release Portal for the All India Council for Technical Education (AICTE), Ministry of Education, Government of India.
+**Smart India Hackathon Prototype | Problem Statement ID: SIH26265**  
+*Organization: All India Council for Technical Education (AICTE), Ministry of Education, Government of India*
 
 ---
 
-## 🏛️ Executive Background & Problem Context
-
-Under Chapter IV and Clause 2.14 of the **AICTE Approval Process Handbook (APH)**, every technical and management institution in India must establish a mandatory Fixed Deposit Receipt (FDR) jointly held in the name of the **College Trust/Society** and the **Regional Officer / Member Secretary, AICTE** for a continuous lock-in period of **8 to 10 years** as financial surety.
-
-### Current Regulatory Challenges
-1. **Forgery & Tampered Certificates**: Scanned receipts altered in image editing software (e.g., modifying ₹15 Lakhs to ₹35 Lakhs).
-2. **Missing Joint Lien Pledges**: Receipts created in the trust's name only without legal joint hypothecation in favor of AICTE.
-3. **Unauthorized Encumbrance**: Collusive loans or overdraft facilities taken by colleges against security deposits without AICTE NOC.
-4. **Lineage Disruption post Bank Mergers**: Over 10 years, scheduled commercial banks merge (e.g. Syndicate Bank $\rightarrow$ Canara Bank, Allahabad Bank $\rightarrow$ Indian Bank), causing paper trails to break.
-5. **Silent Expiry & Compliance Risk**: FDRs lapse without timely renewal notifications, exposing institutional Extension of Approval (EoA) to regulatory penalties.
+| Regulatory Category | Details |
+| :--- | :--- |
+| **Problem Statement ID** | **SIH26265** |
+| **Organization** | All India Council for Technical Education (AICTE) — Regulation & Approval Bureau |
+| **Mandate** | AICTE Approval Process Handbook (APH), Clause 2.14 & Chapter IV Norms |
+| **Design Standard** | Guidelines for Indian Government Websites (GIGW 3.0) — Official light theme |
+| **Architecture** | FastAPI + React 19 TypeScript + Cloud MongoDB NoSQL + OpenCV Pixel Forensics |
 
 ---
 
-## ⚡ The 6 X-Factor Architectural Capabilities
+## 🏛️ Problem Statement Context & Regulatory Challenge
 
-TrustLedger solves these systemic challenges through six breakthrough subsystems:
+Under Chapter IV of the **AICTE Approval Process Handbook (APH)**, technical and higher education institutions in India are statutorily required to establish a mandatory Fixed Deposit Receipt (FDR) held **jointly with the Regional Officer / Member Secretary, AICTE** for a continuous lock-in duration of **8 to 10 years** as financial surety.
+
+Historically, the manual processing of thousands of physical and scanned FDR certificates has exposed the regulatory council to significant operational vulnerabilities:
+
+1. **Digital Document Forgery**: Institutions submitting scanned certificates where deposit figures have been altered using image editing tools (e.g., modifying ₹15 Lakhs to ₹35 Lakhs).
+2. **Missing Joint Lien Mandates**: Certificates created in the sole name of the institution's trust without legal joint hypothecation in favor of AICTE.
+3. **Unauthorized Third-Party Encumbrance**: Collusive loans or overdraft credit lines sanctioned against statutory deposits without AICTE clearance.
+4. **Lineage Disruption Across Bank Mergers**: Over 10-year lock-in terms, public sector banks merge (e.g., Syndicate Bank amalgamating into Canara Bank), breaking manual paper trails.
+5. **Silent Expiry & Compliance Risk**: Deposits maturing without automated alerts, leaving institutional Extension of Approval (EoA) in regulatory jeopardy.
+
+---
+
+## ⚡ Core Technical Architecture & Features
+
+TrustLedger addresses the mandate of SIH26265 through six integrated subsystems:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                             TRUSTLEDGER CORE                                │
+│                            TRUSTLEDGER ARCHITECTURE                         │
 ├───────────────────────────────┬─────────────────────────────────────────────┤
-│ 1. Tri-Party Dual-Truth       │ Independent separation of College Claim,   │
-│    Registry                   │ AI Forensics, and Authoritative Bank CBS.   │
+│ 1. Centralized Repository     │ Tri-Party data model isolating College      │
+│    (Instrument-wise Records)  │ Claim, Machine Forensics, and Bank Truth.   │
 ├───────────────────────────────┼─────────────────────────────────────────────┤
-│ 2. Multimodal AI & Pixel      │ OpenCV Error Level Analysis (ELA), PyMuPDF  │
-│    Forensics Lab              │ PDF parsing, Gemini OCR, pHash & Math ELA.  │
+│ 2. Document Upload &          │ PyMuPDF vector rendering, OpenCV Error Level│
+│    Multi-Layer AI Forensics   │ Analysis (ELA), Gemini OCR, and Math Check. │
 ├───────────────────────────────┼─────────────────────────────────────────────┤
 │ 3. 3-Tier Bank Verification   │ NeSL API Webhook, Zero-Login OTP Magic Link │
 │    Gateway                    │ for rural branches, and Nodal Bank Portal.  │
 ├───────────────────────────────┼─────────────────────────────────────────────┤
-│ 4. Git-Style DAG Lineage      │ Unbroken chronological Directed Acyclic     │
-│    Graph                      │ Graph tracking 10-year renewals & mergers.  │
+│ 4. Deposit History DAG        │ Unbroken chronological Directed Acyclic     │
+│    Lineage Graph              │ Graph tracking renewals and bank mergers.   │
 ├───────────────────────────────┼─────────────────────────────────────────────┤
-│ 5. Temporal SLA Watchdog      │ Time-travel simulator triggering automated  │
-│    (T-90, T-60, T-30, Lapsed) │ notices and EoA soft-holds upon maturity.   │
+│ 5. Temporal SLA Watchdog      │ Automated maturity alerts (T-90, T-60, T-30)│
+│    & Notice Engine            │ and compliance soft-holds on overdue FDRs.  │
 ├───────────────────────────────┼─────────────────────────────────────────────┤
-│ 6. 4-Gate Statutory Release   │ Automated Tenure, Cross-Bureau ERP check,   │
-│    & QR-Verifiable NOC        │ Scrutiny sign-off, and Competent Auth DSC.  │
+│ 6. Release, Discharge &       │ 4-Gate Clearance (Tenure, ERP, Scrutiny,    │
+│    Refund Workflow            │ Authority DSC) with QR-verifiable NOC.      │
 └───────────────────────────────┴─────────────────────────────────────────────┘
 ```
 
+### 1. Centralized Security Deposit / FDR Repository
+- Strict separation of data streams:
+  - **College Claimed Information**: Particulars submitted by the institution's nodal officer.
+  - **AI & Forensics Extraction**: Verified parameters extracted directly from document pixels and text streams.
+  - **Authoritative Bank Confirmation**: Live Core Banking ledger attestation.
+
+### 2. Document Upload & Multi-Layer Forensics Lab
+- **PyMuPDF Ingestion**: High-resolution vector PDF rendering to in-memory buffers for forensic scanning.
+- **OpenCV Error Level Analysis (ELA)**: Detects compression rate disparities across image pixel grids, generating visual tamper heatmaps for edited amounts.
+- **Quarterly Compound Interest Verification**: Mathematically recalculates expected maturity:
+  $$A = P \times \left(1 + \frac{r}{400}\right)^{4 \times t}$$
+  Identifies discrepancies where declared principal contradicts actual certificate maturity yield.
+- **Perceptual Hashing (pHash)**: 64-bit DCT fingerprint comparison flagging recycled duplicate scans across different institutions.
+- **Resilient AI Extraction**: Google Gemini multimodal document ingestion backed by instant deterministic regex parsing fallbacks for 100% demo uptime.
+
+### 3. 3-Tier Hybrid Bank Verification Gateway
+- **Tier 1 (Core Banking / NeSL API)**: Direct API link simulating scheduled commercial bank core banking ledger verification.
+- **Tier 2 (Zero-Login Cryptographic Magic Link)**: Dispatches a signed, time-limited token with 2FA OTP to branch managers of rural cooperative branches without API infrastructure.
+- **Domain Whitelisting**: Strict verification ensuring communications route exclusively to official bank domains (`@sbi.co.in`, `@canarabank.com`, `@hdfcbank.com`, `@pnb.co.in`).
+
+### 4. Deposit History (Git-Style DAG Lineage)
+- Models renewals and bank mergers as Directed Acyclic Graphs (DAG).
+- When a bank merges (e.g. Syndicate Bank $\rightarrow$ Canara Bank) or an FDR is renewed, parent nodes transition to `RENEWED_SUPERSEDED` while maintaining permanent historical traceability back to the initial Genesis deposit.
+- Rendered using clean government document card nodes and directional blue lineage arrows.
+
+### 5. Temporal SLA Watchdog & Time-Travel Simulator
+- Monitors lock-in maturity countdowns.
+- Automatic escalation triggers:
+  - **T-90 / T-60 Days**: Early warning advisories dispatched to college dashboards.
+  - **T-30 Days**: Automated SMS and WhatsApp urgent advisories dispatched to College Principal.
+  - **T=0 (Lapsed / Overdue)**: Applies an automated regulatory compliance soft-hold to the institution's annual Extension of Approval (EoA).
+
+### 6. Release, Discharge, or Refund Workflow
+- Enforces 4 sequential approval gates before releasing the AICTE joint lien:
+  - **Gate 1**: Continuous Statutory Lock-in (8–10 continuous years verified across lineage + clean bank lien).
+  - **Gate 2**: Cross-Bureau ERP Compliance (Verifies zero unpaid faculty salary grievances, zero student fee ombudsman penalties, and zero active court cases).
+  - **Gate 3**: Regional Scrutiny Officer formal verification.
+  - **Gate 4**: Competent Authority (Member Secretary) Digital Signature Certificate (DSC) sign-off.
+- Generates a cryptographically signed Discharge NOC certificate with an embedded verification QR code and SHA-256 certificate digest.
+- Printable A4 **Scrutiny Case Summary (e-Note)** with dedicated officer signature and official seal blocks.
+
 ---
 
-## 💻 Tech Stack & Frameworks
+## 🛠️ Technology Stack
 
-| Tier | Technologies / Libraries |
+| Layer | Component |
 | :--- | :--- |
-| **Frontend UI/UX** | React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, React-Flow (DAG Lineage), Canvas ELA Heatmaps |
-| **Design Standard** | **Guidelines for Indian Government Websites (GIGW 3.0)** — Light theme, official NIC header, tricolor accents |
-| **Backend API** | FastAPI (Python 3.10+), Pydantic v2, Uvicorn, Python-Multipart |
-| **NoSQL Database** | **MongoDB Atlas Cloud Cluster** with native BSON documents, dual-truth sub-objects, and index optimization |
-| **Document Ingestion** | **PyMuPDF (`fitz`)** for high-resolution vector PDF rendering to in-memory buffers |
-| **AI & Pixel Forensics** | **OpenCV** (Error Level Analysis), **Pillow**, **ImageHash** (pHash DCT), **Google Gemini GenAI** |
-| **Cryptographic Ledger**| **SHA-256 Hash-Chained Audit Ledger** with mathematical Genesis link verification |
+| **Frontend Framework** | React 19, TypeScript, Vite, Tailwind CSS |
+| **Lineage Visualization**| React-Flow Directed Acyclic Graph canvas |
+| **Backend Framework** | FastAPI (Python 3.10+), Pydantic v2, Uvicorn |
+| **Database** | MongoDB Atlas Cloud (NoSQL document store with Dual-Truth schema) |
+| **PDF & Imaging** | PyMuPDF (`fitz`), Pillow, OpenCV Headless, ImageHash |
+| **AI Extraction** | Google Gemini Multimodal GenAI with offline fallback engines |
+| **Audit Security** | SHA-256 Cryptographically Hash-Chained Audit Ledger |
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 Running the Prototype Locally
 
-### Prerequisites
+### 1. Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **Python**: v3.10 or higher
-- **MongoDB Atlas** or local MongoDB instance
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/BBhargavKasiRam/TrustLedger.git
-cd TrustLedger
-```
+- **MongoDB**: MongoDB Atlas Cloud cluster or local MongoDB instance
 
 ### 2. Environment Configuration
-Create a `.env` file in the repository root (or copy `.env.example`):
-```bash
-cp .env.example .env
-```
-Fill in your credentials:
+Create a `.env` file in the root folder (reference [`.env.example`](./.env.example)):
 ```env
 GEMINI_API_KEY="your-gemini-api-key"
 MONGODB_URL="mongodb+srv://<username>:<password>@cluster0.mongodb.net/"
@@ -98,93 +133,82 @@ MONGODB_URL="mongodb+srv://<username>:<password>@cluster0.mongodb.net/"
 cd backend
 python -m venv venv
 
+# Activate virtual environment:
 # Windows:
 venv\Scripts\activate
 # Linux/macOS:
 source venv/bin/activate
 
+# Install dependencies:
 pip install -r requirements.txt
 
-# Run initial seed and sample generator:
+# Seed MongoDB database with AICTE test institutions and evaluation FDRs:
 python seed.py
 
-# Start the FastAPI daemon:
+# Launch the FastAPI backend:
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
-The interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+API docs are available at `http://127.0.0.1:8000/docs`.
 
 ### 4. Frontend Setup
-In a new terminal window:
+In a separate terminal:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open your browser at `http://127.0.0.1:5173`.
+Open `http://127.0.0.1:5173` in your browser.
 
 ---
 
-## 🎯 SIH26265 Grand Finale Evaluation Scenarios
+## 📋 SIH26265 Evaluation Scenarios Check
 
-The portal contains built-in demo scenarios matching the exact evaluation criteria of the problem statement:
+The prototype includes built-in scenarios directly aligned with the Smart India Hackathon problem statement mandate:
 
-| Scenario # | Testing Mandate | Interactive Demonstration |
-| :---: | :--- | :--- |
-| **1** | **New FDR Submission** | Open *Document Upload & Verification*, select *1. Genuine SBI ₹35L*, run automated OCR + ELA + Math validation, and submit to registry. |
-| **2** | **Validity & Tri-Party Tracking** | Inspect the *FDR Verification Log*. Columns clearly isolate Institution Claims vs. Machine Forensics vs. Authoritative Bank CBS. |
-| **3** | **Approaching Maturity (SLA Watchdog)** | Open *Demo Controls* $\rightarrow$ *Temporal SLA Watchdog*. Simulate `+30 Days`: see automated WhatsApp/SMS dispatch notices; simulate `+180 Days`: see stark `[⚠ COMPLIANCE AT RISK]` soft-hold badge. |
-| **4** | **Renewal & Bank Merger DAG** | Open *Deposit History*. Inspect the React-Flow graph tracking Syndicate Bank (2016) $\rightarrow$ Canara Bank post-merger replacement (2020) without breaking lineage. |
-| **5** | **Discrepancy Identification** | Select *2. Tampered Principal ₹15L $\rightarrow$ ₹35L*. View the OpenCV Error Level Analysis heatmap overlay ($0.87$ score) and Compound Interest Math anomaly flag. |
-| **6** | **Authorized 4-Gate Release** | Navigate to *Release, Discharge, or Refund Workflow*. Clear Gate 1 (Tenure), Gate 2 (Cross-Bureau ERP), Gate 3 (Scrutiny Sign-Off), and Gate 4 (Competent Authority DSC) to mint a QR-verifiable Discharge NOC. |
+1. **New FDR Submission**: Open *Document Upload & Verification*, upload or pick a preset receipt, execute automated OCR extraction, verify compound interest math, and submit to the central repository.
+2. **Validity & Tri-Party Tracking**: Inspect the *Centralized Security Deposit/FDR Repository*. Clear column headers isolate institution-submitted information, machine forensics, and bank-confirmed data.
+3. **Approaching Maturity (SLA Watchdog)**: In *Demo Controls* $\rightarrow$ *Temporal SLA Watchdog*, simulate `+30 Days` to inspect automated alerts, or simulate `+180 Days` to observe the `[⚠ COMPLIANCE AT RISK]` soft-hold badge on the institution profile.
+4. **Renewal & Replacement Lineage**: Open *Deposit History* to view the unbroken DAG lineage graph tracking Syndicate Bank (2016) $\rightarrow$ Canara Bank (2020) replacement without losing historical deposit continuity.
+5. **Discrepancy Identification**: Select the tampered preset (*Vanguard College*). Inspect the OpenCV Error Level Analysis heatmap overlay ($0.87$ tamper score) and the mathematical yield discrepancy warning.
+6. **Authorized Release Processing**: Navigate to *Release, Discharge, or Refund Workflow*. Clear Gate 1 (Tenure), Gate 2 (Cross-Bureau ERP), Gate 3 (Scrutiny Sign-Off), and Gate 4 (Authority DSC) to issue the official QR-verifiable Discharge NOC.
 
 ---
 
-## 🛡️ Security, Forensics & Audit Guarantee
-
-- **Zero-Downtime Guarantee**: If external networks or API services stall, the backend automatically engages deterministic offline parsers with zero HTTP 500 crashes.
-- **Microsecond Precision Normalization**: All audit ledger timestamps are normalized to prevent BSON date rounding from corrupting cryptographic hash integrity.
-- **Printable e-Note Summary**: Officers can click `[🖨️ Export Scrutiny e-Note (PDF)]` to generate formal A4 case summaries with officer signature blocks.
-
----
-
-## 📂 Repository Structure
+## 📁 Repository Structure
 
 ```
 TrustLedger/
 ├── backend/
-│   ├── main.py                 # FastAPI application & REST routing
+│   ├── main.py                 # FastAPI application routes & endpoints
 │   ├── database.py             # MongoDB Atlas connection & collection refs
 │   ├── models.py               # Pydantic BSON document models with Dual-Truth
-│   ├── schemas.py              # Request & Response API schemas
-│   ├── audit_service.py        # SHA-256 hash-chained audit engine
+│   ├── schemas.py              # Pydantic request/response validation schemas
+│   ├── audit_service.py        # SHA-256 hash-chained audit ledger service
 │   ├── forensics_engine.py     # OpenCV ELA, PyMuPDF, Gemini OCR, pHash
 │   ├── bank_gateway.py         # NeSL Tier-1 CBS & Tier-2 Zero-Login OTP portal
 │   ├── lineage_engine.py       # DAG lineage graph & Temporal SLA watchdog
-│   ├── release_engine.py       # 4-Gate statutory release & QR NOC minter
+│   ├── release_engine.py       # 4-Gate statutory release & QR NOC engine
 │   ├── seed.py                 # MongoDB synthetic evaluation dataset seeder
 │   ├── requirements.txt        # Python backend dependencies
-│   └── static/                 # Static assets, uploads, and sample certificates
+│   └── static/                 # Sample certificates, uploads, and assets
 ├── frontend/
 │   ├── src/
 │   │   ├── components/         # GIGW 3.0 Government UI workbenches
 │   │   ├── services/api.ts     # Axios API client
 │   │   ├── types/index.ts      # TypeScript interfaces
 │   │   ├── App.tsx             # Main portal application
-│   │   └── main.tsx            # Application entry point
+│   │   └── main.tsx            # React application entry point
 │   ├── package.json            # Node.js dependencies
-│   ├── vite.config.ts          # Vite build & reverse-proxy configuration
-│   └── tailwind.config.js      # Government tricolor utility theme
+│   ├── vite.config.ts          # Vite build configuration
+│   └── tailwind.config.js      # GIGW 3.0 government styling
 ├── .env.example                # Sanitized environment template
 ├── .gitignore                  # Production git ignore configuration
-├── ARCHITECTURE.md             # In-depth architectural & mathematical manual
-├── CONTRIBUTING.md             # Code contribution & commit standards
+├── ARCHITECTURE.md             # Technical architecture manual
 ├── LICENSE                     # MIT Open Source License
-├── SECURITY.md                 # Vulnerability disclosure policy
-└── README.md                   # Project overview & documentation
+├── SECURITY.md                 # Security & audit integrity overview
+└── README.md                   # Project documentation
 ```
 
 ---
 
-## 📜 Regulatory Disclaimer
-
-*TrustLedger is developed as an authentic technology prototype for the Smart India Hackathon (SIH26265) under the guidelines of the All India Council for Technical Education (AICTE). Simulated bank marks, IFSC registries, and college names are used solely for evaluation scenarios.*
+*This application was built as a solution prototype for Smart India Hackathon (SIH26265) to modernize the All India Council for Technical Education (AICTE) Fixed Deposit Receipt and Security Deposit regulatory infrastructure.*
