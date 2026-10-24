@@ -11,7 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import type { BankFDRSession, FDRInstrument } from '../types';
-import { api } from '../services/api';
+import { api, getAssetUrl } from '../services/api';
 
 interface BankManagerPortalProps {
   fdrs: FDRInstrument[];
@@ -292,7 +292,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
               {/* Document Image Preview */}
               <div className="rounded overflow-hidden border border-gray-300 bg-gray-100">
                 <img
-                  src={session.document_path || '/static/sample_fdrs/sample_2_tampered_principal_pune.jpg'}
+                  src={getAssetUrl(session.document_path || '/static/sample_fdrs/sample_2_tampered_principal_pune.jpg')}
                   alt="Scanned FDR Document"
                   className="w-full h-auto object-cover max-h-56"
                 />

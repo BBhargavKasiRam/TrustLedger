@@ -17,7 +17,7 @@ import {
   Printer
 } from 'lucide-react';
 import type { PresetSample, ForensicsAnalyzeResponse, Institution } from '../types';
-import { api } from '../services/api';
+import { api, getAssetUrl } from '../services/api';
 
 interface ForensicsWorkbenchProps {
   institutions: Institution[];
@@ -295,11 +295,11 @@ export const ForensicsWorkbench: React.FC<ForensicsWorkbenchProps> = ({
               <div className="relative w-full">
                 {/* Active Image (Original Scan or ELA Heatmap) */}
                 <img
-                  src={
+                  src={getAssetUrl(
                     viewMode === 'ELA_HEATMAP' && analysisResult?.ela_result.heatmap_url
                       ? analysisResult.ela_result.heatmap_url
                       : previewImage
-                  }
+                  )}
                   alt="Bank FDR Receipt"
                   className="w-full h-auto object-contain select-none"
                 />

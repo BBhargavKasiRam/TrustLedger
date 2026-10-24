@@ -22,15 +22,27 @@ import type {
   ExecutiveAnalyticsResponse
 } from '../types';
 
-// Use relative URL so Vite proxy directs to localhost:8000
-const API_BASE = '/api';
+// Resolve backend URL from environment variables for production (Render/Vercel)
+// or fallback to relative '/api' during local Vite development (proxied by Vite)
+const rawBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
+export const BACKEND_URL = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
+const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+
+export const getAssetUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+    return url;
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return BACKEND_URL ? `${BACKEND_URL}${cleanPath}` : cleanPath;
+};
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 20000,
 });
 
 export const api = {
