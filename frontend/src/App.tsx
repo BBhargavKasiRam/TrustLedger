@@ -152,8 +152,11 @@ export const App: React.FC = () => {
 
   // Quick navigation handler for SIH26265 Evaluation Scenarios Check
   const handleNavigateToScenario = (scenarioId: number) => {
-    // 1. Ensure user is authenticated into an administrative session
-    if (!currentSession || currentSession.role === 'BANK_BRANCH_MANAGER') {
+    // 1. Close circulars repository overlay if open
+    setViewingCirculars(false);
+
+    // 2. Ensure user is authenticated into an administrative session
+    if (!currentSession || currentSession.role !== 'AICTE_SCRUTINY_OFFICER') {
       const dbOfficer = userPresets.find(p => p.role === 'AICTE_SCRUTINY_OFFICER');
       if (dbOfficer) {
         setCurrentSession({
@@ -176,49 +179,65 @@ export const App: React.FC = () => {
       }
     }
 
-    // 2. Dispatch to the exact workflow required by the scenario
+    // Helper for robust scrolling across async React render cycles
+    const scrollToTarget = (elementId: string) => {
+      let attempts = 0;
+      const maxAttempts = 30; // 30 * 60ms = 1800ms max polling
+      const interval = setInterval(() => {
+        attempts++;
+        const el = document.getElementById(elementId);
+        if (el) {
+          clearInterval(interval);
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Highlight visual cue for evaluators
+          el.classList.add('ring-4', 'ring-[#1E3A8A]', 'ring-offset-4', 'transition-all', 'duration-500');
+          setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-[#1E3A8A]', 'ring-offset-4', 'transition-all', 'duration-500');
+          }, 2500);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 60);
+    };
+
+    // 3. Dispatch to the exact workflow required by the scenario
     switch (scenarioId) {
       case 1: // New FDR Submission: Links to Document Upload & Verification
         setScrutinySubMenu('FORENSICS');
-        setTimeout(() => {
-          document.getElementById('forensics-workbench')?.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        scrollToTarget('forensics-workbench');
         break;
 
       case 2: // Validity Tracking: Links to Centralized Repository / Bank Gateway
         setScrutinySubMenu('SCRUTINY_INBOX');
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 150);
+        scrollToTarget('centralized-fdr-repository');
         break;
 
       case 3: // Approaching Maturity: Links to Time-Travel Simulator & Alert Feed
         setScrutinySubMenu('RELEASE_WATCHLIST');
-        setTimeout(() => {
-          document.getElementById('release-clearance-workbench')?.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        scrollToTarget('countdown-matrix-section');
         break;
 
       case 4: // Renewal & Replacement: Links to Deposit History DAG Graph
         setScrutinySubMenu('RELEASE_WATCHLIST');
-        setTimeout(() => {
-          document.getElementById('dag-lineage-workbench')?.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        scrollToTarget('dag-lineage-workbench');
         break;
 
       case 5: // Discrepancy Identification: Links to AI Forensics & Bank Mismatch View
         setScrutinySubMenu('BANK_GATEWAY');
-        setTargetBankFdrUid('FDR-2026-309');
-        setTimeout(() => {
-          document.getElementById('bank-verification-gateway')?.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        const discFdr = fdrs.find(f => f.fdr_uid === 'FDR-2026-309' || f.math_tamper_flag || f.bank_verified_status === 'MISMATCH_FLAGGED');
+        setTargetBankFdrUid(discFdr?.fdr_uid || 'FDR-2026-309');
+        scrollToTarget('bank-verification-gateway');
         break;
 
       case 6: // Authorized Release Processing: Links to 4-Gate Refund Workflow
         setScrutinySubMenu('RELEASE_WATCHLIST');
-        setTimeout(() => {
-          document.getElementById('release-clearance-workbench')?.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        scrollToTarget('release-clearance-workbench');
+        break;
+
+      default:
+        setScrutinySubMenu('SCRUTINY_INBOX');
+        scrollToTarget('centralized-fdr-repository');
         break;
     }
   };
@@ -695,7 +714,7 @@ export const App: React.FC = () => {
                       {/* Right Main Content Pane */}
                       <div className="lg:col-span-9 space-y-6">
                         {scrutinySubMenu === 'SCRUTINY_INBOX' && (
-                          <div className="space-y-4">
+                          <div id="centralized-fdr-repository" className="space-y-4">
                             <div className="bg-white p-4 rounded border border-gray-300 shadow-sm">
                               <h3 className="font-bold text-sm text-[#1a365d]">
                                 Centralized Security Deposit/FDR Repository (Instrument-wise Records)
@@ -727,6 +746,7 @@ export const App: React.FC = () => {
                           <ErrorBoundary moduleName="Bank CBS Verification Gateway">
                             <BankVerificationGateway
                               fdrs={fdrs}
+                              targetFdrUid={targetBankFdrUid}
                               onRefresh={loadData}
                               onSwitchRole={(_, targetUid) => {
                                 if (targetUid) setTargetBankFdrUid(targetUid);

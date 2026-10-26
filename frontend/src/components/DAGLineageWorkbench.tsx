@@ -739,7 +739,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
       </div>
 
       {/* BOTTOM SECTION: T-90 / T-60 / T-30 Maturity Countdown Matrix */}
-      <div className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-4">
+      <div id="countdown-matrix-section" className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
           <div className="flex items-center space-x-2">
             <Clock className="w-5 h-5 text-blue-900" />

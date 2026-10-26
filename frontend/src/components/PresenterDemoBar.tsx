@@ -279,8 +279,12 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
                     </div>
                   </label>
                   <button
-                    onClick={() => onNavigateToScenario?.(item.id)}
-                    className="shrink-0 flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-[#1a365d] hover:text-orange-600 font-bold text-[10px] rounded border border-blue-200 cursor-pointer transition whitespace-nowrap"
+                    onClick={() => {
+                      onNavigateToScenario?.(item.id);
+                      setIsOpen(false);
+                    }}
+                    title={`Jump to Mandate ${item.id}: ${item.title}`}
+                    className="shrink-0 flex items-center space-x-1 px-2.5 py-1 bg-[#1E3A8A] hover:bg-[#172554] text-white font-bold text-[10px] rounded border border-blue-900 cursor-pointer transition shadow-xs whitespace-nowrap"
                   >
                     <span>Jump</span>
                     <ArrowRight className="w-3 h-3" />

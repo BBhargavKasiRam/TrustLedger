@@ -26,16 +26,18 @@ import { api } from '../services/api';
 
 interface BankVerificationGatewayProps {
   fdrs: FDRInstrument[];
+  targetFdrUid?: string;
   onRefresh: () => void;
   onSwitchRole: (role: UserRole, targetFdrUid?: string) => void;
 }
 
 export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = ({
   fdrs,
+  targetFdrUid,
   onRefresh,
   onSwitchRole
 }) => {
-  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(fdrs[0]?.fdr_uid || 'FDR-2026-309');
+  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(targetFdrUid || fdrs[0]?.fdr_uid || 'FDR-2026-309');
   const [ifscData, setIfscData] = useState<IFSCResponse | null>(null);
   const [ifscLoading, setIfscLoading] = useState<boolean>(false);
   const [cbsResponse, setCbsResponse] = useState<Tier1CBSVerifyResponse | null>(null);
@@ -44,6 +46,13 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
   const [magicLinkResult, setMagicLinkResult] = useState<Tier2MagicLinkResponse | null>(null);
   const [mlLoading, setMlLoading] = useState<boolean>(false);
   const [copiedToken, setCopiedToken] = useState<boolean>(false);
+
+  // Sync selected FDR when targetFdrUid changes externally (e.g., from Demo Jump controls)
+  useEffect(() => {
+    if (targetFdrUid) {
+      setSelectedFdrUid(targetFdrUid);
+    }
+  }, [targetFdrUid]);
 
   // Selected FDR object
   const currentFdr = fdrs.find((f) => f.fdr_uid === selectedFdrUid) || fdrs[0];
