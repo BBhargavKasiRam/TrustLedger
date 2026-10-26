@@ -102,6 +102,12 @@ institutions_col = db["institutions"]
 fdr_instruments_col = db["fdr_instruments"]
 audit_logs_col = db["audit_logs"]
 release_requests_col = db["release_requests"]
+users_col = db["users"]
+rbi_directory_col = db["rbi_ifsc_directory"]
+magic_links_col = db["bank_magic_links"]
+system_state_col = db["system_state"]
+scenarios_col = db["evaluation_scenarios"]
+circulars_col = db["circulars"]
 
 
 def ensure_db_seeded():
@@ -140,6 +146,7 @@ def try_reconnect_atlas() -> Dict[str, Any]:
     useful once 0.0.0.0/0 is whitelisted in Atlas Network Access.
     """
     global client, db, institutions_col, fdr_instruments_col, audit_logs_col, release_requests_col
+    global users_col, rbi_directory_col, magic_links_col, system_state_col, scenarios_col, circulars_col
     global is_mock_db, db_connection_status, db_connection_error
 
     atlas_kwargs: Dict[str, Any] = {
@@ -164,6 +171,12 @@ def try_reconnect_atlas() -> Dict[str, Any]:
         fdr_instruments_col = db["fdr_instruments"]
         audit_logs_col = db["audit_logs"]
         release_requests_col = db["release_requests"]
+        users_col = db["users"]
+        rbi_directory_col = db["rbi_ifsc_directory"]
+        magic_links_col = db["bank_magic_links"]
+        system_state_col = db["system_state"]
+        scenarios_col = db["evaluation_scenarios"]
+        circulars_col = db["circulars"]
 
         is_mock_db = False
         db_connection_status = "CONNECTED_ATLAS"

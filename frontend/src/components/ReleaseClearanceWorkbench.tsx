@@ -35,8 +35,27 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
   fdrs,
   onRefreshAll
 }) => {
+  // Derive scenario targets dynamically from loaded instruments and institutions
+  const cleanFdr = fdrs.find(f => f.fdr_uid === 'FDR-2020-205') || 
+                   fdrs.find(f => {
+                     const inst = institutions.find(i => i.id === f.institution_id);
+                     return inst && (inst.pending_pgrc_penalties === 0) && !inst.pending_court_cases;
+                   }) || fdrs[0];
+
+  const pgrcBlockedFdr = fdrs.find(f => f.fdr_uid === 'FDR-2026-309') || 
+                         fdrs.find(f => {
+                           const inst = institutions.find(i => i.id === f.institution_id);
+                           return inst && (inst.pending_pgrc_penalties || 0) > 0;
+                         }) || fdrs[1];
+
+  const legalStayFdr = fdrs.find(f => f.fdr_uid === 'FDR-2018-519') || 
+                       fdrs.find(f => {
+                         const inst = institutions.find(i => i.id === f.institution_id);
+                         return inst && (inst.pending_court_cases || (inst as any).legal_stay_active);
+                       }) || fdrs[2];
+
   // Target FDR selection
-  const [selectedFdrUid, setSelectedFdrUid] = useState<string>('FDR-2020-205');
+  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(cleanFdr?.fdr_uid || 'FDR-2020-205');
   const [releaseStatus, setReleaseStatus] = useState<ReleaseStatusResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
 
@@ -195,38 +214,44 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
               Select Institution Case:
             </span>
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => handleSelectScenario('FDR-2020-205', false)}
-                className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                  selectedFdrUid === 'FDR-2020-205'
-                    ? 'bg-green-700 text-white border-green-800 shadow-sm'
-                    : 'bg-white text-green-900 border-green-300 hover:bg-green-50'
-                }`}
-              >
-                ✓ Scenario A: Clean Matured (Apex ₹35L)
-              </button>
+              {cleanFdr && (
+                <button
+                  onClick={() => handleSelectScenario(cleanFdr.fdr_uid, false)}
+                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                    selectedFdrUid === cleanFdr.fdr_uid
+                      ? 'bg-green-700 text-white border-green-800 shadow-sm'
+                      : 'bg-white text-green-900 border-green-300 hover:bg-green-50'
+                  }`}
+                >
+                  ✓ Scenario A: Clean Matured ({cleanFdr.fdr_uid})
+                </button>
+              )}
 
-              <button
-                onClick={() => handleSelectScenario('FDR-2026-309', false)}
-                className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                  selectedFdrUid === 'FDR-2026-309'
-                    ? 'bg-red-700 text-white border-red-800 shadow-sm'
-                    : 'bg-white text-red-900 border-red-300 hover:bg-red-50'
-                }`}
-              >
-                ✕ Scenario B: PGRC Blocked (Vanguard)
-              </button>
+              {pgrcBlockedFdr && (
+                <button
+                  onClick={() => handleSelectScenario(pgrcBlockedFdr.fdr_uid, false)}
+                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                    selectedFdrUid === pgrcBlockedFdr.fdr_uid
+                      ? 'bg-red-700 text-white border-red-800 shadow-sm'
+                      : 'bg-white text-red-900 border-red-300 hover:bg-red-50'
+                  }`}
+                >
+                  ✕ Scenario B: PGRC Blocked ({pgrcBlockedFdr.fdr_uid})
+                </button>
+              )}
 
-              <button
-                onClick={() => handleSelectScenario('FDR-2018-519', false)}
-                className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                  selectedFdrUid === 'FDR-2018-519'
-                    ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
-                    : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50'
-                }`}
-              >
-                ⚖️ Scenario C: Court Case (Shivalik)
-              </button>
+              {legalStayFdr && (
+                <button
+                  onClick={() => handleSelectScenario(legalStayFdr.fdr_uid, false)}
+                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                    selectedFdrUid === legalStayFdr.fdr_uid
+                      ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
+                      : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50'
+                  }`}
+                >
+                  ⚖️ Scenario C: Court Case ({legalStayFdr.fdr_uid})
+                </button>
+              )}
 
               <select
                 aria-label="Select Target FDR"

@@ -35,7 +35,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
   onRefresh,
   onSwitchRole
 }) => {
-  const [selectedFdrUid, setSelectedFdrUid] = useState<string>('FDR-2026-309');
+  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(fdrs[0]?.fdr_uid || 'FDR-2026-309');
   const [ifscData, setIfscData] = useState<IFSCResponse | null>(null);
   const [ifscLoading, setIfscLoading] = useState<boolean>(false);
   const [cbsResponse, setCbsResponse] = useState<Tier1CBSVerifyResponse | null>(null);
@@ -52,25 +52,23 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
   useEffect(() => {
     if (currentFdr?.inst_ifsc) {
       handleIfscLookup(currentFdr.inst_ifsc);
-      // Pre-fill manager email based on IFSC bank
-      const prefix = currentFdr.inst_ifsc.slice(0, 4).toUpperCase();
-      const domainMap: Record<string, string> = {
-        SBIN: 'bm.pune@sbi.co.in',
-        HDFC: 'bm.hyderabad@hdfcbank.com',
-        CNRB: 'bm.lucknow@canarabank.com',
-        PUNB: 'bm.dehradun@pnb.co.in'
-      };
-      setManagerEmail(domainMap[prefix] || `branch.manager@${prefix.toLowerCase()}.bank.gov.in`);
       setCbsResponse(null);
       setMagicLinkResult(null);
     }
-  }, [selectedFdrUid]);
+  }, [selectedFdrUid, currentFdr?.inst_ifsc]);
 
   const handleIfscLookup = async (ifscCode: string) => {
     setIfscLoading(true);
     try {
       const data = await api.lookupIFSC(ifscCode);
       setIfscData(data);
+      if (data) {
+        if ((data as any).sample_email) {
+          setManagerEmail((data as any).sample_email);
+        } else if (data.whitelisted_domain) {
+          setManagerEmail(`branch.manager@${data.whitelisted_domain}`);
+        }
+      }
     } catch (err) {
       console.error('IFSC lookup failed', err);
     } finally {
@@ -146,7 +144,10 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
             <span className="text-xs font-semibold text-gray-600 mr-1">Select Instrument:</span>
             {fdrs.map((fdr) => {
               const isSelected = fdr.fdr_uid === currentFdr?.fdr_uid;
-              const isDiscrepant = fdr.fdr_uid === 'FDR-2026-309' || fdr.math_tamper_flag;
+              const isDiscrepant = fdr.bank_verified_status === 'MISMATCH_FLAGGED' || 
+                fdr.lifecycle_status === 'DISCREPANCY_FLAGGED' || 
+                fdr.math_tamper_flag || 
+                (fdr.bank_confirmed_principal != null && fdr.inst_principal_amount != null && fdr.bank_confirmed_principal !== fdr.inst_principal_amount);
 
               return (
                 <button
@@ -166,7 +167,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-700 shrink-0" />
                   )}
                   <span>{fdr.fdr_uid}</span>
-                  {fdr.fdr_uid === 'FDR-2026-309' && (
+                  {isDiscrepant && (
                     <span className="text-[9px] bg-red-600 text-white px-1.5 py-0.2 rounded font-sans font-bold">
                       Mismatch Flagged
                     </span>

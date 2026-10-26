@@ -62,14 +62,24 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
         const data = await api.getBankFDRSession(selectedFdrUid);
         setSession(data);
         
-        // Setup initial form based on scenario
-        if (data.fdr_uid === 'FDR-2026-309' || data.fdr_uid === 'FDR-2026-992') {
-          // Pre-set to Vanguard fraud scenario
-          setActualPrincipal(1500000);
+        // Setup initial form based on scenario or bank truth from DB
+        const isDiscrepant = (data as any).discrepancy_flag || (data as any).math_tamper_flag || (data as any).verification_status === 'MISMATCH_FLAGGED' || ((data as any).bank_principal_amount != null && (data as any).bank_principal_amount !== data.inst_principal_amount);
+
+        if ((data as any).bank_principal_amount != null) {
+          setActualPrincipal((data as any).bank_principal_amount);
+          setActualMaturityDate((data as any).bank_maturity_date || data.inst_maturity_date || '2031-06-09');
+          setLienStatus((data as any).bank_lien_status || (isDiscrepant ? 'LOAN_TAKEN_ENCUMBERED' : 'ACTIVE_JOINT_AICTE'));
+          setRemarks((data as any).bank_manager_remarks || (isDiscrepant
+            ? 'Core Banking System alert: Deposit balance differs from self-declared claim. Unauthorized encumbrance identified.'
+            : 'Core Banking balance and maturity match certificate. Security deposit jointly pledged to Member Secretary, AICTE with zero third-party encumbrances.'));
+        } else if (isDiscrepant) {
+          // Pre-set to discrepancy scenario
+          const trueBal = Math.round((data.inst_principal_amount || 3500000) * 0.42857);
+          setActualPrincipal(trueBal);
           setActualMaturityDate(data.inst_maturity_date || '2031-06-09');
           setLienStatus('LOAN_TAKEN_ENCUMBERED');
           setRemarks(
-            'SBI Core Banking System alert: True deposit balance is Rs 15,00,000. Active overdraft loan of Rs 20,00,000 sanctioned against this deposit to college trust without AICTE NOC.'
+            `Core Banking System alert: True deposit balance is Rs ${trueBal.toLocaleString('en-IN')}. Active overdraft loan sanctioned against this deposit without AICTE NOC.`
           );
         } else {
           // Pre-set to clean authentic scenario
@@ -99,11 +109,13 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
         'Core Banking balance and maturity match certificate. Security deposit jointly pledged to Member Secretary, AICTE with zero third-party encumbrances.'
       );
     } else {
-      setActualPrincipal(1500000);
-      setActualMaturityDate(session?.inst_maturity_date || '2031-06-09');
+      const claimed = session?.inst_principal_amount || 3500000;
+      const trueBal = (session as any)?.bank_principal_amount || Math.round(claimed * 0.42857);
+      setActualPrincipal(trueBal);
+      setActualMaturityDate((session as any)?.bank_maturity_date || session?.inst_maturity_date || '2031-06-09');
       setLienStatus('LOAN_TAKEN_ENCUMBERED');
       setRemarks(
-        'CBS Attestation Alert: True principal is Rs 15,00,000 only. An unauthorized loan encumbrance is marked in favor of the college management.'
+        `CBS Attestation Alert: True principal is Rs ${trueBal.toLocaleString('en-IN')} only. An unauthorized loan encumbrance is marked in favor of the college management.`
       );
     }
   };

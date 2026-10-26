@@ -96,14 +96,38 @@ OFFLINE_IFSC_CACHE = {
     }
 }
 
-async def lookup_rbi_ifsc(ifsc_code: str) -> Dict[str, Any]:
+async def lookup_rbi_ifsc(ifsc_code: str, db: Optional[Any] = None) -> Dict[str, Any]:
     """
-    Queries live public RBI IFSC Directory via Razorpay API with offline deterministic fallback.
+    Queries live public RBI IFSC Directory via database or Razorpay API with offline deterministic fallback.
     Also resolves the official whitelisted bank domain for Zero-Login Magic Link dispatch.
     """
     clean_code = ifsc_code.strip().upper()
     prefix = clean_code[:4]
     domain_info = BANK_DOMAIN_WHITELIST.get(prefix, {"domain": "@bank.gov.in", "name": "Scheduled Commercial Bank"})
+
+    # Check database directory if provided
+    if db is not None:
+        rbi_col = db.rbi_ifsc_directory if hasattr(db, "rbi_ifsc_directory") else None
+        if rbi_col:
+            record = rbi_col.find_one({"ifsc": clean_code})
+            if record:
+                domain = record.get("whitelisted_domain", "")
+                if domain and not domain.startswith("@"):
+                    domain = f"@{domain}"
+                return {
+                    "IFSC": clean_code,
+                    "BANK": record.get("bank_name"),
+                    "BRANCH": record.get("branch_name"),
+                    "ADDRESS": record.get("branch_address"),
+                    "CITY": "Capital City",
+                    "STATE": "India",
+                    "MICR": "N/A",
+                    "whitelisted_domain": domain or domain_info["domain"],
+                    "source": "DATABASE_RBI_DIRECTORY",
+                    "rtgs": True,
+                    "neft": True,
+                    "cbs_supported": record.get("cbs_supported", True)
+                }
 
     # Attempt live query with 3-second timeout
     try:

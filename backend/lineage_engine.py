@@ -106,6 +106,12 @@ def run_temporal_time_travel(
                 {"$set": {"lifecycle_status": new_status, "updated_at": datetime.datetime.utcnow()}}
             )
 
+        if new_status == "MATURED_ACTION_PENDING":
+            inst_col.update_one(
+                {"$or": [{"id": fdr.institution_id}, {"id": str(fdr.institution_id)}]},
+                {"$set": {"eoa_status": "SOFT_HOLD_APPLIED", "updated_at": datetime.datetime.utcnow()}}
+            )
+
         inst_info = inst_map.get(str(fdr.institution_id), {})
         inst_display_name = inst_info.get("name", f"Institution #{fdr.institution_id}")
 
@@ -151,6 +157,13 @@ def run_temporal_time_travel(
 
     # Sort countdown matrix by days_remaining ascending
     countdown_matrix.sort(key=lambda x: x["days_remaining"])
+
+    if hasattr(db, "system_state"):
+        db.system_state.update_one(
+            {"id": 1},
+            {"$set": {"simulated_system_date": sim_date.isoformat(), "days_offset": days_offset, "updated_at": datetime.datetime.utcnow()}},
+            upsert=True
+        )
 
     return {
         "simulated_date": sim_date.isoformat(),

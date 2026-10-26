@@ -14,16 +14,22 @@ class Institution(MongoBaseModel):
     _id: Optional[Any] = None
     pid: str  # AICTE Permanent ID, e.g. 1-492837461
     name: str
+    city: Optional[str] = None
     state: str
     region: str  # North, South, West, East
     programme_tier: str  # Engineering_Degree, MBA_PGDM, Diploma
     required_fdr_norm: int  # e.g., 3500000 for Engg, 1500000 for Diploma
+    eoa_status: str = "COMPLIANT"  # COMPLIANT vs SOFT_HOLD_APPLIED
     
-    # AICTE Regulatory & Compliance Flags
+    # AICTE Regulatory & Compliance Flags (Gate 2 cross-bureau corpus)
     pending_court_cases: bool = False
     unpaid_salary_complaints: bool = False
     pending_pgrc_penalties: int = 0
     evc_deficiencies: bool = False
+    pgrc_penalty_amount: float = 0.0
+    unpaid_salary_cases: int = 0
+    legal_stay_active: bool = False
+    erp_remarks: Optional[str] = None
     created_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
 
     def to_mongo_dict(self) -> Dict[str, Any]:
@@ -374,3 +380,133 @@ def doc_to_audit_log(doc: Optional[Dict[str, Any]]) -> Optional[AuditLog]:
         if "id" not in d or d["id"] is None:
             d["id"] = oid
     return AuditLog(**d)
+
+
+class UserRecord(MongoBaseModel):
+    id: Optional[Union[int, str]] = None
+    _id: Optional[Any] = None
+    role: str
+    user_id: str
+    user_name: str
+    designation: str
+    department: Optional[str] = None
+    institution_id: Optional[Union[int, str]] = None
+    institution_pid: Optional[str] = None
+    institution_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    branch_name: Optional[str] = None
+    label: str
+    icon: str = "👤"
+
+    def to_mongo_dict(self) -> Dict[str, Any]:
+        d = self.model_dump()
+        if "_id" in d and d["_id"] is None:
+            del d["_id"]
+        return d
+
+
+class EvaluationScenarioRecord(MongoBaseModel):
+    id: int
+    _id: Optional[Any] = None
+    title: str
+    subtitle: str
+    workflow_target: str
+    target_fdr_uid: Optional[str] = None
+    description: str
+    is_verified: bool = True
+
+    def to_mongo_dict(self) -> Dict[str, Any]:
+        d = self.model_dump()
+        if "_id" in d and d["_id"] is None:
+            del d["_id"]
+        return d
+
+
+class SystemStateRecord(MongoBaseModel):
+    id: Optional[Union[int, str]] = 1
+    _id: Optional[Any] = None
+    simulated_system_date: str = "2026-10-24"
+    days_offset: int = 0
+    national_corpus_locked: float = 0.0
+    active_institutions_count: int = 0
+    updated_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
+
+    def to_mongo_dict(self) -> Dict[str, Any]:
+        d = self.model_dump()
+        if "_id" in d and d["_id"] is None:
+            del d["_id"]
+        return d
+
+
+class CircularRecord(MongoBaseModel):
+    id: str
+    _id: Optional[Any] = None
+    reference_no: str
+    title: str
+    date: str
+    category: str
+    summary: str
+    signatory_designation: str
+    pdf_download_url: str
+    badge_text: str = "OFFICIAL"
+
+    def to_mongo_dict(self) -> Dict[str, Any]:
+        d = self.model_dump()
+        if "_id" in d and d["_id"] is None:
+            del d["_id"]
+        return d
+
+
+class RBIBankDirectoryRecord(MongoBaseModel):
+    ifsc: str
+    _id: Optional[Any] = None
+    bank_name: str
+    branch_name: str
+    branch_address: str
+    whitelisted_domain: str
+    cbs_supported: bool = True
+    mock_cbs_balance: float = 0.0
+    mock_lien_status: str = "ACTIVE_JOINT_AICTE"
+
+    def to_mongo_dict(self) -> Dict[str, Any]:
+        d = self.model_dump()
+        if "_id" in d and d["_id"] is None:
+            del d["_id"]
+        return d
+
+
+def doc_to_user(doc: Optional[Dict[str, Any]]) -> Optional[UserRecord]:
+    if not doc:
+        return None
+    d = dict(doc)
+    if "_id" in d:
+        oid = str(d["_id"])
+        d["_id"] = oid
+        if "id" not in d or d["id"] is None:
+            d["id"] = oid
+    return UserRecord(**d)
+
+
+def doc_to_scenario(doc: Optional[Dict[str, Any]]) -> Optional[EvaluationScenarioRecord]:
+    if not doc:
+        return None
+    d = dict(doc)
+    if "_id" in d:
+        oid = str(d["_id"])
+        d["_id"] = oid
+        if "id" not in d or d["id"] is None:
+            d["id"] = int(doc.get("id", 1))
+    return EvaluationScenarioRecord(**d)
+
+
+def doc_to_circular(doc: Optional[Dict[str, Any]]) -> Optional[CircularRecord]:
+    if not doc:
+        return None
+    d = dict(doc)
+    if "_id" in d:
+        oid = str(d["_id"])
+        d["_id"] = oid
+        if "id" not in d or d["id"] is None:
+            d["id"] = oid
+    return CircularRecord(**d)
+

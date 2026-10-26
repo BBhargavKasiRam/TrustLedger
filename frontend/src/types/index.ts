@@ -21,15 +21,77 @@ export interface Institution {
   id: number;
   pid: string;
   name: string;
+  city?: string;
   state: string;
   region: string;
   programme_tier: string;
   required_fdr_norm: number;
+  eoa_status?: string;
   pending_court_cases: boolean;
   unpaid_salary_complaints: boolean;
   pending_pgrc_penalties: number;
+  pgrc_penalty_amount?: number;
+  unpaid_salary_cases?: number;
+  legal_stay_active?: boolean;
   evc_deficiencies: boolean;
+  erp_remarks?: string;
   created_at?: string;
+}
+
+export interface UserPreset {
+  id: number | string;
+  role: UserRole;
+  user_id: string;
+  user_name: string;
+  designation: string;
+  department?: string;
+  institution_id?: number;
+  institution_pid?: string;
+  institution_name?: string;
+  bank_name?: string;
+  branch_name?: string;
+  label: string;
+  icon: string;
+}
+
+export interface EvaluationScenario {
+  id: number;
+  title: string;
+  subtitle: string;
+  workflow_target: string;
+  target_fdr_uid?: string | null;
+  description: string;
+  is_verified?: boolean;
+}
+
+export interface SystemState {
+  simulated_system_date: string;
+  days_offset: number;
+  national_corpus_locked: number;
+  active_institutions_count: number;
+}
+
+export interface CircularItem {
+  id: string;
+  reference_no: string;
+  title: string;
+  date: string;
+  category: 'ALL' | 'APH_NORMS' | 'BANKING_SOP' | 'RELEASE_SOP' | 'LEGAL_GAZETTE' | string;
+  summary: string;
+  signatory_designation: string;
+  pdf_download_url: string;
+  badge_text: string;
+}
+
+export interface RBIBankDirectory {
+  ifsc: string;
+  bank_name: string;
+  branch_name: string;
+  branch_address: string;
+  whitelisted_domain: string;
+  cbs_supported: boolean;
+  mock_cbs_balance: number;
+  mock_lien_status: string;
 }
 
 export interface FDRInstrument {

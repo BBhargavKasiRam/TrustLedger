@@ -19,7 +19,12 @@ import type {
   LinkRenewalResponse,
   ReleaseStatusResponse,
   NOCVerificationResponse,
-  ExecutiveAnalyticsResponse
+  ExecutiveAnalyticsResponse,
+  UserPreset,
+  EvaluationScenario,
+  SystemState,
+  CircularItem,
+  RBIBankDirectory
 } from '../types';
 
 // Helper function to sanitize any backend URL string
@@ -140,7 +145,42 @@ export const api = {
   },
 
   resetSeedDatabase: async (): Promise<{ message: string }> => {
-    const res = await apiClient.post<{ message: string }>('/audit/reset-seed');
+    const res = await apiClient.post<{ message: string }>('/demo/reset');
+    return res.data;
+  },
+
+  resetDemoDB: async (): Promise<{ status: string; message: string }> => {
+    const res = await apiClient.post<{ status: string; message: string }>('/demo/reset');
+    return res.data;
+  },
+
+  getUsers: async (): Promise<UserPreset[]> => {
+    const res = await apiClient.get<UserPreset[]>('/users');
+    return res.data;
+  },
+
+  getEvaluationScenarios: async (): Promise<EvaluationScenario[]> => {
+    const res = await apiClient.get<EvaluationScenario[]>('/evaluation/scenarios');
+    return res.data;
+  },
+
+  getSystemState: async (): Promise<SystemState> => {
+    const res = await apiClient.get<SystemState>('/system/state');
+    return res.data;
+  },
+
+  getCirculars: async (): Promise<CircularItem[]> => {
+    const res = await apiClient.get<CircularItem[]>('/circulars');
+    return res.data;
+  },
+
+  getIFSCDirectory: async (): Promise<RBIBankDirectory[]> => {
+    const res = await apiClient.get<RBIBankDirectory[]>('/bank/ifsc-directory');
+    return res.data;
+  },
+
+  getWatchdogAlerts: async (): Promise<TemporalTimeTravelResponse> => {
+    const res = await apiClient.get<TemporalTimeTravelResponse>('/watchdog/alerts');
     return res.data;
   },
 

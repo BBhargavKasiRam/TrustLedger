@@ -5,14 +5,20 @@ from datetime import datetime
 class InstitutionBase(BaseModel):
     pid: str
     name: str
+    city: Optional[str] = None
     state: str
     region: str
     programme_tier: str
     required_fdr_norm: int
+    eoa_status: str = "COMPLIANT"
     pending_court_cases: bool = False
     unpaid_salary_complaints: bool = False
     pending_pgrc_penalties: int = 0
     evc_deficiencies: bool = False
+    pgrc_penalty_amount: float = 0.0
+    unpaid_salary_cases: int = 0
+    legal_stay_active: bool = False
+    erp_remarks: Optional[str] = None
 
 class InstitutionResponse(InstitutionBase):
     id: Union[int, str]
@@ -340,5 +346,62 @@ class ExecutiveAnalyticsResponse(BaseModel):
     total_locked_amount: float
     total_released_amount: float
     total_compliant_rate_pct: float
+
+class UserResponse(BaseModel):
+    id: Union[int, str]
+    role: str
+    user_id: str
+    user_name: str
+    designation: str
+    department: Optional[str] = None
+    institution_id: Optional[Union[int, str]] = None
+    institution_pid: Optional[str] = None
+    institution_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    branch_name: Optional[str] = None
+    label: str
+    icon: str = "👤"
+    model_config = ConfigDict(from_attributes=True)
+
+class EvaluationScenarioResponse(BaseModel):
+    id: int
+    title: str
+    subtitle: str
+    workflow_target: str
+    target_fdr_uid: Optional[str] = None
+    description: str
+    is_verified: bool = True
+    model_config = ConfigDict(from_attributes=True)
+
+class SystemStateResponse(BaseModel):
+    simulated_system_date: str
+    days_offset: int
+    national_corpus_locked: float
+    active_institutions_count: int
+    model_config = ConfigDict(from_attributes=True)
+
+class CircularResponse(BaseModel):
+    id: str
+    reference_no: str
+    title: str
+    date: str
+    category: str
+    summary: str
+    signatory_designation: str
+    pdf_download_url: str
+    badge_text: str = "OFFICIAL"
+    model_config = ConfigDict(from_attributes=True)
+
+class RBIBankDirectoryResponse(BaseModel):
+    ifsc: str
+    bank_name: str
+    branch_name: str
+    branch_address: str
+    whitelisted_domain: str
+    cbs_supported: bool = True
+    mock_cbs_balance: float = 0.0
+    mock_lien_status: str = "ACTIVE_JOINT_AICTE"
+    model_config = ConfigDict(from_attributes=True)
+
 
 

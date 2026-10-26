@@ -50,7 +50,12 @@ try:
         Gate4ApproveRequest,
         ReleaseStatusResponse,
         NOCVerificationResponse,
-        ExecutiveAnalyticsResponse
+        ExecutiveAnalyticsResponse,
+        UserResponse,
+        EvaluationScenarioResponse,
+        SystemStateResponse,
+        CircularResponse,
+        RBIBankDirectoryResponse
     )
     from .audit_service import verify_audit_chain, record_audit_log
     from .seed import seed_database
@@ -111,7 +116,12 @@ except ImportError:
         Gate4ApproveRequest,
         ReleaseStatusResponse,
         NOCVerificationResponse,
-        ExecutiveAnalyticsResponse
+        ExecutiveAnalyticsResponse,
+        UserResponse,
+        EvaluationScenarioResponse,
+        SystemStateResponse,
+        CircularResponse,
+        RBIBankDirectoryResponse
     )
     from audit_service import verify_audit_chain, record_audit_log
     from seed import seed_database
@@ -221,6 +231,7 @@ def root():
         "status": "OPERATIONAL"
     }
 
+@app.get("/api/dashboard/kpis", response_model=DashboardSummaryResponse)
 @app.get("/api/dashboard/summary", response_model=DashboardSummaryResponse)
 def get_dashboard_summary(db: Any = Depends(get_db)):
     """Computes high-level KPI metrics from MongoDB for the Executive Regulatory Dashboard."""
@@ -261,7 +272,8 @@ def get_dashboard_summary(db: Any = Depends(get_db)):
     )
 
     audit_status = verify_audit_chain(db)
-    simulated_system_date = datetime.date.today().isoformat()
+    sys_state = db.system_state.find_one({"id": 1}) or {}
+    simulated_system_date = sys_state.get("simulated_system_date", "2026-10-24")
 
     return DashboardSummaryResponse(
         total_institutions=total_institutions,
@@ -274,6 +286,51 @@ def get_dashboard_summary(db: Any = Depends(get_db)):
         audit_chain_verified=audit_status["integrity_verified"],
         simulated_system_date=simulated_system_date
     )
+
+
+@app.get("/api/users", response_model=List[UserResponse])
+@app.get("/api/auth/presets", response_model=List[UserResponse])
+def get_users(db: Any = Depends(get_db)):
+    """Fetches all official AICTE and Bank SSO role presets dynamically from MongoDB users collection."""
+    users = list(db.users.find({}))
+    return clean_mongo_docs(users)
+
+@app.get("/api/evaluation/scenarios", response_model=List[EvaluationScenarioResponse])
+def get_evaluation_scenarios(db: Any = Depends(get_db)):
+    """Fetches official SIH26265 Evaluation Scenarios Check Matrix directly from MongoDB."""
+    scenarios = list(db.evaluation_scenarios.find({}).sort("id", 1))
+    return clean_mongo_docs(scenarios)
+
+@app.get("/api/system/state", response_model=SystemStateResponse)
+def get_system_state(db: Any = Depends(get_db)):
+    """Fetches current simulated regulatory system state and calendar date from MongoDB."""
+    state = db.system_state.find_one({"id": 1}) or {
+        "simulated_system_date": "2026-10-24",
+        "days_offset": 0,
+        "national_corpus_locked": 13500000.0,
+        "active_institutions_count": 4
+    }
+    return clean_mongo_doc(state)
+
+@app.get("/api/circulars", response_model=List[CircularResponse])
+def get_circulars(db: Any = Depends(get_db)):
+    """Fetches official AICTE circulars, notifications, and SOPs from MongoDB."""
+    circulars = list(db.circulars.find({}))
+    return clean_mongo_docs(circulars)
+
+@app.get("/api/bank/ifsc-directory", response_model=List[RBIBankDirectoryResponse])
+def get_ifsc_directory(db: Any = Depends(get_db)):
+    """Fetches authoritative RBI IFSC directory records from MongoDB."""
+    records = list(db.rbi_ifsc_directory.find({}))
+    return clean_mongo_docs(records)
+
+@app.get("/api/watchdog/alerts")
+def get_watchdog_alerts(db: Any = Depends(get_db)):
+    """Computes live statutory SLA alerts dynamically from database state."""
+    sys_state = db.system_state.find_one({"id": 1}) or {}
+    sim_date = sys_state.get("simulated_system_date", "2026-10-24")
+    days_offset = sys_state.get("days_offset", 0)
+    return run_temporal_time_travel(db, simulated_date_str=sim_date, days_offset=days_offset)
 
 @app.get("/api/institutions", response_model=List[InstitutionResponse])
 def get_institutions(db: Any = Depends(get_db)):
@@ -612,6 +669,7 @@ def get_bank_fdr_session(fdr_uid: str, db: Any = Depends(get_db)):
 # FEATURE MODULE 3: TEMPORAL SLA WATCHDOG & DAG LINEAGE GRAPH
 # ==============================================================================
 
+@app.post("/api/demo/time-travel", response_model=TemporalTimeTravelResponse)
 @app.post("/api/temporal/time-travel", response_model=TemporalTimeTravelResponse)
 def post_temporal_time_travel(payload: TemporalTimeTravelRequest, db: Any = Depends(get_db)):
     """Interactive SLA Cron Watchdog Simulator: scans FDRs, simulates dates, transitions statuses, generates notices."""
@@ -766,6 +824,7 @@ def verify_audit(db: Any = Depends(get_db)):
     result = verify_audit_chain(db)
     return AuditVerifyResponse(**result)
 
+@app.post("/api/demo/reset")
 @app.post("/api/audit/reset-seed")
 def reset_demo_database():
     """Resets MongoDB collections to the clean evaluation seed state."""

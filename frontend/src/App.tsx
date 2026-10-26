@@ -15,7 +15,7 @@ import { PresenterDemoBar, DEMO_PRESETS } from './components/PresenterDemoBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { BackendConnectionAlert } from './components/BackendConnectionAlert';
 import { GovFooter } from './components/GovFooter';
-import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession } from './types';
+import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession, UserPreset, EvaluationScenario, SystemState } from './types';
 import { api, getApiBase, getResolvedBackendUrl } from './services/api';
 import { 
   FileSpreadsheet, 
@@ -63,6 +63,9 @@ export const App: React.FC = () => {
   const [fdrs, setFdrs] = useState<FDRInstrument[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [userPresets, setUserPresets] = useState<UserPreset[]>([]);
+  const [evaluationScenarios, setEvaluationScenarios] = useState<EvaluationScenario[]>([]);
+  const [_systemState, setSystemState] = useState<SystemState | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isResetting, setIsResetting] = useState<boolean>(false);
   const [targetBankFdrUid, setTargetBankFdrUid] = useState<string>('FDR-2026-309');
@@ -73,17 +76,23 @@ export const App: React.FC = () => {
     setIsRetrying(true);
     try {
       setError(null);
-      const [sumRes, instRes, fdrRes, auditRes] = await Promise.all([
+      const [sumRes, instRes, fdrRes, auditRes, usersRes, scenariosRes, stateRes] = await Promise.all([
         api.getSummary(),
         api.getInstitutions(),
         api.getFdrs(),
         api.getAuditLogs(),
+        api.getUsers().catch(() => []),
+        api.getEvaluationScenarios().catch(() => []),
+        api.getSystemState().catch(() => null),
       ]);
 
       setSummary(sumRes);
       setInstitutions(instRes);
       setFdrs(fdrRes);
       setLogs(auditRes);
+      if (usersRes && usersRes.length > 0) setUserPresets(usersRes);
+      if (scenariosRes && scenariosRes.length > 0) setEvaluationScenarios(scenariosRes);
+      if (stateRes) setSystemState(stateRes);
 
       if (instRes.length > 0 && selectedInstitutionId === null) {
         setSelectedInstitutionId(instRes[0].id);
@@ -145,9 +154,25 @@ export const App: React.FC = () => {
   const handleNavigateToScenario = (scenarioId: number) => {
     // 1. Ensure user is authenticated into an administrative session
     if (!currentSession || currentSession.role === 'BANK_BRANCH_MANAGER') {
-      const officerPreset = DEMO_PRESETS.find(p => p.session.role === 'AICTE_SCRUTINY_OFFICER');
-      if (officerPreset) {
-        setCurrentSession(officerPreset.session);
+      const dbOfficer = userPresets.find(p => p.role === 'AICTE_SCRUTINY_OFFICER');
+      if (dbOfficer) {
+        setCurrentSession({
+          role: dbOfficer.role,
+          userId: dbOfficer.user_id,
+          userName: dbOfficer.user_name,
+          designation: dbOfficer.designation,
+          department: dbOfficer.department,
+          institutionId: dbOfficer.institution_id,
+          institutionPid: dbOfficer.institution_pid,
+          institutionName: dbOfficer.institution_name,
+          bankName: dbOfficer.bank_name,
+          branchName: dbOfficer.branch_name,
+        });
+      } else {
+        const officerPreset = DEMO_PRESETS.find(p => p.session.role === 'AICTE_SCRUTINY_OFFICER');
+        if (officerPreset) {
+          setCurrentSession(officerPreset.session);
+        }
       }
     }
 
@@ -247,6 +272,7 @@ export const App: React.FC = () => {
           <PublicLandingPage
             onLoginSuccess={handleLoginSuccess}
             onOpenCircularsModal={() => setViewingCirculars(true)}
+            presets={userPresets}
           />
 
           {/* Discreet Presenter Bottom-Right Demo Controls */}
@@ -259,6 +285,8 @@ export const App: React.FC = () => {
             onResetSeed={handleResetSeed}
             isResetting={isResetting}
             onNavigateToScenario={handleNavigateToScenario}
+            presets={userPresets}
+            scenarios={evaluationScenarios}
           />
 
           {/* Full Screen Circulars Viewer Overlay if opened from Landing Page */}
@@ -769,7 +797,7 @@ export const App: React.FC = () => {
                               National Corpus
                             </span>
                             <span className="text-base font-extrabold text-amber-800 font-mono">
-                              ₹1.35 Cr Locked
+                              ₹{((summary?.total_security_deposit_locked || 13500000) / 10000000).toFixed(2)} Cr Locked
                             </span>
                           </div>
                         </div>
@@ -1000,6 +1028,8 @@ export const App: React.FC = () => {
             onResetSeed={handleResetSeed}
             isResetting={isResetting}
             onNavigateToScenario={handleNavigateToScenario}
+            presets={userPresets}
+            scenarios={evaluationScenarios}
           />
         </>
       )}

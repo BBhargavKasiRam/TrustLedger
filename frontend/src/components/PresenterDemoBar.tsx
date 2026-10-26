@@ -8,7 +8,7 @@ import {
   CheckSquare,
   ArrowRight
 } from 'lucide-react';
-import type { UserSession } from '../types';
+import type { UserSession, UserPreset, EvaluationScenario } from '../types';
 import { api } from '../services/api';
 
 interface PresenterDemoBarProps {
@@ -20,6 +20,8 @@ interface PresenterDemoBarProps {
   onResetSeed: () => Promise<void>;
   isResetting: boolean;
   onNavigateToScenario?: (scenarioId: number) => void;
+  presets?: UserPreset[];
+  scenarios?: EvaluationScenario[];
 }
 
 export const EVALUATION_SCENARIOS = [
@@ -132,11 +134,42 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
   onDateChange,
   onResetSeed,
   isResetting,
-  onNavigateToScenario
+  onNavigateToScenario,
+  presets,
+  scenarios
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isTraveling, setIsTraveling] = useState<boolean>(false);
   const [customDate, setCustomDate] = useState<string>(simulatedDate);
+
+  // Dynamically map scenarios and presets from backend DB if provided
+  const activeScenarios = (scenarios && scenarios.length > 0)
+    ? scenarios.map(s => ({
+        id: s.id,
+        title: s.title,
+        subtitle: s.subtitle,
+        badge: `MANDATE ${s.id}`
+      }))
+    : EVALUATION_SCENARIOS;
+
+  const activePresets: { label: string; icon: string; session: UserSession }[] = (presets && presets.length > 0)
+    ? presets.map(p => ({
+        label: p.label || p.user_name,
+        icon: p.icon || '👤',
+        session: {
+          role: p.role,
+          userId: p.user_id,
+          userName: p.user_name,
+          designation: p.designation,
+          department: p.department,
+          institutionId: p.institution_id,
+          institutionPid: p.institution_pid,
+          institutionName: p.institution_name,
+          bankName: p.bank_name,
+          branchName: p.branch_name,
+        }
+      }))
+    : DEMO_PRESETS;
 
   // SIH26265 Evaluation Checklist State (All 6 scenarios verified by default)
   const [checkedScenarios, setCheckedScenarios] = useState<Record<number, boolean>>({
@@ -224,7 +257,7 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
             </p>
 
             <div className="space-y-1.5">
-              {EVALUATION_SCENARIOS.map((item) => (
+              {activeScenarios.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between gap-2 p-2 rounded bg-white border border-blue-100 hover:border-blue-300 transition shadow-2xs"
@@ -291,7 +324,7 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
               1. Instant Session Switcher:
             </label>
             <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-              {DEMO_PRESETS.map((preset, idx) => {
+              {activePresets.map((preset, idx) => {
                 const isActive = currentSession?.userId === preset.session.userId;
                 return (
                   <button

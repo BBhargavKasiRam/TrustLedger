@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Download, 
@@ -12,6 +12,7 @@ import {
   FileCheck2,
   CheckCircle2
 } from 'lucide-react';
+import { api } from '../services/api';
 
 export interface CircularItem {
   id: string;
@@ -245,13 +246,38 @@ interface CircularsAndManualsProps {
 }
 
 export const CircularsAndManuals: React.FC<CircularsAndManualsProps> = () => {
+  const [circulars, setCirculars] = useState<CircularItem[]>(CIRCULARS_DATA);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewingCircular, setViewingCircular] = useState<CircularItem | null>(null);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    api.getCirculars()
+      .then((data: any) => {
+        if (data && data.length > 0) {
+          const merged = data.map((d: any, idx: number) => {
+            const fallback = CIRCULARS_DATA[idx % CIRCULARS_DATA.length];
+            return {
+              ...fallback,
+              id: d.id || fallback.id,
+              circular_no: d.reference_no || d.circular_no || fallback.circular_no,
+              title: d.title || fallback.title,
+              date: d.date || fallback.date,
+              category: d.category || fallback.category,
+              category_label: d.badge_text || fallback.category_label,
+              summary: d.summary || fallback.summary,
+              issued_by: d.signatory_designation || fallback.issued_by,
+            };
+          });
+          setCirculars(merged);
+        }
+      })
+      .catch((err) => console.error('Failed to load circulars from backend', err));
+  }, []);
+
   // Filter circulars based on category & search query
-  const filteredCirculars = CIRCULARS_DATA.filter((item) => {
+  const filteredCirculars = circulars.filter((item) => {
     const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
     const matchesSearch = 
       item.circular_no.toLowerCase().includes(searchQuery.toLowerCase()) ||

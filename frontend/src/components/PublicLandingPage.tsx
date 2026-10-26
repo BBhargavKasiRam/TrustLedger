@@ -18,7 +18,7 @@ import {
   GitBranch, 
   Scale
 } from 'lucide-react';
-import type { UserRole, UserSession, NOCVerificationResponse } from '../types';
+import type { UserRole, UserSession, NOCVerificationResponse, UserPreset } from '../types';
 import { api } from '../services/api';
 import { DEMO_PRESETS } from './PresenterDemoBar';
 import { Navbar } from './Navbar';
@@ -27,12 +27,34 @@ import { GovFooter } from './GovFooter';
 interface PublicLandingPageProps {
   onLoginSuccess: (session: UserSession) => void;
   onOpenCircularsModal: () => void;
+  presets?: UserPreset[];
 }
 
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onLoginSuccess,
-  onOpenCircularsModal
+  onOpenCircularsModal,
+  presets
 }) => {
+  // Dynamically map presets from backend DB if provided
+  const activePresets = (presets && presets.length > 0)
+    ? presets.map(p => ({
+        label: p.label || p.user_name,
+        icon: p.icon || '👤',
+        session: {
+          role: p.role,
+          userId: p.user_id,
+          userName: p.user_name,
+          designation: p.designation,
+          department: p.department,
+          institutionId: p.institution_id,
+          institutionPid: p.institution_pid,
+          institutionName: p.institution_name,
+          bankName: p.bank_name,
+          branchName: p.branch_name,
+        }
+      }))
+    : DEMO_PRESETS;
+
   // 4 SSO Role Tabs
   const [activeTab, setActiveTab] = useState<UserRole>('INSTITUTION_NODAL_OFFICER');
 
@@ -96,7 +118,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     }
 
     // Match preset
-    const matchedPreset = DEMO_PRESETS.find(
+    const matchedPreset = activePresets.find(
       p => p.session.userId.toLowerCase() === userId.trim().toLowerCase()
     );
 
@@ -749,38 +771,17 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     ⚡ Evaluator 1-Click SSO Shortcuts:
                   </span>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onLoginSuccess(DEMO_PRESETS[0].session)}
-                      className="p-2 text-left bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 rounded-md transition-colors cursor-pointer"
-                    >
-                      <span className="font-bold text-[11px] text-blue-900 block truncate">1. College Nodal Officer</span>
-                      <span className="text-[10px] text-slate-500 font-mono">PID 1-100200301</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onLoginSuccess(DEMO_PRESETS[2].session)}
-                      className="p-2 text-left bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 rounded-md transition-colors cursor-pointer"
-                    >
-                      <span className="font-bold text-[11px] text-emerald-900 block truncate">2. AICTE Scrutiny</span>
-                      <span className="text-[10px] text-slate-500 font-mono">officer.rb</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onLoginSuccess(DEMO_PRESETS[3].session)}
-                      className="p-2 text-left bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200 rounded-md transition-colors cursor-pointer"
-                    >
-                      <span className="font-bold text-[11px] text-amber-900 block truncate">3. Member Secretary</span>
-                      <span className="text-[10px] text-slate-500 font-mono">Authority Sign-Off</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onLoginSuccess(DEMO_PRESETS[4].session)}
-                      className="p-2 text-left bg-purple-50/70 hover:bg-purple-100/70 border border-purple-200 rounded-md transition-colors cursor-pointer"
-                    >
-                      <span className="font-bold text-[11px] text-purple-900 block truncate">4. Bank Manager</span>
-                      <span className="text-[10px] text-slate-500 font-mono">SBI Shivaji Nagar</span>
-                    </button>
+                    {activePresets.slice(0, 4).map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => onLoginSuccess(preset.session)}
+                        className="p-2 text-left bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 rounded-md transition-colors cursor-pointer"
+                      >
+                        <span className="font-bold text-[11px] text-blue-900 block truncate">{idx + 1}. {preset.label.split('(')[0].trim()}</span>
+                        <span className="text-[10px] text-slate-500 font-mono truncate block">{preset.session.userId}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

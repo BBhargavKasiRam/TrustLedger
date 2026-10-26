@@ -107,26 +107,39 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
 
   // Preset 1: Auto-Fill Canara Renewal 2026->2031
   const handleAutoFillRenewal = () => {
-    setParentFdrUid('FDR-2020-205');
+    const parent = selectedNode || (graphData?.nodes && graphData.nodes[graphData.nodes.length - 1]);
+    const parentUid = parent?.fdr_uid || 'FDR-2020-205';
+    const parentBank = parent?.bank_name || 'Canara Bank';
+    const parentIfsc = parent?.ifsc || 'CNRB0001234';
+    const parentAmt = parent?.principal_amount || 3500000;
+    const parentMat = parent?.maturity_date || '2026-10-24';
+    const matYear = parseInt(parentMat.slice(0, 4), 10) || 2026;
+    const nextMat = `${matYear + 5}${parentMat.slice(4)}`;
+
+    setParentFdrUid(parentUid);
     setRelationType('MATURITY_RENEWAL');
-    setNewFdrNumber('FDR-2026-710');
-    setNewBankName('Canara Bank');
-    setNewIfsc('CNRB0001234');
-    setNewPrincipal(3500000);
+    setNewFdrNumber(`FDR-${matYear}-RNW`);
+    setNewBankName(parentBank);
+    setNewIfsc(parentIfsc);
+    setNewPrincipal(parentAmt);
     setNewRate(7.40);
-    setNewIssueDate('2026-10-24');
-    setNewMaturityDate('2031-10-24');
+    setNewIssueDate(parentMat);
+    setNewMaturityDate(nextMat);
     setRenewalReason('Statutory 5-year lock-in renewal under AICTE Approval Process Handbook (APH 2026-31).');
   };
 
   // Preset 2: Auto-Fill Bank Merger Migration
   const handleAutoFillMerger = () => {
-    setParentFdrUid('FDR-2016-101');
+    const rootNode = graphData?.nodes?.find(n => n.depth === 0 || n.is_root) || graphData?.nodes?.[0];
+    const parentUid = rootNode?.fdr_uid || 'FDR-2016-101';
+    const parentAmt = rootNode?.principal_amount || 3500000;
+
+    setParentFdrUid(parentUid);
     setRelationType('BANK_MERGER_REPLACEMENT');
     setNewFdrNumber('FDR-2020-205');
     setNewBankName('Canara Bank');
     setNewIfsc('CNRB0001234');
-    setNewPrincipal(3500000);
+    setNewPrincipal(parentAmt);
     setNewRate(7.20);
     setNewIssueDate('2020-04-15');
     setNewMaturityDate('2026-04-14');

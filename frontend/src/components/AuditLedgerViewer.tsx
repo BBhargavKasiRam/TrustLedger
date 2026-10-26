@@ -74,7 +74,7 @@ export const AuditLedgerViewer: React.FC<AuditLedgerViewerProps> = ({ logs, onRe
           <button
             onClick={onRefresh}
             className="p-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 transition cursor-pointer"
-            title="Reload ledger from SQLite"
+            title="Reload immutable audit ledger"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
