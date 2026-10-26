@@ -65,15 +65,22 @@ def evaluate_gate1_lockin(db: Any, fdr: FDRInstrument, sim_date: Optional[dateti
         "passed": gate_passed,
         "tenure_years_completed": tenure_years,
         "tenure_years_required": required_years,
+        "required_tenure_years": required_years,
         "tenure_satisfied": is_tenure_satisfied,
+        "tenure_completed": is_tenure_satisfied,
         "genesis_root_fdr_uid": root_node.fdr_uid,
+        "lineage_genesis_fdr_uid": root_node.fdr_uid,
         "genesis_bank_name": root_node.inst_bank_name,
         "genesis_issue_date": root_start_date.isoformat(),
+        "lineage_genesis_date": root_start_date.isoformat(),
         "current_maturity_date": fdr_mat_date.isoformat(),
+        "maturity_date": fdr_mat_date.isoformat(),
         "bank_lien_clean": is_lien_clean,
+        "lien_clean": is_lien_clean,
+        "bank_verified": fdr.bank_verified_status in ["VERIFIED_API", "VERIFIED_MAGIC_LINK"],
         "bank_lien_status": fdr.bank_lien_status,
         "bank_verified_status": fdr.bank_verified_status,
-        "remarks": remarks
+        "remarks": "; ".join(remarks) if isinstance(remarks, list) else str(remarks)
     }
 
 def evaluate_gate2_compliance(db: Any, inst: Optional[Any], override: bool = False) -> Dict[str, Any]:
@@ -126,16 +133,47 @@ def evaluate_gate2_compliance(db: Any, inst: Optional[Any], override: bool = Fal
     else:
         remarks.append("Zero outstanding compliance holds across AICTE National ERP, PGRC Ombudsman, and Legal Bureau.")
 
+    compliance_items = [
+        {
+            "category": "Active Court Litigation (Title / Trust)",
+            "cleared": not court_cases or override,
+            "details": "Active litigation stay on file in High Court" if court_cases and not override else "Zero pending court cases or injunctions",
+            "dues_amount": 0.0
+        },
+        {
+            "category": "Faculty Salary Complaints (7th CPC)",
+            "cleared": not unpaid_salary or override,
+            "details": "Pending 7th CPC unpaid salary grievance on portal" if unpaid_salary and not override else "100% faculty salary compliances certified",
+            "dues_amount": 0.0
+        },
+        {
+            "category": "Student Ombudsman (PGRC) Fee Penalties",
+            "cleared": pgrc_penalties == 0 or override,
+            "details": f"Unrecovered penalty: ₹{pgrc_penalties:,.0f}" if pgrc_penalties > 0 and not override else "Zero outstanding student grievance penalties",
+            "dues_amount": float(pgrc_penalties)
+        },
+        {
+            "category": "Expert Visit Committee (EVC) Infrastructure",
+            "cleared": not evc_deficiencies or override,
+            "details": "Infrastructure deficiency notice pending" if evc_deficiencies and not override else "Cadre ratio & built-up norms 100% compliant",
+            "dues_amount": 0.0
+        }
+    ]
+
+    total_pending_dues = float(pgrc_penalties) if (pgrc_penalties > 0 and not override) else 0.0
+
     return {
         "gate_number": 2,
         "gate_name": "Cross-Bureau ERP Compliance Clearance",
         "passed": passed,
+        "compliance_items": compliance_items,
+        "total_pending_dues": total_pending_dues,
         "pending_court_cases": court_cases,
         "unpaid_salary_complaints": unpaid_salary,
         "pending_pgrc_penalties": pgrc_penalties,
         "evc_deficiencies": evc_deficiencies,
         "override_applied": override,
-        "remarks": remarks
+        "remarks": "; ".join(remarks) if isinstance(remarks, list) else str(remarks)
     }
 
 def get_or_create_release_request(db: Any, fdr: FDRInstrument) -> ReleaseRequest:

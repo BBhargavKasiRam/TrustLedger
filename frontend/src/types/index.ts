@@ -416,7 +416,10 @@ export interface Gate1Evaluation {
   bank_lien_status: string;
   tenure_completed: boolean;
   lien_clean: boolean;
-  remarks: string;
+  remarks: string | string[];
+  genesis_root_fdr_uid?: string;
+  tenure_years_required?: number;
+  bank_lien_clean?: boolean;
 }
 
 export interface Gate2ComplianceItem {
@@ -424,6 +427,8 @@ export interface Gate2ComplianceItem {
   cleared: boolean;
   details: string;
   dues_amount: number;
+  reason?: string;
+  penalty_amount?: number;
 }
 
 export interface Gate2Evaluation {

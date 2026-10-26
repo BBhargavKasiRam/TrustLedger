@@ -842,44 +842,50 @@ export const App: React.FC = () => {
                       {/* Right Main Content Pane */}
                       <div className="lg:col-span-9 space-y-6">
                         {authoritySubMenu === 'EXECUTIVE_SUMMARY' && (
-                          <div className="space-y-6">
-                            <KPISummary summary={summary} loading={loading} />
+                          <ErrorBoundary moduleName="Executive Summary & Release Cockpit">
+                            <div className="space-y-6">
+                              <KPISummary summary={summary} loading={loading} />
+                              <ReleaseClearanceWorkbench
+                                institutions={institutions}
+                                fdrs={fdrs}
+                                onRefreshAll={loadData}
+                              />
+                            </div>
+                          </ErrorBoundary>
+                        )}
+
+                        {authoritySubMenu === 'RELEASE_DSC' && (
+                          <ErrorBoundary moduleName="Release & DSC Sign-Off Workbench">
                             <ReleaseClearanceWorkbench
                               institutions={institutions}
                               fdrs={fdrs}
                               onRefreshAll={loadData}
                             />
-                          </div>
-                        )}
-
-                        {authoritySubMenu === 'RELEASE_DSC' && (
-                          <ReleaseClearanceWorkbench
-                            institutions={institutions}
-                            fdrs={fdrs}
-                            onRefreshAll={loadData}
-                          />
+                          </ErrorBoundary>
                         )}
 
                         {authoritySubMenu === 'AUDIT_DEFAULTER' && (
-                          <div className="space-y-6">
-                            <div className="bg-white p-4 rounded border border-gray-300 shadow-sm">
-                              <h3 className="font-bold text-sm text-[#1a365d]">
-                                Cryptographic SHA-256 Ledger & AICTE Defaulter Oversight
-                              </h3>
-                              <p className="text-xs text-gray-600 mt-0.5">
-                                Immutable block verification and cross-bureau penalty tracking across student PGRC and faculty complaints.
-                              </p>
+                          <ErrorBoundary moduleName="Audit & Defaulter Registry">
+                            <div className="space-y-6">
+                              <div className="bg-white p-4 rounded border border-gray-300 shadow-sm">
+                                <h3 className="font-bold text-sm text-[#1a365d]">
+                                  Cryptographic SHA-256 Ledger & AICTE Defaulter Oversight
+                                </h3>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                  Immutable block verification and cross-bureau penalty tracking across student PGRC and faculty complaints.
+                                </p>
+                              </div>
+                              <AuditLedgerViewer
+                                logs={logs}
+                                onRefresh={loadData}
+                              />
+                              <InstitutionsList
+                                institutions={institutions}
+                                selectedInstitutionId={selectedInstitutionId}
+                                onSelectInstitution={setSelectedInstitutionId}
+                              />
                             </div>
-                            <AuditLedgerViewer
-                              logs={logs}
-                              onRefresh={loadData}
-                            />
-                            <InstitutionsList
-                              institutions={institutions}
-                              selectedInstitutionId={selectedInstitutionId}
-                              onSelectInstitution={setSelectedInstitutionId}
-                            />
-                          </div>
+                          </ErrorBoundary>
                         )}
                       </div>
 

@@ -299,13 +299,13 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
           {/* GATE 1: Lock-in Tenure & Bank Verification Check */}
           <div className={`rounded border p-4 space-y-2.5 transition-all ${
-            releaseStatus?.gate1.passed 
+            releaseStatus?.gate1?.passed 
               ? 'bg-green-50/50 border-green-300' 
               : 'bg-red-50/50 border-red-300'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                {releaseStatus?.gate1.passed ? (
+                {releaseStatus?.gate1?.passed ? (
                   <CheckCircle2 className="w-5 h-5 text-green-700" />
                 ) : (
                   <XCircle className="w-5 h-5 text-red-600" />
@@ -315,35 +315,37 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 </h4>
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                releaseStatus?.gate1.passed 
+                releaseStatus?.gate1?.passed 
                   ? 'bg-green-100 text-green-800 border-green-300' 
                   : 'bg-red-100 text-red-800 border-red-300'
               }`}>
-                {releaseStatus?.gate1.passed ? 'GATE 1 PASSED' : 'GATE 1 HOLD'}
+                {releaseStatus?.gate1?.passed ? 'GATE 1 PASSED' : 'GATE 1 HOLD'}
               </span>
             </div>
 
             <p className="text-xs text-gray-700 leading-relaxed">
-              {releaseStatus?.gate1.remarks}
+              {Array.isArray(releaseStatus?.gate1?.remarks)
+                ? releaseStatus.gate1.remarks.join('; ')
+                : (releaseStatus?.gate1?.remarks || 'Verifying statutory lock-in tenure...')}
             </p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2 border-t border-gray-200 text-[11px]">
               <div>
                 <span className="text-[10px] text-gray-500 block">Genesis Root FDR:</span>
-                <span className="font-mono text-gray-800 font-semibold">{releaseStatus?.gate1.lineage_genesis_fdr_uid}</span>
+                <span className="font-mono text-gray-800 font-semibold">{releaseStatus?.gate1?.lineage_genesis_fdr_uid || releaseStatus?.gate1?.genesis_root_fdr_uid || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-[10px] text-gray-500 block">Tenure Completed:</span>
-                <span className="font-bold text-gray-900">{releaseStatus?.gate1.tenure_years_completed} / {releaseStatus?.gate1.required_tenure_years} Years</span>
+                <span className="font-bold text-gray-900">{releaseStatus?.gate1?.tenure_years_completed ?? 0} / {releaseStatus?.gate1?.required_tenure_years || releaseStatus?.gate1?.tenure_years_required || 8} Years</span>
               </div>
               <div>
                 <span className="text-[10px] text-gray-500 block">CBS Bank Status:</span>
-                <span className="font-semibold text-green-800">{releaseStatus?.gate1.bank_verified_status}</span>
+                <span className="font-semibold text-green-800">{releaseStatus?.gate1?.bank_verified_status || 'PENDING'}</span>
               </div>
               <div>
                 <span className="text-[10px] text-gray-500 block">Lien Status:</span>
-                <span className={`font-semibold ${releaseStatus?.gate1.lien_clean ? 'text-gray-800' : 'text-red-700 font-bold'}`}>
-                  {releaseStatus?.gate1.bank_lien_status}
+                <span className={`font-semibold ${(releaseStatus?.gate1?.lien_clean ?? releaseStatus?.gate1?.bank_lien_clean) ? 'text-gray-800' : 'text-red-700 font-bold'}`}>
+                  {releaseStatus?.gate1?.bank_lien_status || 'UNVERIFIED'}
                 </span>
               </div>
             </div>
@@ -351,13 +353,13 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
           {/* GATE 2: Cross-Bureau AICTE ERP Pre-Clearance Checklist */}
           <div className={`rounded border p-4 space-y-3 transition-all ${
-            releaseStatus?.gate2.passed 
+            releaseStatus?.gate2?.passed 
               ? 'bg-green-50/50 border-green-300' 
               : 'bg-amber-50/50 border-amber-300'
           }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
-                {releaseStatus?.gate2.passed ? (
+                {releaseStatus?.gate2?.passed ? (
                   <CheckCircle2 className="w-5 h-5 text-green-700" />
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
@@ -395,7 +397,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
             {/* 4-Item ERP Registry Checklist */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-              {releaseStatus?.gate2.compliance_items.map((item, idx) => (
+              {(releaseStatus?.gate2?.compliance_items || []).map((item, idx) => (
                 <div 
                   key={idx}
                   className={`p-2.5 rounded border flex items-start space-x-2 ${
@@ -419,10 +421,12 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
             <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-200">
               <span className="text-gray-700 font-medium">
-                {releaseStatus?.gate2.remarks}
+                {Array.isArray(releaseStatus?.gate2?.remarks)
+                  ? releaseStatus.gate2.remarks.join('; ')
+                  : (releaseStatus?.gate2?.remarks || 'Real-time query verified across regulatory registries.')}
               </span>
-              <span className={`font-bold ${releaseStatus?.gate2.total_pending_dues ? 'text-red-700' : 'text-green-800'}`}>
-                Total Pending Dues: ₹{(releaseStatus?.gate2.total_pending_dues || 0).toLocaleString('en-IN')}
+              <span className={`font-bold ${releaseStatus?.gate2?.total_pending_dues ? 'text-red-700' : 'text-green-800'}`}>
+                Total Pending Dues: ₹{(releaseStatus?.gate2?.total_pending_dues || 0).toLocaleString('en-IN')}
               </span>
             </div>
           </div>
@@ -475,7 +479,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 <button
                   type="button"
                   onClick={handleGate3Signoff}
-                  disabled={isSubmittingGate3 || (!releaseStatus?.gate1.passed || !releaseStatus?.gate2.passed)}
+                  disabled={isSubmittingGate3 || (!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed)}
                   className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
                 >
                   {isSubmittingGate3 ? (
@@ -789,7 +793,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
 
             <div className="space-y-2.5">
-              {analytics?.regional_exposure.map((r, idx) => (
+              {(analytics?.regional_exposure || []).map((r, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-700 font-semibold">{r.region} Region</span>
@@ -814,12 +818,12 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 Lifecycle Portfolio Funnel
               </span>
               <span className="text-[10px] text-green-800 bg-green-50 px-2 py-0.5 rounded border border-green-200 font-mono font-bold">
-                {analytics?.total_compliant_rate_pct}% Compliant
+                {analytics?.total_compliant_rate_pct ?? 0}% Compliant
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {analytics?.lifecycle_distribution.map((item, idx) => (
+              {(analytics?.lifecycle_distribution || []).map((item, idx) => (
                 <div key={idx} className="bg-white border border-gray-200 p-2 rounded shadow-sm">
                   <span className="text-[10px] text-gray-600 block truncate">{item.label}</span>
                   <span className="text-sm font-bold font-mono" style={{ color: item.color }}>
@@ -841,9 +845,11 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
 
             <div className="space-y-1.5 text-xs">
-              {analytics?.compliance_holds.map((h, idx) => (
+              {(analytics?.compliance_holds || []).map((h, idx) => (
                 <div key={idx} className="flex items-center justify-between p-1.5 rounded bg-white border border-gray-200 shadow-sm">
-                  <span className="text-gray-800 font-medium text-[11px] truncate max-w-[170px]">{h.reason}</span>
+                  <span className="text-gray-800 font-medium text-[11px] truncate max-w-[170px]">
+                    {h.reason || (h as any).category || 'Regulatory Check'}
+                  </span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                     h.count > 0 ? 'bg-red-100 text-red-800 border-red-300' : 'bg-gray-100 text-gray-700 border-gray-300'
                   }`}>
