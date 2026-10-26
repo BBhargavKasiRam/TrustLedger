@@ -17,7 +17,8 @@ dotenv.load_dotenv()
 try:
     from .database import (
         get_db, db, client, institutions_col, fdr_instruments_col,
-        audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs
+        audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs,
+        is_mock_db, db_connection_status, db_connection_error, try_reconnect_atlas
     )
     from .models import (
         Institution, FDRInstrument, ReleaseRequest, AuditLog,
@@ -77,7 +78,8 @@ try:
 except ImportError:
     from database import (
         get_db, db, client, institutions_col, fdr_instruments_col,
-        audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs
+        audit_logs_col, release_requests_col, clean_mongo_doc, clean_mongo_docs,
+        is_mock_db, db_connection_status, db_connection_error, try_reconnect_atlas
     )
     from models import (
         Institution, FDRInstrument, ReleaseRequest, AuditLog,
@@ -157,7 +159,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def on_startup():
-    """Initializes static asset folders, generates synthetic FDRs, and seeds MongoDB database."""
+    """Initializes static asset folders, generates synthetic FDRs, and seeds database."""
     os.makedirs(STATIC_DIR, exist_ok=True)
     os.makedirs(SAMPLE_FDRS_DIR, exist_ok=True)
     try:
@@ -166,38 +168,38 @@ def on_startup():
         print(f"[STARTUP WARNING] Synthetic FDR certificate generation notice: {e}")
 
     try:
-        seed_database(force=False)
-        print("[DATABASE] MongoDB connection verified and initialized successfully.")
+        active_db = get_db()
+        seed_database(force=False, custom_db=active_db)
+        print(f"[DATABASE] Database verified and initialized successfully (mode: {db_connection_status}).")
     except Exception as e:
-        print(f"[STARTUP WARNING] MongoDB seeding deferred during startup: {e}")
-        print("[STARTUP NOTICE] If running on Render or cloud, ensure '0.0.0.0/0' is whitelisted in MongoDB Atlas Network Access.")
+        print(f"[STARTUP WARNING] Database seeding notice: {e}")
 
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
     """Health check endpoint for Render / cloud monitoring services."""
-    db_status = "CONNECTED"
-    details = "Atlas connection operational"
-    try:
-        client.admin.command("ping")
-    except Exception as e:
-        db_status = "DISCONNECTED"
-        details = str(e)
-
     return {
         "status": "HEALTHY",
         "service": "TrustLedger AICTE Regulatory Portal",
-        "database": db_status,
-        "details": details,
+        "database_status": db_connection_status,
+        "database_engine": "In-Memory Resilient Mock (Auto-Seeded)" if is_mock_db else "MongoDB Atlas Cloud",
+        "atlas_ip_whitelist_tip": "If running on Render and Atlas is disconnected, add '0.0.0.0/0' to MongoDB Atlas -> Network Access." if is_mock_db else "Atlas Cloud Active",
+        "error_detail": db_connection_error if is_mock_db else None,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
+
+@app.post("/api/admin/reconnect-db")
+def admin_reconnect_database():
+    """Admin endpoint to test and reconnect to MongoDB Atlas on-demand once IP is whitelisted."""
+    return try_reconnect_atlas()
 
 @app.post("/api/admin/seed")
 def admin_seed_database(force: bool = False):
     """Admin endpoint to trigger or re-run database seeding on demand."""
     try:
-        seed_database(force=force)
-        return {"status": "SUCCESS", "message": f"Database seeded successfully (force={force})"}
+        active_db = get_db()
+        seed_database(force=force, custom_db=active_db)
+        return {"status": "SUCCESS", "message": f"Database seeded successfully (force={force}, engine={'mongomock' if is_mock_db else 'Atlas'})"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database seeding failed: {str(e)}")
 
