@@ -476,14 +476,14 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                   type="button"
                   onClick={handleGate3Signoff}
                   disabled={isSubmittingGate3 || (!releaseStatus?.gate1.passed || !releaseStatus?.gate2.passed)}
-                  className="w-full py-2 px-3 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
                 >
                   {isSubmittingGate3 ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      <FileCheck className="w-4 h-4 text-orange-400" />
-                      <span>Approve Gate 3 & Forward to Member Secretary</span>
+                      <FileCheck className="w-4 h-4 text-amber-400" />
+                      <span>Approve Gate 3 &amp; Forward to Member Secretary</span>
                     </>
                   )}
                 </button>
@@ -556,14 +556,14 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                   type="button"
                   onClick={handleGate4Approval}
                   disabled={isSubmittingGate4 || !releaseStatus?.gate3_scrutiny_officer_approved}
-                  className="w-full py-2.5 px-3 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
                 >
                   {isSubmittingGate4 ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      <Crown className="w-4 h-4 text-orange-400" />
-                      <span>Apply Digital Signature & Generate Official Bank Discharge NOC</span>
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      <span>Authorize Release &amp; Generate Cryptographic QR Discharge NOC</span>
                     </>
                   )}
                 </button>

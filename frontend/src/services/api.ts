@@ -22,11 +22,72 @@ import type {
   ExecutiveAnalyticsResponse
 } from '../types';
 
-// Resolve backend URL from environment variables for production (Render/Vercel)
-// or fallback to relative '/api' during local Vite development (proxied by Vite)
-const rawBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
-export const BACKEND_URL = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
-const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+// Helper function to sanitize any backend URL string
+export const cleanUrl = (raw?: string | null): string => {
+  if (!raw) return '';
+  return raw
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .replace(/\/+$/, '')
+    .replace(/\/api\/?$/, '');
+};
+
+// Dynamically resolve target backend URL with multi-layer fallback:
+// 1. Browser localStorage override (set via UI for instant testing on Vercel)
+// 2. Vite define injection or Vite envPrefix variables (BACKEND_URL, VITE_BACKEND_URL, API_URL, etc.)
+// 3. Fallback to empty string for relative '/api' during local Vite development (proxied to 127.0.0.1:8000)
+export const getResolvedBackendUrl = (): string => {
+  // Layer 1: LocalStorage manual override
+  try {
+    const saved = localStorage.getItem('AICTE_FDR_BACKEND_URL');
+    if (saved) {
+      const clean = cleanUrl(saved);
+      if (clean) return clean;
+    }
+  } catch {
+    // Ignore Storage access restrictions
+  }
+
+  // Layer 2: Vite environment variables (injected during build on Vercel)
+  // @ts-ignore
+  const injected = typeof __BACKEND_URL__ !== 'undefined' ? __BACKEND_URL__ : '';
+  const fromEnv = (
+    import.meta.env.BACKEND_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.API_URL ||
+    injected ||
+    ''
+  );
+
+  return cleanUrl(fromEnv);
+};
+
+export const setRuntimeBackendUrl = (url: string): void => {
+  try {
+    const cleaned = cleanUrl(url);
+    if (!cleaned) {
+      localStorage.removeItem('AICTE_FDR_BACKEND_URL');
+    } else {
+      localStorage.setItem('AICTE_FDR_BACKEND_URL', cleaned);
+    }
+  } catch (e) {
+    console.warn('Failed to save backend URL to localStorage', e);
+  }
+};
+
+export const clearRuntimeBackendUrl = (): void => {
+  try {
+    localStorage.removeItem('AICTE_FDR_BACKEND_URL');
+  } catch {}
+};
+
+// Active BACKEND_URL and API Base
+export const BACKEND_URL = getResolvedBackendUrl();
+export const getApiBase = (): string => {
+  const backend = getResolvedBackendUrl();
+  return backend ? `${backend}/api` : '/api';
+};
 
 export const getAssetUrl = (url: string | null | undefined): string => {
   if (!url) return '';
@@ -34,15 +95,22 @@ export const getAssetUrl = (url: string | null | undefined): string => {
     return url;
   }
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
-  return BACKEND_URL ? `${BACKEND_URL}${cleanPath}` : cleanPath;
+  const backend = getResolvedBackendUrl();
+  return backend ? `${backend}${cleanPath}` : cleanPath;
 };
 
 export const apiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: getApiBase(),
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 20000,
+  timeout: 60000, // 60s timeout accommodates Render free-tier cold starts
+});
+
+// Dynamic request interceptor: ensure the latest resolved baseURL is always used
+apiClient.interceptors.request.use((config) => {
+  config.baseURL = getApiBase();
+  return config;
 });
 
 export const api = {

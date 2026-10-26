@@ -141,13 +141,15 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Enable CORS for frontend Vite dev server (localhost:5173) and any demo port
+# Enable CORS for frontend Vite dev server (localhost:5173), Vercel deployments, and remote origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_origin_regex=r"^https?:\/\/.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Mount static folder for sample FDR images, ELA heatmaps, and uploaded documents

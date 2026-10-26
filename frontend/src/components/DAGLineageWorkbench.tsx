@@ -689,7 +689,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             <button
               type="submit"
               disabled={submittingRenewal}
-              className="w-full py-2.5 px-4 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
             >
               {submittingRenewal ? (
                 <>

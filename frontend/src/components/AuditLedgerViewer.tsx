@@ -82,7 +82,7 @@ export const AuditLedgerViewer: React.FC<AuditLedgerViewerProps> = ({ logs, onRe
           <button
             onClick={handleVerify}
             disabled={isVerifying}
-            className="flex items-center space-x-2 px-4 py-2 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-medium text-xs shadow-sm transition cursor-pointer disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
             <ShieldCheck className={`w-4 h-4 ${isVerifying ? 'animate-spin' : ''}`} />
             <span>{isVerifying ? 'Verifying Records...' : 'Verify Audit Trail Integrity'}</span>

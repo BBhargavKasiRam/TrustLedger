@@ -489,7 +489,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
             <button
               onClick={handleTier1CBSVerify}
               disabled={cbsLoading || !currentFdr}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Terminal className={`w-3.5 h-3.5 ${cbsLoading ? 'animate-spin' : ''}`} />
               <span>{cbsLoading ? 'Handshaking with Core Banking...' : 'Run Instant CBS / NeSL API Handshake'}</span>
@@ -565,7 +565,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
             <button
               onClick={handleGenerateMagicLink}
               disabled={mlLoading || !currentFdr}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Key className={`w-3.5 h-3.5 ${mlLoading ? 'animate-spin' : ''}`} />
               <span>{mlLoading ? 'Generating Cryptographic Token...' : 'Generate Cryptographic Magic Link'}</span>

@@ -405,7 +405,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
             <button
               onClick={handleSubmitAttestation}
               disabled={submitting || !otpVerified}
-              className="w-full flex items-center justify-center space-x-2 px-5 py-3.5 rounded bg-[#1a365d] hover:bg-blue-900 text-white font-bold text-xs shadow-sm transition cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Lock className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
               <span>

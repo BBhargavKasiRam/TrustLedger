@@ -611,10 +611,10 @@ export const ForensicsWorkbench: React.FC<ForensicsWorkbenchProps> = ({
                 <button
                   onClick={handleSubmitToRegistry}
                   disabled={submitting}
-                  className={`w-full flex items-center justify-center space-x-2 px-3 py-3 rounded font-bold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50 ${
+                  className={`w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50 ${
                     analysisResult.has_discrepancy
                       ? 'bg-red-700 hover:bg-red-800 text-white'
-                      : 'bg-[#1a365d] hover:bg-blue-900 text-white'
+                      : 'bg-[#1E3A8A] hover:bg-[#172554] text-white'
                   }`}
                 >
                   <Lock className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
