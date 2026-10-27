@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { KPISummary } from './components/KPISummary';
 import { FDRRegistryTable } from './components/FDRRegistryTable';
@@ -35,7 +35,8 @@ import {
   ShieldAlert, 
   ArrowLeft,
   AlertTriangle,
-  MessageSquare
+  MessageSquare,
+  Clock
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -278,6 +279,64 @@ export const App: React.FC = () => {
   // Determine active role
   const activeRole: UserRole = currentSession ? currentSession.role : 'INSTITUTION_NODAL_OFFICER';
 
+  // AICTE Requirement 4: Pure UTC Date-Math Warning Banner computation for Nodal Officer
+  const nodalWarningState = useMemo(() => {
+    if (activeRole !== 'INSTITUTION_NODAL_OFFICER') return null;
+
+    // Active deposit for this institution
+    const activeFdr = collegeFdrs.find(f => f.lifecycle_status !== 'RENEWED_SUPERSEDED' && f.lifecycle_status !== 'RELEASE_APPROVED_NOC_ISSUED') || collegeFdrs[0];
+    if (!activeFdr) return null;
+
+    const matStr = activeFdr.bankAttestedMaturityDate || activeFdr.bank_confirmed_maturity_date || activeFdr.inst_maturity_date;
+    if (!matStr) return null;
+
+    // Standard pure JS UTC Date math
+    const now = new Date();
+    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const parts = matStr.split('T')[0].split('-');
+    if (parts.length < 3) return null;
+    const matUtc = Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const daysRemaining = Math.ceil((matUtc - todayUtc) / (1000 * 60 * 60 * 24));
+
+    const isExpired = daysRemaining < 0 || activeFdr.lifecycleState === 'EXPIRED_ACTION_REQUIRED' || activeFdr.lifecycle_status === 'MATURED_ACTION_PENDING';
+    const isT30 = !isExpired && (daysRemaining <= 30 || activeFdr.lifecycleState === 'MATURITY_T30' || activeFdr.lifecycle_status === 'APPROACHING_MATURITY_T30');
+    const isT60 = !isExpired && !isT30 && (daysRemaining <= 60 || activeFdr.lifecycleState === 'MATURITY_T60');
+    const isT90 = !isExpired && !isT30 && !isT60 && (daysRemaining <= 90 || activeFdr.lifecycleState === 'MATURITY_T90' || activeFdr.lifecycle_status === 'APPROACHING_MATURITY_T90');
+
+    // ONLY render banner if in a warning state (T-90, T-60, T-30, or Expired)
+    if (isExpired) {
+      return {
+        type: 'EXPIRED' as const,
+        daysRemaining,
+        bankName: activeFdr.inst_bank_name || 'Scheduled Commercial Bank',
+        matDate: matStr,
+        fdrUid: activeFdr.fdr_uid,
+        title: 'CRITICAL STATUTORY NOTICE: Security Deposit Has Matured & Expired',
+        badge: `${Math.abs(daysRemaining)} DAYS OVERDUE • EXPIRED_ACTION_REQUIRED`,
+        tag: 'EoA Soft-Hold Imposed',
+        description: `Your security deposit (${activeFdr.fdr_uid}) with ${activeFdr.inst_bank_name} matured on ${matStr}. Under AICTE APH regulations, renewal or authorized discharge is required immediately to prevent regulatory soft-hold on your institution's Annual Extension of Approval (EoA). Renewal workflow is now unlocked.`
+      };
+    }
+
+    if (isT30 || isT60 || isT90) {
+      const noticeLabel = isT30 ? 'T-30 Notice' : isT60 ? 'T-60 Notice' : 'T-90 Notice';
+      const stateTag = isT30 ? 'MATURITY_T30' : isT60 ? 'MATURITY_T60' : 'MATURITY_T90';
+      return {
+        type: 'WARNING' as const,
+        daysRemaining,
+        bankName: activeFdr.inst_bank_name || 'Scheduled Commercial Bank',
+        matDate: matStr,
+        fdrUid: activeFdr.fdr_uid,
+        title: `STATUTORY MATURITY NOTICE: Security Deposit Approaching Expiration (${noticeLabel})`,
+        badge: `${daysRemaining} DAYS REMAINING • ${stateTag}`,
+        tag: 'Renewal Workflow Unlocked',
+        description: `Your security deposit (${activeFdr.fdr_uid}) with ${activeFdr.inst_bank_name} will mature in ${daysRemaining} days (${matStr}). In accordance with AICTE Approval Process Handbook (APH 2026-31) Clause 2.14, the renewal workflow is now unlocked.`
+      };
+    }
+
+    return null;
+  }, [collegeFdrs, activeRole]);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-amber-500 selection:text-white">
       {/* Top Global Backend Connection Notification Bar */}
@@ -447,6 +506,67 @@ export const App: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* AICTE Requirement 4: Highly visible Warning Banner (Yellow for T-90/30, Red for Expired) ONLY if in a warning state */}
+                    {nodalWarningState && (
+                      <div className={`p-4 rounded-lg border-2 shadow-sm flex items-start space-x-3.5 ${
+                        nodalWarningState.type === 'EXPIRED'
+                          ? 'bg-red-50 border-red-600 animate-pulse'
+                          : 'bg-amber-50 border-amber-400'
+                      }`}>
+                        <div className={`p-2 rounded-md shrink-0 mt-0.5 ${
+                          nodalWarningState.type === 'EXPIRED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {nodalWarningState.type === 'EXPIRED' ? (
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-amber-700" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className={`text-sm font-bold flex items-center gap-2 ${
+                              nodalWarningState.type === 'EXPIRED' ? 'text-red-950 font-black' : 'text-amber-950'
+                            }`}>
+                              {nodalWarningState.title}
+                              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded shadow-2xs ${
+                                nodalWarningState.type === 'EXPIRED' ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'
+                              }`}>
+                                {nodalWarningState.badge}
+                              </span>
+                            </h4>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono border ${
+                              nodalWarningState.type === 'EXPIRED'
+                                ? 'bg-red-100 text-red-800 border-red-300'
+                                : 'bg-amber-100 text-amber-900 border-amber-300'
+                            }`}>
+                              {nodalWarningState.tag}
+                            </span>
+                          </div>
+                          <p className={`text-xs mt-1 font-medium leading-relaxed ${
+                            nodalWarningState.type === 'EXPIRED' ? 'text-red-900' : 'text-amber-950'
+                          }`}>
+                            {nodalWarningState.description}
+                          </p>
+                          <div className={`mt-2.5 pt-2 border-t text-[11px] flex flex-wrap items-center justify-between gap-2 ${
+                            nodalWarningState.type === 'EXPIRED' ? 'border-red-200 text-red-800' : 'border-amber-200 text-amber-900'
+                          }`}>
+                            <span>Depository Bank: <strong className={nodalWarningState.type === 'EXPIRED' ? 'text-red-950' : 'text-amber-950'}>{nodalWarningState.bankName}</strong></span>
+                            <span>Maturity Date: <strong className="font-mono">{nodalWarningState.matDate}</strong></span>
+                            <button
+                              onClick={() => setCollegeSubMenu('RENEWAL_MERGER')}
+                              className={`text-xs font-bold px-3 py-1 rounded shadow-2xs transition cursor-pointer flex items-center space-x-1 ${
+                                nodalWarningState.type === 'EXPIRED'
+                                  ? 'bg-red-700 hover:bg-red-800 text-white'
+                                  : 'bg-[#1E3A8A] hover:bg-[#172554] text-white'
+                              }`}
+                            >
+                              <span>Open Renewal Workflow →</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Isolated 4-Item NSWS Sidebar + Main Content Layout */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

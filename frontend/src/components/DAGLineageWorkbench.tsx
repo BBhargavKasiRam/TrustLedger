@@ -278,10 +278,13 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
       bankName = matchingCountdown.bank_name || bankName;
       status = matchingCountdown.status || status;
     } else if (activeDeposit?.maturity_date) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const mDate = new Date(activeDeposit.maturity_date);
-      daysRemaining = Math.ceil((mDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const now = new Date();
+      const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const parts = activeDeposit.maturity_date.split('T')[0].split('-');
+      if (parts.length >= 3) {
+        const matUtc = Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        daysRemaining = Math.ceil((matUtc - todayUtc) / (1000 * 60 * 60 * 24));
+      }
     }
 
     return {
@@ -298,108 +301,77 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
   const renderNodalAlertBanner = () => {
     const { daysRemaining, fdrUid, matDate, bankName } = getPersonalizedBannerData();
 
+    // AICTE Requirement 4: ONLY render banner if FDR is in a warning state (T-90, T-60, T-30, or Expired)
+    // If deposit has > 90 days remaining, hide the banner completely
+    if (daysRemaining > 90) {
+      return null;
+    }
+
     if (daysRemaining <= 0) {
       const overdueDays = Math.abs(daysRemaining);
       return (
-        <div className="bg-red-50 border-2 border-red-500 rounded p-4 shadow-sm flex items-start space-x-3.5">
-          <div className="p-2 rounded bg-red-100 text-red-700 shrink-0 mt-0.5">
+        <div className="bg-red-50 border-2 border-red-600 rounded-lg p-4 shadow-sm flex items-start space-x-3.5 animate-pulse">
+          <div className="p-2 rounded-md bg-red-100 text-red-700 shrink-0 mt-0.5">
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-sm font-bold text-red-950">
-                Notice: Security Deposit Has Matured — Renewal Required
+              <h4 className="text-sm font-black uppercase tracking-wider text-red-950 flex items-center gap-2">
+                CRITICAL STATUTORY NOTICE: Security Deposit Matured — Renewal Required
+                <span className="text-[10px] font-mono font-bold bg-red-600 text-white px-2 py-0.5 rounded shadow-2xs">
+                  {overdueDays} DAYS OVERDUE • EXPIRED_ACTION_REQUIRED
+                </span>
               </h4>
-              <span className="text-[10px] font-mono font-bold bg-red-600 text-white px-2 py-0.5 rounded shadow-sm">
-                LAPSED / ACTION PENDING
+              <span className="text-[11px] font-bold text-red-800 bg-red-100 border border-red-300 px-2 py-0.5 rounded font-mono">
+                EoA Soft-Hold Imposed
               </span>
             </div>
-            <p className="text-xs text-red-900 mt-1 font-medium">
-              Notice: Your deposit {fdrUid ? `(${fdrUid})` : ''} matured {overdueDays > 0 ? `${overdueDays} days ago` : 'recently'} ({matDate}). Please submit a renewal below.
+            <p className="text-xs text-red-900 mt-1 font-medium leading-relaxed">
+              Notice: Your security deposit {fdrUid ? `(${fdrUid})` : ''} matured {overdueDays > 0 ? `${overdueDays} days ago` : 'recently'} ({matDate}). In accordance with AICTE Approval Process Handbook (APH 2026-31) regulations, the renewal workflow is now unlocked. Please submit your renewed deposit certificate below immediately.
             </p>
             <div className="mt-2.5 pt-2 border-t border-red-200 text-[11px] text-red-800 flex flex-wrap items-center justify-between gap-2">
-              <span>Bank: <strong>{bankName}</strong></span>
-              <span>Instrument UID: <strong className="font-mono">{fdrUid}</strong></span>
-              <span className="font-semibold text-red-950">Please upload your renewal below ↓</span>
+              <span>Depository Bank: <strong className="text-red-950">{bankName}</strong></span>
+              <span>Instrument UID: <strong className="font-mono text-red-950">{fdrUid}</strong></span>
+              <span className="font-semibold text-red-950">Renewal Form Unlocked Below ↓</span>
             </div>
           </div>
         </div>
       );
     }
 
-    if (daysRemaining <= 30) {
-      return (
-        <div className="bg-amber-50 border-2 border-amber-400 rounded p-4 shadow-sm flex items-start space-x-3.5">
-          <div className="p-2 rounded bg-amber-100 text-amber-800 shrink-0 mt-0.5">
-            <AlertTriangle className="w-5 h-5 text-amber-700" />
-          </div>
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-sm font-bold text-amber-950">
-                Warning: Deposit Approaching Maturity (T-30 Statutory Notice)
-              </h4>
-              <span className="text-[10px] font-mono font-bold bg-amber-500 text-white px-2 py-0.5 rounded shadow-sm">
-                EXPIRES IN {daysRemaining} DAYS
-              </span>
-            </div>
-            <p className="text-xs text-amber-950 mt-1 font-medium">
-              Warning: Your current deposit {fdrUid ? `(${fdrUid})` : ''} expires in {daysRemaining} days ({matDate}). Please upload your renewal below.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-amber-200 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
-              <span>Bank: <strong>{bankName}</strong></span>
-              <span>Maturity Date: <strong className="font-mono">{matDate}</strong></span>
-              <span className="font-semibold text-amber-950">Please upload your renewal below ↓</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (daysRemaining <= 90) {
-      return (
-        <div className="bg-blue-50 border border-blue-300 rounded p-4 shadow-sm flex items-start space-x-3.5">
-          <div className="p-2 rounded bg-blue-100 text-blue-800 shrink-0 mt-0.5">
-            <Clock className="w-5 h-5 text-blue-700" />
-          </div>
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-sm font-bold text-blue-950">
-                Advisory: Upcoming Deposit Maturity
-              </h4>
-              <span className="text-[10px] font-mono font-bold bg-blue-600 text-white px-2 py-0.5 rounded shadow-sm">
-                {daysRemaining} DAYS REMAINING
-              </span>
-            </div>
-            <p className="text-xs text-blue-900 mt-1 font-medium">
-              Advisory: Your deposit {fdrUid ? `(${fdrUid})` : ''} will mature in {daysRemaining} days ({matDate}). You may prepare and submit your 5-year renewal below.
-            </p>
-            <div className="mt-2.5 pt-2 border-t border-blue-200 text-[11px] text-blue-800 flex flex-wrap items-center justify-between gap-2">
-              <span>Bank: <strong>{bankName}</strong></span>
-              <span>Maturity Date: <strong className="font-mono">{matDate}</strong></span>
-              <span className="font-semibold text-blue-900">Renewal form available below ↓</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    // Yellow / Amber Warning Banner for T-90, T-60, and T-30
+    const stateTag = daysRemaining <= 30 ? 'MATURITY_T30' : daysRemaining <= 60 ? 'MATURITY_T60' : 'MATURITY_T90';
+    const noticeHeadline = daysRemaining <= 30 
+      ? 'Warning: Deposit Approaching Maturity (T-30 Statutory Notice)' 
+      : daysRemaining <= 60 
+      ? 'Advisory: Deposit Approaching Maturity (T-60 Statutory Notice)' 
+      : 'Advisory: Upcoming Deposit Maturity (T-90 Statutory Notice)';
 
     return (
-      <div className="bg-green-50 border border-green-300 rounded p-4 shadow-sm flex items-start space-x-3.5">
-        <div className="p-2 rounded bg-green-100 text-green-800 shrink-0 mt-0.5">
-          <CheckCircle2 className="w-5 h-5 text-green-700" />
+      <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 shadow-sm flex items-start space-x-3.5">
+        <div className="p-2 rounded-md bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+          <Clock className="w-5 h-5 text-amber-700" />
         </div>
         <div className="flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-sm font-bold text-green-950">
-              Deposit Status: Fully Compliant &amp; Active
+            <h4 className="text-sm font-bold text-amber-950 flex items-center gap-2">
+              {noticeHeadline}
+              <span className="text-[10px] font-mono font-bold bg-amber-500 text-white px-2 py-0.5 rounded shadow-2xs">
+                {daysRemaining} DAYS REMAINING • {stateTag}
+              </span>
             </h4>
-            <span className="text-[10px] font-mono font-bold bg-green-600 text-white px-2 py-0.5 rounded shadow-sm">
-              ACTIVE &amp; COMPLIANT
+            <span className="text-[11px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono">
+              Renewal Workflow Unlocked
             </span>
           </div>
-          <p className="text-xs text-green-900 mt-1 font-medium">
-            Your security deposit {fdrUid ? `(${fdrUid})` : ''} with {bankName} is active and meets all statutory requirements. Maturity date: {matDate || 'Active'} ({daysRemaining} days remaining).
+          <p className="text-xs text-amber-950 mt-1 font-medium leading-relaxed">
+            Statutory Notice: Your deposit {fdrUid ? `(${fdrUid})` : ''} with {bankName} matures in {daysRemaining} days ({matDate}). In accordance with AICTE APH Norm Clause 2.14, the renewal workflow is now unlocked. You may prepare and submit your 5-year renewal deposit below.
           </p>
+          <div className="mt-2.5 pt-2 border-t border-amber-200 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
+            <span>Depository Bank: <strong>{bankName}</strong></span>
+            <span>Maturity Date: <strong className="font-mono">{matDate}</strong></span>
+            <span className="font-semibold text-amber-950">Renewal Form Unlocked Below ↓</span>
+          </div>
         </div>
       </div>
     );
@@ -882,6 +854,42 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             </span>
           </div>
 
+          {/* AICTE Requirement 4: State-Based Locking Banner */}
+          {(() => {
+            const { daysRemaining, fdrUid, matDate } = getPersonalizedBannerData();
+            const isRenewalUnlocked = !isNodalOfficer || (daysRemaining <= 90);
+
+            if (isNodalOfficer && !isRenewalUnlocked) {
+              return (
+                <div className="p-3.5 rounded-md bg-slate-50 border-2 border-slate-300 text-slate-700 space-y-2">
+                  <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
+                    <Lock className="w-4 h-4 text-slate-700" />
+                    <span>Deposit Renewal Form Locked</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Under AICTE Approval Process Handbook (APH 2026-31) regulations, deposit renewal workflows are strictly locked until an active deposit is within <strong>T-90 days of maturity</strong> or has expired.
+                  </p>
+                  <div className="text-[11px] font-mono text-slate-700 bg-white p-2 rounded border border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                    <span>Active Deposit: <strong>{fdrUid}</strong></span>
+                    <span>Maturity Date: <strong>{matDate || '2031-10-24'}</strong></span>
+                    <span className="text-[#1E3A8A] font-bold">Unlocks in {Math.max(0, daysRemaining - 90)} days</span>
+                  </div>
+                </div>
+              );
+            }
+
+            if (isNodalOfficer && isRenewalUnlocked) {
+              return (
+                <div className="p-3 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-950 flex items-center space-x-2 text-xs font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>Renewal Workflow Unlocked — Deposit is within statutory renewal window ({daysRemaining <= 0 ? 'Expired' : `${daysRemaining} days remaining`}).</span>
+                </div>
+              );
+            }
+
+            return null;
+          })()}
+
           {/* Live 1-Click Auto-Fill Demo Presets - Hidden for Nodal Officer */}
           {!isNodalOfficer && (
             <div className="space-y-1.5">
@@ -925,183 +933,209 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
           )}
 
           {/* Form */}
-          <form onSubmit={handleCommitRenewal} className="space-y-3 text-xs">
-            
-            {/* Parent Selector */}
-            <div>
-              <label className="text-gray-700 block mb-1 font-semibold">
-                {isNodalOfficer ? 'Existing Deposit to Renew:' : 'Parent Instrument to Supersede:'}
-              </label>
-              <select
-                aria-label="Parent Instrument"
-                value={parentFdrUid}
-                onChange={(e) => setParentFdrUid(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-gray-900 font-mono focus:border-blue-900 focus:outline-none"
-              >
-                {graphData?.nodes.map((n) => (
-                  <option key={n.id} value={n.fdr_uid}>
-                    {n.fdr_uid} — {n.bank_name} (₹{(n.principal_amount || 0).toLocaleString('en-IN')}) [{n.lifecycle_status.replace(/_/g, ' ')}]
-                  </option>
-                ))}
-              </select>
-            </div>
+          {(() => {
+            const { daysRemaining } = getPersonalizedBannerData();
+            const isRenewalUnlocked = !isNodalOfficer || (daysRemaining <= 90);
 
-            {/* Relation Type */}
-            <div>
-              <label className="text-gray-700 block mb-1 font-semibold">
-                {isNodalOfficer ? 'Renewal Type:' : 'Record Re-issuance Type:'}
-              </label>
-              <select
-                aria-label="Relation Type"
-                value={relationType}
-                onChange={(e) => setRelationType(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-blue-950 font-bold focus:border-blue-900 focus:outline-none"
-              >
-                <option value="MATURITY_RENEWAL">Renewal (5-Year Statutory Extension)</option>
-                <option value="BANK_MERGER_REPLACEMENT">
-                  {isNodalOfficer ? 'Bank Merger / Amalgamation Replacement' : 'Status: Re-issued (Bank Merger)'}
-                </option>
-              </select>
-            </div>
+            return (
+              <form onSubmit={handleCommitRenewal} className="space-y-3 text-xs">
+                
+                {/* Parent Selector */}
+                <div>
+                  <label className="text-gray-700 block mb-1 font-semibold">
+                    {isNodalOfficer ? 'Existing Deposit to Renew:' : 'Parent Instrument to Supersede:'}
+                  </label>
+                  <select
+                    aria-label="Parent Instrument"
+                    disabled={isNodalOfficer && !isRenewalUnlocked}
+                    value={parentFdrUid}
+                    onChange={(e) => setParentFdrUid(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  >
+                    {graphData?.nodes.map((n) => (
+                      <option key={n.id} value={n.fdr_uid}>
+                        {n.fdr_uid} — {n.bank_name} (₹{(n.principal_amount || 0).toLocaleString('en-IN')}) [{n.lifecycle_status.replace(/_/g, ' ')}]
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Child FDR UID & Bank Name */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">
-                  {isNodalOfficer ? 'New FDR Receipt No:' : 'Re-issued / Renewal FDR UID:'}
-                </label>
-                <input
-                  type="text"
-                  value={newFdrNumber}
-                  onChange={(e) => setNewFdrNumber(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">Bank Name:</label>
-                <input
-                  type="text"
-                  value={newBankName}
-                  onChange={(e) => setNewBankName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-            </div>
+                {/* Relation Type */}
+                <div>
+                  <label className="text-gray-700 block mb-1 font-semibold">
+                    {isNodalOfficer ? 'Renewal Type:' : 'Record Re-issuance Type:'}
+                  </label>
+                  <select
+                    aria-label="Relation Type"
+                    disabled={isNodalOfficer && !isRenewalUnlocked}
+                    value={relationType}
+                    onChange={(e) => setRelationType(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-blue-950 font-bold focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  >
+                    <option value="MATURITY_RENEWAL">Renewal (5-Year Statutory Extension)</option>
+                    <option value="BANK_MERGER_REPLACEMENT">
+                      {isNodalOfficer ? 'Bank Merger / Amalgamation Replacement' : 'Status: Re-issued (Bank Merger)'}
+                    </option>
+                  </select>
+                </div>
 
-            {/* IFSC & Principal Amount */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">IFSC Code:</label>
-                <input
-                  type="text"
-                  value={newIfsc}
-                  onChange={(e) => setNewIfsc(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-[#1a365d] font-mono font-bold focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">Principal Amount (₹):</label>
-                <input
-                  type="number"
-                  value={newPrincipal}
-                  onChange={(e) => setNewPrincipal(Number(e.target.value))}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-bold focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-            </div>
+                {/* Child FDR UID & Bank Name */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">
+                      {isNodalOfficer ? 'New FDR Receipt No:' : 'Re-issued / Renewal FDR UID:'}
+                    </label>
+                    <input
+                      type="text"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newFdrNumber}
+                      onChange={(e) => setNewFdrNumber(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">Bank Name:</label>
+                    <input
+                      type="text"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newBankName}
+                      onChange={(e) => setNewBankName(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
 
-            {/* Interest Rate & New Maturity Date */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">Interest Rate (%):</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  value={newRate}
-                  onChange={(e) => setNewRate(Number(e.target.value))}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-gray-700 block mb-1 font-medium">New Maturity Date:</label>
-                <input
-                  type="date"
-                  value={newMaturityDate}
-                  onChange={(e) => setNewMaturityDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none"
-                />
-              </div>
-            </div>
+                {/* IFSC & Principal Amount */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">IFSC Code:</label>
+                    <input
+                      type="text"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newIfsc}
+                      onChange={(e) => setNewIfsc(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-[#1a365d] font-mono font-bold focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">Principal Amount (₹):</label>
+                    <input
+                      type="number"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newPrincipal}
+                      onChange={(e) => setNewPrincipal(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-bold focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
 
-            {/* Standard Upload File Input */}
-            <div>
-              <label className="text-gray-700 mb-1 font-semibold flex items-center space-x-1.5">
-                <UploadCloud className="w-3.5 h-3.5 text-blue-900" />
-                <span>Upload Renewed FDR Certificate / Deposit Receipt:</span>
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setRenewalFile(e.target.files[0]);
-                    }
-                  }}
-                  className="block w-full text-xs text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100 border border-gray-300 rounded cursor-pointer bg-gray-50"
-                />
-              </div>
-              {renewalFile && (
-                <p className="text-[11px] text-green-700 mt-1 flex items-center gap-1 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                  Selected File: {renewalFile.name} ({(renewalFile.size / 1024).toFixed(1)} KB)
-                </p>
-              )}
-            </div>
+                {/* Interest Rate & New Maturity Date */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">Interest Rate (%):</label>
+                    <input
+                      type="number"
+                      step="0.05"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newRate}
+                      onChange={(e) => setNewRate(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">New Maturity Date:</label>
+                    <input
+                      type="date"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newMaturityDate}
+                      onChange={(e) => setNewMaturityDate(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
 
-            {/* Renewal Reason */}
-            <div>
-              <label className="text-gray-700 block mb-1 font-medium">
-                {isNodalOfficer ? 'Renewal Remarks / Justification:' : 'Statutory Renewal Reason:'}
-              </label>
-              <textarea
-                rows={2}
-                value={renewalReason}
-                onChange={(e) => setRenewalReason(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 rounded p-2 text-gray-900 text-[11px] focus:border-blue-900 focus:outline-none resize-none"
-              />
-            </div>
+                {/* Standard Upload File Input */}
+                <div>
+                  <label className="text-gray-700 mb-1 font-semibold flex items-center space-x-1.5">
+                    <UploadCloud className="w-3.5 h-3.5 text-blue-900" />
+                    <span>Upload Renewed FDR Certificate / Deposit Receipt:</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      accept="image/*,.pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setRenewalFile(e.target.files[0]);
+                        }
+                      }}
+                      className="block w-full text-xs text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100 border border-gray-300 rounded cursor-pointer bg-gray-50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  {renewalFile && (
+                    <p className="text-[11px] text-green-700 mt-1 flex items-center gap-1 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      Selected File: {renewalFile.name} ({(renewalFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
+                </div>
 
-            {/* Submit Action */}
-            <button
-              type="submit"
-              disabled={submittingRenewal}
-              className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
-            >
-              {submittingRenewal ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>
-                    {isNodalOfficer ? 'Submitting Renewed Deposit...' : 'Mining SHA-256 Block & Linking DAG Node...'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {isNodalOfficer ? (
+                {/* Renewal Reason */}
+                <div>
+                  <label className="text-gray-700 block mb-1 font-medium">
+                    {isNodalOfficer ? 'Renewal Remarks / Justification:' : 'Statutory Renewal Reason:'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={isNodalOfficer && !isRenewalUnlocked}
+                    value={renewalReason}
+                    onChange={(e) => setRenewalReason(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 rounded p-2 text-gray-900 text-[11px] focus:border-blue-900 focus:outline-none resize-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Submit Action (Disabled if locked) */}
+                <button
+                  type="submit"
+                  disabled={!isRenewalUnlocked || submittingRenewal}
+                  className={`w-full py-2.5 px-4 rounded-md font-semibold text-xs shadow-sm transition-all flex items-center justify-center space-x-2 ${
+                    !isRenewalUnlocked
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
+                      : 'bg-[#1E3A8A] hover:bg-[#172554] text-white cursor-pointer'
+                  }`}
+                >
+                  {!isRenewalUnlocked ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-green-400" />
-                      <span>Submit Renewed Deposit</span>
+                      <Lock className="w-4 h-4 text-slate-500" />
+                      <span>Renewal Form Locked (Deposit Active: {daysRemaining}d to maturity)</span>
+                    </>
+                  ) : submittingRenewal ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>
+                        {isNodalOfficer ? 'Submitting Renewed Deposit...' : 'Mining SHA-256 Block & Linking DAG Node...'}
+                      </span>
                     </>
                   ) : (
                     <>
-                      <GitCommit className="w-4 h-4 text-orange-400" />
-                      <span>Link Child Instrument to DAG Tree &amp; Seal Ledger Block</span>
+                      {isNodalOfficer ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          <span>Submit Renewed Deposit</span>
+                        </>
+                      ) : (
+                        <>
+                          <GitCommit className="w-4 h-4 text-orange-400" />
+                          <span>Link Child Instrument to DAG Tree &amp; Seal Ledger Block</span>
+                        </>
+                      )}
                     </>
                   )}
-                </>
-              )}
-            </button>
-          </form>
+                </button>
+              </form>
+            );
+          })()}
 
           {/* Success Receipt */}
           {commitSuccessHash && (
@@ -1182,9 +1216,13 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  countdownList.map((item, idx) => {
-                    const sla = getSlaBadge(item.days_remaining);
-                    return (
+                  // AICTE Requirement 4: Automatically sort records by "Days Remaining" in ascending order
+                  // so the most critically expiring deposits always float to the very top
+                  [...countdownList]
+                    .sort((a, b) => a.days_remaining - b.days_remaining)
+                    .map((item, idx) => {
+                      const sla = getSlaBadge(item.days_remaining);
+                      return (
                       <tr 
                         key={idx}
                         className="hover:bg-gray-50 transition-colors"

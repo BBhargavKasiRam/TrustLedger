@@ -97,6 +97,9 @@ class FDRInstrumentResponse(BaseModel):
 
     # Lifecycle & Workflow State
     lifecycle_status: str
+    lifecycleState: Optional[str] = "ACTIVE_COMPLIANT"
+    daysRemaining: Optional[int] = None
+    bankAttestedMaturityDate: Optional[str] = None
     document_path: Optional[str] = None
     documentUrl: Optional[str] = None
     document_url: Optional[str] = None

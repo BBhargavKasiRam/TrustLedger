@@ -52,9 +52,13 @@ const fdrInstrumentSchema = new mongoose.Schema({
   bank_verified_status: { type: String, default: 'PENDING' },
   bank_confirmed_principal: { type: Number, default: null },
   bank_confirmed_maturity_date: { type: String, default: null },
+  bankAttestedMaturityDate: { type: String, default: null },
   bank_lien_status: { type: String, default: 'PENDING' },
   
+  // AICTE Requirement 4: Validity & Maturity Tracking
   lifecycle_status: { type: String, default: 'SUBMITTED' },
+  lifecycleState: { type: String, default: 'ACTIVE_COMPLIANT' }, // e.g. "MATURITY_T90", "MATURITY_T60", "MATURITY_T30", "EXPIRED_ACTION_REQUIRED", "ACTIVE_COMPLIANT"
+  daysRemaining: { type: Number, default: null },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, {

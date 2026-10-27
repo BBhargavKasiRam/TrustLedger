@@ -102,6 +102,21 @@ export const getDeterministicFlags = (fdr: FDRInstrument): DeterministicFlag[] =
 export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
   const [selectedVaultFdr, setSelectedVaultFdr] = useState<FDRInstrument | null>(null);
   const [filterFlaggedOnly, setFilterFlaggedOnly] = useState<boolean>(false);
+  const [sortByMaturityAsc, setSortByMaturityAsc] = useState<boolean>(true);
+
+  const calculateDaysRemainingUtc = (matStr?: string | null) => {
+    if (!matStr) return 9999;
+    try {
+      const now = new Date();
+      const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const parts = matStr.split('T')[0].split('-');
+      if (parts.length < 3) return 9999;
+      const matUtc = Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return Math.ceil((matUtc - todayUtc) / (1000 * 60 * 60 * 24));
+    } catch {
+      return 9999;
+    }
+  };
 
   const formatCurrency = (amount?: number | null) => {
     if (amount === undefined || amount === null) return '—';
@@ -112,13 +127,14 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, daysRemaining?: number | null) => {
     switch (status) {
+      case 'EXPIRED_ACTION_REQUIRED':
       case 'MATURED_ACTION_PENDING':
         return (
-          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 font-semibold px-2.5 py-0.5 rounded text-xs">
-            <Clock className="w-3.5 h-3.5 text-amber-700" />
-            <span>MATURED: ACTION PENDING</span>
+          <span className="inline-flex items-center space-x-1 bg-red-50 text-red-900 border border-red-300 font-semibold px-2.5 py-0.5 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-red-700" />
+            <span>EXPIRED • ACTION REQUIRED</span>
           </span>
         );
       case 'DISCREPANCY_FLAGGED':
@@ -128,18 +144,27 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
             <span>DISCREPANCY FLAGGED</span>
           </span>
         );
+      case 'MATURITY_T30':
       case 'APPROACHING_MATURITY_T30':
         return (
-          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 font-semibold px-2.5 py-0.5 rounded text-xs">
-            <Clock className="w-3.5 h-3.5 text-amber-700" />
+          <span className="inline-flex items-center space-x-1 bg-orange-50 text-orange-900 border border-orange-300 font-semibold px-2.5 py-0.5 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-orange-700" />
             <span>CRITICAL EXPIRY: T-30</span>
           </span>
         );
+      case 'MATURITY_T60':
+        return (
+          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 font-semibold px-2.5 py-0.5 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-amber-700" />
+            <span>ADVISORY: T-60</span>
+          </span>
+        );
+      case 'MATURITY_T90':
       case 'APPROACHING_MATURITY_T90':
         return (
-          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 font-semibold px-2.5 py-0.5 rounded text-xs">
-            <Clock className="w-3.5 h-3.5 text-amber-700" />
-            <span>APPROACHING: T-90</span>
+          <span className="inline-flex items-center space-x-1 bg-blue-50 text-blue-900 border border-blue-300 font-semibold px-2.5 py-0.5 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-blue-700" />
+            <span>WATCHDOG: T-90</span>
           </span>
         );
       case 'RENEWED_SUPERSEDED':
@@ -160,32 +185,41 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
         return (
           <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold px-2.5 py-0.5 rounded text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{status}</span>
+            <span>{status} {daysRemaining != null && daysRemaining < 9999 ? `(${daysRemaining}d)` : ''}</span>
           </span>
         );
     }
   };
 
-  // Compute flagged count and sorted/filtered records
+  // Compute flagged count and sorted/filtered records (AICTE Requirement 4)
   const { processedFdrs, flaggedCount } = useMemo(() => {
     let count = 0;
     const itemsWithFlags = fdrs.map(f => {
       const flags = getDeterministicFlags(f);
       if (flags.length > 0) count++;
-      return { fdr: f, flags };
+      const matStr = f.bankAttestedMaturityDate || f.bank_confirmed_maturity_date || f.inst_maturity_date;
+      const daysRemaining = f.daysRemaining !== undefined && f.daysRemaining !== null
+        ? f.daysRemaining
+        : calculateDaysRemainingUtc(matStr);
+      return { fdr: f, flags, daysRemaining };
     });
 
     let displayList = itemsWithFlags;
 
     if (filterFlaggedOnly) {
       displayList = itemsWithFlags.filter(item => item.flags.length > 0);
-    } else {
-      // Sort flagged items to the top by default so scrutiny officers immediately see violations
-      displayList = [...itemsWithFlags].sort((a, b) => b.flags.length - a.flags.length);
+    }
+
+    if (sortByMaturityAsc) {
+      // AICTE Requirement 4: Automatically sort records by "Days Remaining" in ascending order
+      // so the most critically expiring deposits always float to the very top
+      displayList = [...displayList].sort((a, b) => a.daysRemaining - b.daysRemaining);
+    } else if (!filterFlaggedOnly) {
+      displayList = [...displayList].sort((a, b) => b.flags.length - a.flags.length);
     }
 
     return { processedFdrs: displayList, flaggedCount: count };
-  }, [fdrs, filterFlaggedOnly]);
+  }, [fdrs, filterFlaggedOnly, sortByMaturityAsc]);
 
   return (
     <div id="centralized-fdr-repository" className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] shadow-sm p-6">
@@ -213,6 +247,21 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
 
         {/* Quick-Filter & Metric Counters */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs shrink-0">
+          {/* AICTE Requirement 4: Maturity Countdown Sort Button */}
+          <button
+            type="button"
+            onClick={() => setSortByMaturityAsc(!sortByMaturityAsc)}
+            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md font-bold text-xs border transition shadow-2xs cursor-pointer ${
+              sortByMaturityAsc
+                ? 'bg-[#1E3A8A] text-white border-blue-950 ring-2 ring-blue-300'
+                : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'
+            }`}
+            title="Sort records by Days Remaining in ascending order (Critically expiring deposits float to top)"
+          >
+            <Clock className="w-3.5 h-3.5 text-inherit" />
+            <span>Maturity Countdown (Asc)</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setFilterFlaggedOnly(!filterFlaggedOnly)}
@@ -288,7 +337,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white">
-            {processedFdrs.map(({ fdr, flags }) => {
+            {processedFdrs.map(({ fdr, flags, daysRemaining }) => {
               const hasFlags = flags.length > 0;
               const hasLineageParent = !!fdr.parent_fdr_id;
 
@@ -418,9 +467,19 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                     </button>
                   </td>
 
-                  {/* Lifecycle Status */}
+                  {/* Lifecycle Status & Maturity Countdown Metric */}
                   <td className="py-3.5 px-3.5 whitespace-nowrap border-l border-slate-200 align-top">
-                    {getStatusBadge(fdr.lifecycle_status)}
+                    {getStatusBadge(fdr.lifecycleState || fdr.lifecycle_status, daysRemaining)}
+                    <div className="text-[10px] font-mono mt-1 font-semibold flex items-center space-x-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      {daysRemaining <= 0 ? (
+                        <span className="text-red-700 font-bold">{Math.abs(daysRemaining)}d OVERDUE</span>
+                      ) : daysRemaining <= 90 ? (
+                        <span className="text-amber-800 font-bold">{daysRemaining}d remaining (Watchdog)</span>
+                      ) : (
+                        <span className="text-slate-500">{daysRemaining}d remaining</span>
+                      )}
+                    </div>
                   </td>
 
                 </tr>

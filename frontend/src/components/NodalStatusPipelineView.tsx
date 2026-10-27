@@ -109,7 +109,21 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
     ];
   };
 
-  const getStatusBadge = (status: string) => {
+  const calculateDaysRemainingUtc = (matStr?: string | null) => {
+    if (!matStr) return 9999;
+    try {
+      const now = new Date();
+      const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const parts = matStr.split('T')[0].split('-');
+      if (parts.length < 3) return 9999;
+      const matUtc = Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return Math.ceil((matUtc - todayUtc) / (1000 * 60 * 60 * 24));
+    } catch {
+      return 9999;
+    }
+  };
+
+  const getStatusBadge = (status: string, daysRemaining?: number | null) => {
     switch (status) {
       case 'RELEASE_APPROVED_NOC_ISSUED':
         return (
@@ -118,18 +132,35 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
             <span>NOC ISSUED &amp; DISCHARGED</span>
           </span>
         );
+      case 'EXPIRED_ACTION_REQUIRED':
       case 'MATURED_ACTION_PENDING':
         return (
-          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-400 font-bold px-2.5 py-1 rounded text-xs shadow-2xs">
-            <Clock className="w-3.5 h-3.5 text-amber-700" />
-            <span>MATURED • ACTION REQUIRED</span>
+          <span className="inline-flex items-center space-x-1 bg-red-50 text-red-900 border border-red-400 font-bold px-2.5 py-1 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-red-700" />
+            <span>EXPIRED • ACTION REQUIRED {daysRemaining != null && daysRemaining <= 0 ? `(${Math.abs(daysRemaining)}d OVERDUE)` : ''}</span>
           </span>
         );
+      case 'MATURITY_T30':
       case 'APPROACHING_MATURITY_T30':
         return (
           <span className="inline-flex items-center space-x-1 bg-orange-50 text-orange-900 border border-orange-300 font-semibold px-2.5 py-1 rounded text-xs shadow-2xs">
             <Clock className="w-3.5 h-3.5 text-orange-700" />
-            <span>RENEWAL DUE (T-30 NOTICE)</span>
+            <span>RENEWAL DUE (T-30 NOTICE) {daysRemaining != null ? `• ${daysRemaining}d` : ''}</span>
+          </span>
+        );
+      case 'MATURITY_T60':
+        return (
+          <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 font-semibold px-2.5 py-1 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-amber-700" />
+            <span>T-60 ADVISORY {daysRemaining != null ? `• ${daysRemaining}d REMAINING` : ''}</span>
+          </span>
+        );
+      case 'MATURITY_T90':
+      case 'APPROACHING_MATURITY_T90':
+        return (
+          <span className="inline-flex items-center space-x-1 bg-blue-50 text-blue-900 border border-blue-300 font-semibold px-2.5 py-1 rounded text-xs shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-blue-700" />
+            <span>T-90 WATCHDOG {daysRemaining != null ? `• ${daysRemaining}d REMAINING` : ''}</span>
           </span>
         );
       case 'DISCREPANCY_FLAGGED':
@@ -150,7 +181,7 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
         return (
           <span className="inline-flex items-center space-x-1 bg-blue-50 text-blue-900 border border-blue-200 font-semibold px-2.5 py-1 rounded text-xs shadow-2xs">
             <ShieldCheck className="w-3.5 h-3.5 text-[#1E3A8A]" />
-            <span>ACTIVE STATUTORY DEPOSIT</span>
+            <span>ACTIVE STATUTORY DEPOSIT {daysRemaining != null && daysRemaining < 9999 ? `(${daysRemaining}d)` : ''}</span>
           </span>
         );
     }
@@ -302,7 +333,12 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
                     {formatCurrency(fdr.inst_principal_amount)}
                   </span>
                   <div>
-                    {getStatusBadge(fdr.lifecycle_status)}
+                    {getStatusBadge(
+                      fdr.lifecycleState || fdr.lifecycle_status,
+                      fdr.daysRemaining !== undefined && fdr.daysRemaining !== null
+                        ? fdr.daysRemaining
+                        : calculateDaysRemainingUtc(fdr.bankAttestedMaturityDate || fdr.bank_confirmed_maturity_date || fdr.inst_maturity_date)
+                    )}
                   </div>
                 </div>
               </div>

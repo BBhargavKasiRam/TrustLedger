@@ -159,6 +159,9 @@ export interface FDRInstrument {
 
   // Lifecycle & Supporting Document
   lifecycle_status: string;
+  lifecycleState?: string; // MATURITY_T90, MATURITY_T60, MATURITY_T30, EXPIRED_ACTION_REQUIRED, ACTIVE_COMPLIANT
+  daysRemaining?: number | null;
+  bankAttestedMaturityDate?: string | null;
   document_path?: string | null;
   documentUrl?: string | null;
   document_url?: string | null;

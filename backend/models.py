@@ -143,6 +143,9 @@ class FDRInstrument(MongoBaseModel):
 
     # Lifecycle & Workflow State
     lifecycle_status: str = "SUBMITTED"
+    lifecycleState: str = "ACTIVE_COMPLIANT"  # MATURITY_T90, MATURITY_T60, MATURITY_T30, EXPIRED_ACTION_REQUIRED, ACTIVE_COMPLIANT
+    daysRemaining: Optional[int] = None
+    bankAttestedMaturityDate: Optional[str] = None
     document_path: Optional[str] = None
     documentUrl: Optional[str] = None
     document_url: Optional[str] = None
@@ -419,6 +422,25 @@ def doc_to_fdr(doc: Optional[Dict[str, Any]]) -> Optional[FDRInstrument]:
         d["lien_encumbrance_flag"] = True
     if "CROSS_REGISTRY_HOLD_FLAG" in flags:
         d["cross_registry_hold_flag"] = True
+
+    # AICTE Requirement 4: Validity & Maturity Tracking fields
+    lifecycle_state = d.get("lifecycleState") or d.get("lifecycle_state")
+    if lifecycle_state:
+        d["lifecycleState"] = lifecycle_state
+    elif d.get("lifecycle_status") == "MATURED_ACTION_PENDING":
+        d["lifecycleState"] = "EXPIRED_ACTION_REQUIRED"
+    elif d.get("lifecycle_status") == "APPROACHING_MATURITY_T30":
+        d["lifecycleState"] = "MATURITY_T30"
+    elif d.get("lifecycle_status") == "APPROACHING_MATURITY_T90":
+        d["lifecycleState"] = "MATURITY_T90"
+
+    days_rem = d.get("daysRemaining") or d.get("days_remaining")
+    if days_rem is not None:
+        d["daysRemaining"] = days_rem
+
+    bank_attested_mat = d.get("bankAttestedMaturityDate") or d.get("bank_confirmed_maturity_date") or d.get("inst_maturity_date")
+    if bank_attested_mat:
+        d["bankAttestedMaturityDate"] = bank_attested_mat
 
     fdr = FDRInstrument(**d)
     fdr.sync_dual_truth()

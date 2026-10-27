@@ -1016,6 +1016,101 @@ def post_temporal_time_travel(payload: TemporalTimeTravelRequest, db: Any = Depe
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# AICTE Requirement 4: Automated Cron Sweep Endpoint for Validity & Maturity Tracking
+@app.api_route("/api/cron/check-maturities", methods=["GET", "POST"])
+def check_maturities_cron_endpoint(db: Any = Depends(get_db)):
+    """
+    Automated Validity & Maturity Tracking Engine (AICTE Requirement 4).
+    Calculates UTC day difference against maturity dates, updates lifecycleState,
+    and dispatches simulated statutory reminders.
+    """
+    now_utc = datetime.datetime.utcnow().date()
+    fdrs = list(db.fdr_instruments.find({}))
+    scanned_count = len(fdrs)
+    transitions_triggered = 0
+    results = []
+
+    for doc in fdrs:
+        fdr_uid = doc.get("fdr_uid")
+        curr_status = doc.get("lifecycle_status")
+        if curr_status in ["RENEWED_SUPERSEDED", "RELEASE_APPROVED_NOC_ISSUED"]:
+            continue
+
+        mat_str = doc.get("bankAttestedMaturityDate") or doc.get("bank_confirmed_maturity_date") or doc.get("inst_maturity_date")
+        if not mat_str:
+            continue
+
+        try:
+            mat_date = datetime.datetime.strptime(mat_str.split("T")[0], "%Y-%m-%d").date()
+            diff_days = (mat_date - now_utc).days
+        except Exception:
+            continue
+
+        if diff_days < 0:
+            target_state = "EXPIRED_ACTION_REQUIRED"
+            target_status = "MATURED_ACTION_PENDING"
+        elif diff_days <= 30:
+            target_state = "MATURITY_T30"
+            target_status = "APPROACHING_MATURITY_T30"
+        elif diff_days <= 60:
+            target_state = "MATURITY_T60"
+            target_status = "APPROACHING_MATURITY_T60"
+        elif diff_days <= 90:
+            target_state = "MATURITY_T90"
+            target_status = "APPROACHING_MATURITY_T90"
+        else:
+            target_state = "ACTIVE_COMPLIANT"
+            target_status = "ACTIVE" if curr_status in ["MATURED_ACTION_PENDING", "APPROACHING_MATURITY_T30", "APPROACHING_MATURITY_T90"] else curr_status
+
+        update_fields = {
+            "lifecycleState": target_state,
+            "lifecycle_status": target_status,
+            "daysRemaining": diff_days,
+            "bankAttestedMaturityDate": mat_str
+        }
+
+        db.fdr_instruments.update_one({"_id": doc["_id"]}, {"$set": update_fields})
+
+        if target_state in ["MATURITY_T90", "MATURITY_T60", "MATURITY_T30", "EXPIRED_ACTION_REQUIRED"]:
+            transitions_triggered += 1
+            inst_email = f"nodal.{doc.get('inst_fdr_number', 'officer').lower()}@aicte-india.org"
+            print("================================================================================")
+            print(f"[AUTOMATED SLA DISPATCHER] Alert: {fdr_uid} transitioned to {target_state}")
+            print(f"[RECIPIENT] {inst_email}")
+            print(f"[DAYS REMAINING] {diff_days} days (Maturity: {mat_str})")
+            print(f"[MESSAGE] ALERT: AICTE Security Deposit ({fdr_uid}) maturing in {diff_days} days. Action required.")
+            print("================================================================================")
+
+            try:
+                from audit_service import record_audit_log
+                action = "ESCALATION_DEFAULT_NOTICE" if target_state == "EXPIRED_ACTION_REQUIRED" else "AUTOMATED_MATURITY_ALERT"
+                record_audit_log(
+                    db=db,
+                    actor_role="AUTOMATED_CRON_ENGINE",
+                    actor_name="AICTE Temporal Validity Watchdog",
+                    action_type=action,
+                    target_fdr_uid=fdr_uid,
+                    payload_summary=f"Automated {target_state} reminder dispatched to {inst_email} for {fdr_uid} ({diff_days} days remaining)."
+                )
+            except Exception as e:
+                print(f"[Audit Log Warning] {e}")
+
+        results.append({
+            "fdr_uid": fdr_uid,
+            "maturity_date": mat_str,
+            "days_remaining": diff_days,
+            "lifecycleState": target_state,
+            "lifecycle_status": target_status
+        })
+
+    return {
+        "success": True,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "scanned_count": scanned_count,
+        "transitions_triggered": transitions_triggered,
+        "results": results
+    }
+
 @app.get("/api/fdrs/lineage/{fdr_uid}", response_model=LineageGraphResponse)
 def get_fdr_lineage(fdr_uid: str, db: Any = Depends(get_db)):
     """Builds full Directed Acyclic Graph (DAG) for the given FDR UID or root parent chain."""
