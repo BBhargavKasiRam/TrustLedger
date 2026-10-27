@@ -13,7 +13,8 @@ import {
   FileText, 
   Crown, 
   BarChart3,
-  Layers
+  Layers,
+  Clock
 } from 'lucide-react';
 import type { 
   Institution, 
@@ -28,38 +29,59 @@ interface ReleaseClearanceWorkbenchProps {
   institutions: Institution[];
   fdrs: FDRInstrument[];
   onRefreshAll: () => void;
+  isNodalOfficer?: boolean;
+  loggedInstitutionPid?: string;
+  loggedUserName?: string;
 }
 
 export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps> = ({
   institutions,
   fdrs,
-  onRefreshAll
+  onRefreshAll,
+  isNodalOfficer = false,
+  loggedInstitutionPid,
+  loggedUserName
 }) => {
+  // Isolate FDRs for Nodal Officer if PID provided
+  const relevantFdrs = isNodalOfficer && loggedInstitutionPid
+    ? fdrs.filter(f => f.institution?.pid === loggedInstitutionPid || f.institution_id === institutions.find(i => i.pid === loggedInstitutionPid)?.id)
+    : fdrs;
+
   // Derive scenario targets dynamically from loaded instruments and institutions
-  const cleanFdr = fdrs.find(f => f.fdr_uid === 'FDR-2020-205') || 
-                   fdrs.find(f => {
-                     const inst = institutions.find(i => i.id === f.institution_id);
-                     return inst && (inst.pending_pgrc_penalties === 0) && !inst.pending_court_cases;
-                   }) || fdrs[0];
+  const cleanFdr = isNodalOfficer
+    ? relevantFdrs[0]
+    : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2020-205') || 
+       relevantFdrs.find(f => {
+         const inst = institutions.find(i => i.id === f.institution_id);
+         return inst && (inst.pending_pgrc_penalties === 0) && !inst.pending_court_cases;
+       }) || relevantFdrs[0]);
 
-  const pgrcBlockedFdr = fdrs.find(f => f.fdr_uid === 'FDR-2026-309') || 
-                         fdrs.find(f => {
-                           const inst = institutions.find(i => i.id === f.institution_id);
-                           return inst && (inst.pending_pgrc_penalties || 0) > 0;
-                         }) || fdrs[1];
+  const pgrcBlockedFdr = isNodalOfficer
+    ? null
+    : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2026-309') || 
+       relevantFdrs.find(f => {
+         const inst = institutions.find(i => i.id === f.institution_id);
+         return inst && (inst.pending_pgrc_penalties || 0) > 0;
+       }) || relevantFdrs[1]);
 
-  const legalStayFdr = fdrs.find(f => f.fdr_uid === 'FDR-2018-519') || 
-                       fdrs.find(f => {
-                         const inst = institutions.find(i => i.id === f.institution_id);
-                         return inst && (inst.pending_court_cases || (inst as any).legal_stay_active);
-                       }) || fdrs[2];
+  const legalStayFdr = isNodalOfficer
+    ? null
+    : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2018-519') || 
+       relevantFdrs.find(f => {
+         const inst = institutions.find(i => i.id === f.institution_id);
+         return inst && (inst.pending_court_cases || (inst as any).legal_stay_active);
+       }) || relevantFdrs[2]);
 
   // Target FDR selection
-  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(cleanFdr?.fdr_uid || 'FDR-2020-205');
+  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(cleanFdr?.fdr_uid || relevantFdrs[0]?.fdr_uid || 'FDR-2020-205');
   const [releaseStatus, setReleaseStatus] = useState<ReleaseStatusResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
 
-  // Gate 2 Demo Override
+  // Nodal Officer Release Request State
+  const [isRequestingRelease, setIsRequestingRelease] = useState<boolean>(false);
+  const [nodalRequestedSuccess, setNodalRequestedSuccess] = useState<boolean>(false);
+
+  // Gate 2 Demo Override (Disabled for Nodal Officer)
   const [overrideErp, setOverrideErp] = useState<boolean>(false);
 
   // Gate 3 inputs
@@ -165,6 +187,22 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
     }
   };
 
+  // Nodal Officer Release Application Handler
+  const handleNodalRequestRelease = async () => {
+    if (!selectedFdrUid) return;
+    setIsRequestingRelease(true);
+    try {
+      const res = await api.initiateRelease(selectedFdrUid, false, loggedUserName || 'Institution Nodal Officer');
+      setReleaseStatus(res);
+      setNodalRequestedSuccess(true);
+      onRefreshAll();
+    } catch (err: any) {
+      alert(`Release Request Error: ${err?.response?.data?.detail || err.message}`);
+    } finally {
+      setIsRequestingRelease(false);
+    }
+  };
+
   // Simulate Bank scanning QR Code
   const handleSimulateBankQRScan = async () => {
     if (!releaseStatus?.noc_certificate_hash) return;
@@ -208,67 +246,95 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
           </div>
 
-          {/* Quick Scenario Selector */}
+          {/* Quick Scenario Selector (Admin) vs Institutional Deposit Picker (Nodal) */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block w-full lg:w-auto">
-              Select Institution Case:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {cleanFdr && (
-                <button
-                  onClick={() => handleSelectScenario(cleanFdr.fdr_uid, false)}
-                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                    selectedFdrUid === cleanFdr.fdr_uid
-                      ? 'bg-green-700 text-white border-green-800 shadow-sm'
-                      : 'bg-white text-green-900 border-green-300 hover:bg-green-50'
-                  }`}
-                >
-                  ✓ Scenario A: Clean Matured ({cleanFdr.fdr_uid})
-                </button>
-              )}
+            {isNodalOfficer ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Target Deposit:
+                </span>
+                {relevantFdrs.length > 1 ? (
+                  <select
+                    aria-label="Select Target FDR"
+                    value={selectedFdrUid}
+                    onChange={(e) => handleSelectScenario(e.target.value, false)}
+                    className="bg-white border border-gray-300 text-xs text-gray-800 font-semibold px-2.5 py-1.5 rounded focus:outline-none cursor-pointer font-mono"
+                  >
+                    {relevantFdrs.map((f) => (
+                      <option key={f.id} value={f.fdr_uid} className="bg-white text-gray-900">
+                        {f.fdr_uid} — {f.inst_bank_name} (₹{(f.inst_principal_amount || 0).toLocaleString('en-IN')})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-950 border border-blue-200 rounded">
+                    {selectedFdrUid}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <>
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block w-full lg:w-auto">
+                  Select Institution Case:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {cleanFdr && (
+                    <button
+                      onClick={() => handleSelectScenario(cleanFdr.fdr_uid, false)}
+                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                        selectedFdrUid === cleanFdr.fdr_uid
+                          ? 'bg-green-700 text-white border-green-800 shadow-sm'
+                          : 'bg-white text-green-900 border-green-300 hover:bg-green-50'
+                      }`}
+                    >
+                      ✓ Scenario A: Clean Matured ({cleanFdr.fdr_uid})
+                    </button>
+                  )}
 
-              {pgrcBlockedFdr && (
-                <button
-                  onClick={() => handleSelectScenario(pgrcBlockedFdr.fdr_uid, false)}
-                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                    selectedFdrUid === pgrcBlockedFdr.fdr_uid
-                      ? 'bg-red-700 text-white border-red-800 shadow-sm'
-                      : 'bg-white text-red-900 border-red-300 hover:bg-red-50'
-                  }`}
-                >
-                  ✕ Scenario B: PGRC Blocked ({pgrcBlockedFdr.fdr_uid})
-                </button>
-              )}
+                  {pgrcBlockedFdr && (
+                    <button
+                      onClick={() => handleSelectScenario(pgrcBlockedFdr.fdr_uid, false)}
+                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                        selectedFdrUid === pgrcBlockedFdr.fdr_uid
+                          ? 'bg-red-700 text-white border-red-800 shadow-sm'
+                          : 'bg-white text-red-900 border-red-300 hover:bg-red-50'
+                      }`}
+                    >
+                      ✕ Scenario B: PGRC Blocked ({pgrcBlockedFdr.fdr_uid})
+                    </button>
+                  )}
 
-              {legalStayFdr && (
-                <button
-                  onClick={() => handleSelectScenario(legalStayFdr.fdr_uid, false)}
-                  className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                    selectedFdrUid === legalStayFdr.fdr_uid
-                      ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
-                      : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50'
-                  }`}
-                >
-                  ⚖️ Scenario C: Court Case ({legalStayFdr.fdr_uid})
-                </button>
-              )}
+                  {legalStayFdr && (
+                    <button
+                      onClick={() => handleSelectScenario(legalStayFdr.fdr_uid, false)}
+                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
+                        selectedFdrUid === legalStayFdr.fdr_uid
+                          ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
+                          : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50'
+                      }`}
+                    >
+                      ⚖️ Scenario C: Court Case ({legalStayFdr.fdr_uid})
+                    </button>
+                  )}
 
-              <select
-                aria-label="Select Target FDR"
-                value={selectedFdrUid}
-                onChange={(e) => handleSelectScenario(e.target.value, false)}
-                className="bg-white border border-gray-300 text-xs text-gray-800 font-semibold px-2 py-1 rounded focus:outline-none cursor-pointer"
-              >
-                {fdrs.map((f) => {
-                  const inst = institutions.find(i => i.id === f.institution_id);
-                  return (
-                    <option key={f.id} value={f.fdr_uid} className="bg-white text-gray-900">
-                      {f.fdr_uid} — {inst ? inst.name.split(',')[0] : f.inst_bank_name}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+                  <select
+                    aria-label="Select Target FDR"
+                    value={selectedFdrUid}
+                    onChange={(e) => handleSelectScenario(e.target.value, false)}
+                    className="bg-white border border-gray-300 text-xs text-gray-800 font-semibold px-2 py-1 rounded focus:outline-none cursor-pointer"
+                  >
+                    {fdrs.map((f) => {
+                      const inst = institutions.find(i => i.id === f.institution_id);
+                      return (
+                        <option key={f.id} value={f.fdr_uid} className="bg-white text-gray-900">
+                          {f.fdr_uid} — {inst ? inst.name.split(',')[0] : f.inst_bank_name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -399,25 +465,27 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 </div>
               </div>
 
-              {/* Demo ERP Clearance Override Toggle */}
-              <div className="flex items-center space-x-2 bg-white border border-gray-300 px-2.5 py-1 rounded">
-                <span className="text-[10px] text-gray-600 font-medium">Simulate ERP Clearance:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextVal = !overrideErp;
-                    setOverrideErp(nextVal);
-                    loadReleaseData(selectedFdrUid, nextVal);
-                  }}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${
-                    overrideErp 
-                      ? 'bg-green-700 text-white shadow-sm' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                  }`}
-                >
-                  {overrideErp ? 'ON (CLEAR)' : 'OFF (REAL)'}
-                </button>
-              </div>
+              {/* Demo ERP Clearance Override Toggle (Admin Only) */}
+              {!isNodalOfficer && (
+                <div className="flex items-center space-x-2 bg-white border border-gray-300 px-2.5 py-1 rounded">
+                  <span className="text-[10px] text-gray-600 font-medium">Simulate ERP Clearance:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !overrideErp;
+                      setOverrideErp(nextVal);
+                      loadReleaseData(selectedFdrUid, nextVal);
+                    }}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${
+                      overrideErp 
+                        ? 'bg-green-700 text-white shadow-sm' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                    }`}
+                  >
+                    {overrideErp ? 'ON (CLEAR)' : 'OFF (REAL)'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 4-Item ERP Registry Checklist */}
@@ -456,168 +524,268 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
           </div>
 
-          {/* GATE 3: Regulation Bureau Scrutiny Officer Sign-Off */}
-          <div className={`rounded border p-4 space-y-3 transition-all ${
-            releaseStatus?.gate3_scrutiny_officer_approved
-              ? 'bg-blue-50/50 border-blue-200'
-              : 'bg-gray-50 border-gray-300'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FileCheck className={`w-5 h-5 ${releaseStatus?.gate3_scrutiny_officer_approved ? 'text-blue-900' : 'text-gray-400'}`} />
+          {/* RBAC: NODAL OFFICER RELEASE DESK vs ADMINISTRATIVE GATES 3 & 4 */}
+          {isNodalOfficer ? (
+            <div className="rounded border border-slate-300 bg-slate-50/70 p-5 space-y-4 shadow-2xs">
+              <div className="flex items-center space-x-2 pb-3 border-b border-slate-200">
+                <Crown className="w-5 h-5 text-[#1E3A8A]" />
                 <div>
-                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Gate 3: Regulation Bureau Scrutiny Officer Recommendation
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Statutory Security Deposit Release Application
                   </h4>
-                  <span className="text-[10px] text-gray-600">Regional Scrutiny Officer clearance sign-off</span>
+                  <span className="text-[10px] text-slate-500">
+                    Official Institutional Request for Lien Discharge &amp; NOC
+                  </span>
                 </div>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+
+              {releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || releaseStatus?.gate4_competent_authority_approved ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-md text-xs text-emerald-900 space-y-2">
+                  <div className="flex items-center space-x-2 font-bold text-emerald-950">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                    <span>Release Application Approved by AICTE Competent Authority!</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    Your statutory security deposit release has been fully authorized and digitally signed. An official Cryptographic AICTE Discharge NOC Certificate has been generated. You may download and submit this certificate to your issuing bank branch to discharge the deposit.
+                  </p>
+                  <div className="flex items-center space-x-2 text-[10px] font-mono text-emerald-900 bg-white/80 p-2 rounded border border-emerald-200">
+                    <span className="font-bold">NOC Certificate Hash:</span>
+                    <span className="truncate max-w-[280px]">{releaseStatus?.noc_certificate_hash}</span>
+                  </div>
+                </div>
+              ) : nodalRequestedSuccess || releaseStatus?.status === 'PENDING_SCRUTINY' || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' ? (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-md text-xs text-amber-950 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 font-bold text-amber-900">
+                      <Clock className="w-4 h-4 text-amber-700 animate-spin" />
+                      <span>Application Status: Pending AICTE Approval</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 font-mono px-2 py-0.5 rounded font-bold">
+                      UNDER REGULATORY REVIEW
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Your release request for <strong>{selectedFdrUid}</strong> has been logged in the AICTE Regulation Bureau queue. Regional Scrutiny Officer verification and Member Secretary / Competent Authority digital sign-off are currently in progress.
+                  </p>
+                  <div className="text-[10px] text-slate-500 pt-1 border-t border-amber-200/60 flex items-center justify-between">
+                    <span>Gate 1 (Lock-in): {releaseStatus?.gate1?.passed ? 'PASSED ✓' : 'UNDER REVIEW'}</span>
+                    <span>Gate 2 (Zero Dues): {releaseStatus?.gate2?.passed ? 'PASSED ✓' : 'PENDING'}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Technical institutions can apply for statutory return and lien release of their security deposit once the continuous 8–10 year lock-in tenure is completed and all institutional regulatory dues (PGRC, faculty salaries, and court mandates) are cleared.
+                  </p>
+
+                  <div className="p-3 bg-white border border-slate-200 rounded-md text-xs space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Lock-in Tenure Check (Gate 1):</span>
+                      <span className={`font-bold ${releaseStatus?.gate1?.passed ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {releaseStatus?.gate1?.passed ? 'COMPLETED ✓' : 'HOLD / PENDING'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Cross-Bureau Dues Check (Gate 2):</span>
+                      <span className={`font-bold ${releaseStatus?.gate2?.passed ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {releaseStatus?.gate2?.passed ? 'CLEARED (ZERO DUES) ✓' : 'PENDING DUES REPORTED'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleNodalRequestRelease}
+                    disabled={isRequestingRelease || (!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed)}
+                    className="w-full py-3 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
+                  >
+                    {isRequestingRelease ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+                        <span>Submitting Release Application...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>Request Release/NOC</span>
+                      </>
+                    )}
+                  </button>
+
+                  {(!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed) && (
+                    <div className="p-2.5 bg-red-50 border border-red-200 rounded text-[11px] text-red-800 text-center font-medium">
+                      Release application locked: Complete 8-year lock-in tenure and clear all regulatory ERP dues before requesting release.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* GATE 3: Regulation Bureau Scrutiny Officer Sign-Off (Admin Only) */}
+              <div className={`rounded border p-4 space-y-3 transition-all ${
                 releaseStatus?.gate3_scrutiny_officer_approved
-                  ? 'bg-blue-100 text-blue-900 border-blue-300'
-                  : 'bg-gray-200 text-gray-700 border-gray-300'
+                  ? 'bg-blue-50/50 border-blue-200'
+                  : 'bg-gray-50 border-gray-300'
               }`}>
-                {releaseStatus?.gate3_scrutiny_officer_approved ? 'GATE 3 APPROVED' : 'PENDING SCRUTINY'}
-              </span>
-            </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className={`w-5 h-5 ${releaseStatus?.gate3_scrutiny_officer_approved ? 'text-blue-900' : 'text-gray-400'}`} />
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                        Gate 3: Regulation Bureau Scrutiny Officer Recommendation
+                      </h4>
+                      <span className="text-[10px] text-gray-600">Regional Scrutiny Officer clearance sign-off</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    releaseStatus?.gate3_scrutiny_officer_approved
+                      ? 'bg-blue-100 text-blue-900 border-blue-300'
+                      : 'bg-gray-200 text-gray-700 border-gray-300'
+                  }`}>
+                    {releaseStatus?.gate3_scrutiny_officer_approved ? 'GATE 3 APPROVED' : 'PENDING SCRUTINY'}
+                  </span>
+                </div>
 
-            {!releaseStatus?.gate3_scrutiny_officer_approved ? (
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Officer Name:</label>
-                  <input
-                    type="text"
-                    value={scrutinyOfficerName}
-                    onChange={(e) => setScrutinyOfficerName(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Evaluation Remarks:</label>
-                  <textarea
-                    rows={2}
-                    value={scrutinyRemarks}
-                    onChange={(e) => setScrutinyRemarks(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none resize-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGate3Signoff}
-                  disabled={isSubmittingGate3 || (!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed)}
-                  className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
-                >
-                  {isSubmittingGate3 ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <FileCheck className="w-4 h-4 text-amber-400" />
-                      <span>Submit Gate 3 Scrutiny Sign-Off</span>
-                    </>
-                  )}
-                </button>
+                {!releaseStatus?.gate3_scrutiny_officer_approved ? (
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Officer Name:</label>
+                      <input
+                        type="text"
+                        value={scrutinyOfficerName}
+                        onChange={(e) => setScrutinyOfficerName(e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Evaluation Remarks:</label>
+                      <textarea
+                        rows={2}
+                        value={scrutinyRemarks}
+                        onChange={(e) => setScrutinyRemarks(e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none resize-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGate3Signoff}
+                      disabled={isSubmittingGate3 || (!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed)}
+                      className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
+                    >
+                      {isSubmittingGate3 ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <FileCheck className="w-4 h-4 text-amber-400" />
+                          <span>Submit Gate 3 Scrutiny Sign-Off</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded bg-white border border-gray-300 text-xs text-gray-800 flex items-center justify-between">
+                    <span className="font-semibold text-green-800">✓ Verified by Regional Scrutiny Officer and recommended for statutory release.</span>
+                    <span className="text-[10px] font-mono text-gray-600 font-bold">STATUS: PENDING_COMPETENT_AUTHORITY</span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="p-2.5 rounded bg-white border border-gray-300 text-xs text-gray-800 flex items-center justify-between">
-                <span className="font-semibold text-green-800">✓ Verified by Regional Scrutiny Officer and recommended for statutory release.</span>
-                <span className="text-[10px] font-mono text-gray-600 font-bold">STATUS: PENDING_COMPETENT_AUTHORITY</span>
-              </div>
-            )}
-          </div>
 
-          {/* GATE 4: Competent Authority Final Sign-Off & NOC Generation */}
-          <div className={`rounded border p-4 space-y-3 transition-all ${
-            releaseStatus?.gate4_competent_authority_approved
-              ? 'bg-blue-50/50 border-blue-200'
-              : 'bg-gray-50 border-gray-300'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Crown className={`w-5 h-5 ${releaseStatus?.gate4_competent_authority_approved ? 'text-orange-600' : 'text-gray-400'}`} />
-                <div>
-                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Gate 4: Competent Authority Digital Signature & NOC Issuance
-                  </h4>
-                  <span className="text-[10px] text-gray-600">AICTE Member Secretary / Chairman Final Statutory Seal</span>
-                </div>
-              </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              {/* GATE 4: Competent Authority Final Sign-Off & NOC Generation (Admin Only) */}
+              <div className={`rounded border p-4 space-y-3 transition-all ${
                 releaseStatus?.gate4_competent_authority_approved
-                  ? 'bg-green-100 text-green-800 border-green-300'
-                  : 'bg-gray-200 text-gray-700 border-gray-300'
+                  ? 'bg-blue-50/50 border-blue-200'
+                  : 'bg-gray-50 border-gray-300'
               }`}>
-                {releaseStatus?.gate4_competent_authority_approved ? 'NOC ISSUED & ACTIVE' : 'PENDING GATE 4'}
-              </span>
-            </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Crown className={`w-5 h-5 ${releaseStatus?.gate4_competent_authority_approved ? 'text-orange-600' : 'text-gray-400'}`} />
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                        Gate 4: Competent Authority Digital Signature & NOC Issuance
+                      </h4>
+                      <span className="text-[10px] text-gray-600">AICTE Member Secretary / Chairman Final Statutory Seal</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    releaseStatus?.gate4_competent_authority_approved
+                      ? 'bg-green-100 text-green-800 border-green-300'
+                      : 'bg-gray-200 text-gray-700 border-gray-300'
+                  }`}>
+                    {releaseStatus?.gate4_competent_authority_approved ? 'NOC ISSUED & ACTIVE' : 'PENDING GATE 4'}
+                  </span>
+                </div>
 
-            {!releaseStatus?.gate4_competent_authority_approved ? (
-              <div className="space-y-2 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Competent Authority Signatory:</label>
-                    <input
-                      type="text"
-                      value={authorityName}
-                      onChange={(e) => setAuthorityName(e.target.value)}
-                      className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none"
-                    />
+                {!releaseStatus?.gate4_competent_authority_approved ? (
+                  <div className="space-y-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Competent Authority Signatory:</label>
+                        <input
+                          type="text"
+                          value={authorityName}
+                          onChange={(e) => setAuthorityName(e.target.value)}
+                          className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Digital Signature DSC PIN:</label>
+                        <input
+                          type="password"
+                          value={dscPin}
+                          onChange={(e) => setDscPin(e.target.value)}
+                          className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 font-mono text-xs focus:border-blue-900 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Final Statutory Authorization Remarks:</label>
+                      <textarea
+                        rows={2}
+                        value={authorityRemarks}
+                        onChange={(e) => setAuthorityRemarks(e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none resize-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGate4Approval}
+                      disabled={isSubmittingGate4 || !releaseStatus?.gate3_scrutiny_officer_approved}
+                      className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
+                    >
+                      {isSubmittingGate4 ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <span>Authorize Release &amp; Generate Cryptographic QR Discharge NOC</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Digital Signature DSC PIN:</label>
-                    <input
-                      type="password"
-                      value={dscPin}
-                      onChange={(e) => setDscPin(e.target.value)}
-                      className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 font-mono text-xs focus:border-blue-900 focus:outline-none"
-                    />
+                ) : (
+                  <div className="p-3 rounded bg-green-50 border border-green-300 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-green-900 font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-green-700" />
+                        Statutory Authorization Complete & Digitally Signed!
+                      </span>
+                      <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-300">
+                        RELEASE_APPROVED_NOC_ISSUED
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1.5 text-[11px] text-gray-700">
+                      <Lock className="w-3.5 h-3.5 text-green-700" />
+                      <span className="text-gray-600">Cryptographic NOC Hash:</span>
+                      <span className="font-mono text-blue-950 bg-white px-2 py-0.5 rounded border border-gray-300 text-[10px] truncate max-w-[260px] font-bold">
+                        {releaseStatus.noc_certificate_hash}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Final Statutory Authorization Remarks:</label>
-                  <textarea
-                    rows={2}
-                    value={authorityRemarks}
-                    onChange={(e) => setAuthorityRemarks(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 text-xs focus:border-blue-900 focus:outline-none resize-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGate4Approval}
-                  disabled={isSubmittingGate4 || !releaseStatus?.gate3_scrutiny_officer_approved}
-                  className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
-                >
-                  {isSubmittingGate4 ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Crown className="w-4 h-4 text-amber-400" />
-                      <span>Authorize Release &amp; Generate Cryptographic QR Discharge NOC</span>
-                    </>
-                  )}
-                </button>
+                )}
               </div>
-            ) : (
-              <div className="p-3 rounded bg-green-50 border border-green-300 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-green-900 font-bold">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-green-700" />
-                    Statutory Authorization Complete & Digitally Signed!
-                  </span>
-                  <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-300">
-                    RELEASE_APPROVED_NOC_ISSUED
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1.5 text-[11px] text-gray-700">
-                  <Lock className="w-3.5 h-3.5 text-green-700" />
-                  <span className="text-gray-600">Cryptographic NOC Hash:</span>
-                  <span className="font-mono text-blue-950 bg-white px-2 py-0.5 rounded border border-gray-300 text-[10px] truncate max-w-[260px] font-bold">
-                    {releaseStatus.noc_certificate_hash}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* RIGHT PANE: Official Printable AICTE FDR Discharge NOC Certificate (5 Columns) */}
@@ -790,8 +958,9 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
       </div>
 
-      {/* EXECUTIVE ANALYTICS: Regional Exposure & Portfolio Funnel */}
-      <div className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-5">
+      {/* EXECUTIVE ANALYTICS: Regional Exposure & Portfolio Funnel (Admin Only) */}
+      {!isNodalOfficer && (
+        <div className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b border-gray-200 pb-3">
           <div className="flex items-center space-x-2">
             <BarChart3 className="w-5 h-5 text-blue-900" />
@@ -887,6 +1056,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
         </div>
       </div>
+      )}
 
       {/* QR Code Verification Simulation Modal */}
       {showQrModal && (

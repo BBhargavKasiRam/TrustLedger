@@ -31,13 +31,15 @@ interface DAGLineageWorkbenchProps {
   selectedInstitutionId: number | null;
   onSelectInstitution: (id: number) => void;
   onRefreshAll: () => void;
+  isNodalOfficer?: boolean;
 }
 
 export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
   institutions,
   selectedInstitutionId,
   onSelectInstitution,
-  onRefreshAll
+  onRefreshAll,
+  isNodalOfficer
 }) => {
   // Graph state
   const [graphData, setGraphData] = useState<LineageGraphResponse | null>(null);
@@ -272,26 +274,32 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             </div>
           </div>
 
-          {/* Institution Selector */}
+          {/* Institution Selector / Locked Badge for Nodal Officer */}
           <div className="flex items-center space-x-2 bg-gray-50 border border-gray-300 p-2 rounded min-w-max">
             <Building2 className="w-4 h-4 text-blue-900" />
             <span className="text-xs text-gray-600 font-medium">Institution Record:</span>
-            <select
-              aria-label="Institution Lineage Filter"
-              value={selectedInstitutionId || institutions[0]?.id || 1}
-              onChange={(e) => {
-                const newId = Number(e.target.value);
-                onSelectInstitution(newId);
-                loadGraph(newId);
-              }}
-              className="bg-transparent text-xs text-blue-950 font-bold focus:outline-none cursor-pointer pr-2"
-            >
-              {institutions.map((inst) => (
-                <option key={inst.id} value={inst.id} className="bg-white text-gray-900">
-                  {inst.pid} — {inst.name.split(',')[0]}
-                </option>
-              ))}
-            </select>
+            {isNodalOfficer ? (
+              <span className="text-xs text-blue-950 font-bold px-2 py-0.5 bg-blue-50 border border-blue-200 rounded font-mono">
+                {(institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.pid} — {(institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.name?.split(',')[0]}
+              </span>
+            ) : (
+              <select
+                aria-label="Institution Lineage Filter"
+                value={selectedInstitutionId || institutions[0]?.id || 1}
+                onChange={(e) => {
+                  const newId = Number(e.target.value);
+                  onSelectInstitution(newId);
+                  loadGraph(newId);
+                }}
+                className="bg-transparent text-xs text-blue-950 font-bold focus:outline-none cursor-pointer pr-2"
+              >
+                {institutions.map((inst) => (
+                  <option key={inst.id} value={inst.id} className="bg-white text-gray-900">
+                    {inst.pid} — {inst.name.split(',')[0]}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>

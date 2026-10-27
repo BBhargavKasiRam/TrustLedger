@@ -9,6 +9,8 @@ import { BankVerificationGateway } from './components/BankVerificationGateway';
 import { BankManagerPortal } from './components/BankManagerPortal';
 import { DAGLineageWorkbench } from './components/DAGLineageWorkbench';
 import { ReleaseClearanceWorkbench } from './components/ReleaseClearanceWorkbench';
+import { NodalStatusPipelineView } from './components/NodalStatusPipelineView';
+import { NodalFDRSubmissionDesk } from './components/NodalFDRSubmissionDesk';
 import { CircularsAndManuals } from './components/CircularsAndManuals';
 import { PublicLandingPage } from './components/PublicLandingPage';
 import { PresenterDemoBar, DEMO_PRESETS } from './components/PresenterDemoBar';
@@ -242,13 +244,15 @@ export const App: React.FC = () => {
     }
   };
 
-  // Active institution details
-  const activeInstitution = institutions.find((i) => i.id === selectedInstitutionId) || institutions[0];
+  // Active institution details (Strictly isolate for Nodal Officer matching their PID)
+  const activeInstitution = (currentSession?.role === 'INSTITUTION_NODAL_OFFICER' && (currentSession.institutionPid || currentSession.institutionId))
+    ? (institutions.find(i => i.pid === currentSession.institutionPid) || institutions.find(i => i.id === currentSession.institutionId) || institutions[0])
+    : (institutions.find((i) => i.id === selectedInstitutionId) || institutions[0]);
 
-  // College-filtered FDRs
+  // College-filtered FDRs strictly isolated by PID / institution_id
   const collegeFdrs = activeInstitution 
-    ? fdrs.filter(f => f.institution_id === activeInstitution.id)
-    : fdrs;
+    ? fdrs.filter(f => f.institution_id === activeInstitution.id || f.institution?.pid === activeInstitution.pid)
+    : [];
 
   // Multi-Tier Escalation Engine state checks (X-Factor #6)
   const currentSystemDate = new Date();
@@ -294,9 +298,9 @@ export const App: React.FC = () => {
             presets={userPresets}
           />
 
-          {/* Discreet Presenter Bottom-Right Demo Controls */}
+          {/* Public Landing Demo Controls */}
           <PresenterDemoBar
-            currentSession={currentSession}
+            currentSession={null}
             onLoginAs={handleLoginSuccess}
             onLogout={handleLogout}
             onResetSeed={handleResetSeed}
@@ -525,38 +529,25 @@ export const App: React.FC = () => {
                       {/* Right Main Content Pane */}
                       <div className="lg:col-span-9 space-y-6">
                         {collegeSubMenu === 'MY_FDRS' && (
-                          <div className="space-y-4">
-                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
-                              <div>
-                                <h3 className="font-bold text-sm text-slate-900">
-                                  Submitted Fixed Deposit Receipts — {activeInstitution?.name}
-                                </h3>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                  Track Dual-Truth verification status, bank attestation flags, and maturity timelines.
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => setCollegeSubMenu('SUBMIT_FDR')}
-                                className="px-3.5 py-1.5 bg-[#1E3A8A] hover:bg-[#172554] text-white rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                              >
-                                + Submit New FDR
-                              </button>
-                            </div>
-                            <FDRRegistryTable
+                          <ErrorBoundary moduleName="Submitted FDRs Status Pipeline">
+                            <NodalStatusPipelineView
                               fdrs={collegeFdrs}
+                              institution={activeInstitution}
                               loading={loading}
                               onRefresh={loadData}
+                              onNavigateToSubmit={() => setCollegeSubMenu('SUBMIT_FDR')}
+                              onNavigateToRelease={() => setCollegeSubMenu('RELEASE_NOC')}
+                              onNavigateToRenewal={() => setCollegeSubMenu('RENEWAL_MERGER')}
                             />
-                          </div>
+                          </ErrorBoundary>
                         )}
 
                         {collegeSubMenu === 'SUBMIT_FDR' && (
                           <ErrorBoundary moduleName="Online FDR Submission Desk">
-                            <ForensicsWorkbench
-                              institutions={institutions}
-                              selectedInstitutionId={selectedInstitutionId}
-                              onSelectInstitution={setSelectedInstitutionId}
+                            <NodalFDRSubmissionDesk
+                              institution={activeInstitution}
                               onFDRSubmitted={loadData}
+                              onNavigateToMyFdrs={() => setCollegeSubMenu('MY_FDRS')}
                             />
                           </ErrorBoundary>
                         )}
@@ -565,9 +556,10 @@ export const App: React.FC = () => {
                           <ErrorBoundary moduleName="Deposit History Lineage Graph">
                             <DAGLineageWorkbench
                               institutions={institutions}
-                              selectedInstitutionId={selectedInstitutionId}
+                              selectedInstitutionId={activeInstitution?.id || selectedInstitutionId}
                               onSelectInstitution={setSelectedInstitutionId}
                               onRefreshAll={loadData}
+                              isNodalOfficer={true}
                             />
                           </ErrorBoundary>
                         )}
@@ -578,6 +570,9 @@ export const App: React.FC = () => {
                               institutions={institutions}
                               fdrs={collegeFdrs}
                               onRefreshAll={loadData}
+                              isNodalOfficer={true}
+                              loggedInstitutionPid={currentSession?.institutionPid || activeInstitution?.pid}
+                              loggedUserName={currentSession?.userName}
                             />
                           </ErrorBoundary>
                         )}
@@ -1094,17 +1089,19 @@ export const App: React.FC = () => {
           {/* Official Government of India UX4G & GIGW 3.0 Footer */}
           <GovFooter />
 
-          {/* Discreet Presenter Bottom-Right Demo Controls */}
-          <PresenterDemoBar
-            currentSession={currentSession}
-            onLoginAs={handleLoginSuccess}
-            onLogout={handleLogout}
-            onResetSeed={handleResetSeed}
-            isResetting={isResetting}
-            onNavigateToScenario={handleNavigateToScenario}
-            presets={userPresets}
-            scenarios={evaluationScenarios}
-          />
+          {/* Logged-in Presenter Demo Controls (Hidden for Institution Nodal Officer) */}
+          {currentSession?.role !== 'INSTITUTION_NODAL_OFFICER' && (
+            <PresenterDemoBar
+              currentSession={currentSession}
+              onLoginAs={handleLoginSuccess}
+              onLogout={handleLogout}
+              onResetSeed={handleResetSeed}
+              isResetting={isResetting}
+              onNavigateToScenario={handleNavigateToScenario}
+              presets={userPresets}
+              scenarios={evaluationScenarios}
+            />
+          )}
         </>
       )}
 

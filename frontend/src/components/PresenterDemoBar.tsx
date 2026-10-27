@@ -126,6 +126,11 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
   presets,
   scenarios
 }) => {
+  // Requirement 5: Completely hide Demo Controls when logged in as an Institute Nodal Officer
+  if (currentSession?.role === 'INSTITUTION_NODAL_OFFICER') {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   // Dynamically map scenarios and presets from backend DB if provided
