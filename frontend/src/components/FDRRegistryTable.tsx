@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileCheck, 
   AlertTriangle, 
@@ -7,10 +7,10 @@ import {
   CheckCircle2, 
   Clock, 
   Building2,
-  Eye,
-  EyeOff
+  Lock
 } from 'lucide-react';
 import type { FDRInstrument } from '../types';
+import { DigitalVaultModal } from './DigitalVaultModal';
 
 interface FDRRegistryTableProps {
   fdrs: FDRInstrument[];
@@ -19,6 +19,8 @@ interface FDRRegistryTableProps {
 }
 
 export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
+  const [selectedVaultFdr, setSelectedVaultFdr] = useState<FDRInstrument | null>(null);
+
   const formatCurrency = (amount?: number | null) => {
     if (amount === undefined || amount === null) return '—';
     return new Intl.NumberFormat('en-IN', {
@@ -144,7 +146,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
               </th>
 
               <th className="py-3 px-3 border-b border-slate-200 bg-slate-50 text-slate-700 border-l border-slate-200 text-center font-bold">
-                Supporting Documents
+                Digital Vault (Multi-Doc)
               </th>
 
               <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700 border-l border-slate-200">Lifecycle Status</th>
@@ -234,29 +236,22 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                     </div>
                   </td>
 
-                  {/* Supporting Documents (Cloudinary Retrieval) */}
+                  {/* AICTE Requirement 2: Digital Vault Retrieval */}
                   <td className="py-3.5 px-3 whitespace-nowrap border-l border-slate-200 text-center">
-                    {fdr.documentUrl ? (
-                      <button
-                        type="button"
-                        onClick={() => window.open(fdr.documentUrl!, '_blank', 'noopener,noreferrer')}
-                        className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
-                        title="View Source FDR Receipt on Cloudinary"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-[#1E3A8A]" />
-                        <span>View Source FDR</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium cursor-not-allowed opacity-60"
-                        title="No supporting document uploaded for this legacy record"
-                      >
-                        <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                        <span>No Document</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedVaultFdr(fdr)}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
+                      title="Open multi-file Digital Vault for this FDR"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                      <span>Open Digital Vault</span>
+                      {fdr.digitalVault && fdr.digitalVault.length > 0 && (
+                        <span className="ml-0.5 text-[10px] font-mono font-bold bg-[#1E3A8A] text-white px-1.5 py-0.2 rounded-full">
+                          {fdr.digitalVault.length}
+                        </span>
+                      )}
+                    </button>
                   </td>
 
                   {/* Lifecycle Status */}
@@ -270,6 +265,13 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Digital Vault Modal */}
+      <DigitalVaultModal
+        isOpen={!!selectedVaultFdr}
+        onClose={() => setSelectedVaultFdr(null)}
+        fdr={selectedVaultFdr}
+      />
 
     </div>
   );

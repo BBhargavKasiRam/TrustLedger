@@ -26,6 +26,14 @@ class InstitutionResponse(InstitutionBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class DigitalVaultItemSchema(BaseModel):
+    documentType: str
+    fileUrl: str
+    uploadedBy: str
+    timestamp: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 class FDRInstrumentResponse(BaseModel):
     id: Union[int, str]
     fdr_uid: str
@@ -82,6 +90,7 @@ class FDRInstrumentResponse(BaseModel):
     document_path: Optional[str] = None
     documentUrl: Optional[str] = None
     document_url: Optional[str] = None
+    digitalVault: List[DigitalVaultItemSchema] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

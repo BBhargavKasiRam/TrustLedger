@@ -18,9 +18,15 @@ mongoose.connect(mongoUri)
   .then(() => console.log('[VidyaKosh Node/Express] Connected to MongoDB'))
   .catch((err) => console.warn('[VidyaKosh Node/Express] MongoDB connection warning:', err.message));
 
-// FDR Submission Route with Multer Cloudinary Middleware
+// AICTE Requirement 1 & 2: FDR Submission with Multer Cloudinary Middleware
 app.post('/api/fdrs/submit-multipart', uploadFdrDocument, fdrController.submitFDR);
 app.post('/api/fdrs/submit', uploadFdrDocument, fdrController.submitFDR);
+
+// AICTE Requirement 2 & 3: Digital Vault & Bank Attestation Endpoints
+app.get('/api/fdrs/:fdr_uid/vault', fdrController.getFDRVault);
+app.post('/api/fdrs/:fdr_uid/vault', uploadFdrDocument, fdrController.appendVaultDocument);
+app.post('/api/bank/tier2-submit-attestation-multipart', uploadFdrDocument, fdrController.submitBankAttestation);
+app.post('/api/bank/tier2-submit-attestation', uploadFdrDocument, fdrController.submitBankAttestation);
 
 const PORT = process.env.NODE_PORT || 5000;
 if (process.env.START_NODE_SERVER === 'true') {

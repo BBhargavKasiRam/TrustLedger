@@ -18,9 +18,7 @@ import {
   MessageSquare,
   AlertTriangle,
   History,
-  UploadCloud,
-  Eye,
-  EyeOff
+  UploadCloud
 } from 'lucide-react';
 import type { 
   Institution, 
@@ -29,6 +27,7 @@ import type {
   LinkRenewalRequest 
 } from '../types';
 import { api } from '../services/api';
+import { DigitalVaultModal } from './DigitalVaultModal';
 
 interface DAGLineageWorkbenchProps {
   institutions: Institution[];
@@ -49,6 +48,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
   const [graphData, setGraphData] = useState<LineageGraphResponse | null>(null);
   const [loadingGraph, setLoadingGraph] = useState<boolean>(true);
   const [selectedNode, setSelectedNode] = useState<LineageGraphNode | null>(null);
+  const [selectedVaultFdr, setSelectedVaultFdr] = useState<any>(null);
 
   // Linker Form state
   const [parentFdrUid, setParentFdrUid] = useState<string>('FDR-2020-205');
@@ -588,32 +588,25 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                               </span>
                             </td>
 
-                            {/* Supporting Documents (Cloudinary Retrieval) */}
+                            {/* AICTE Requirement 2: Digital Vault */}
                             <td className="py-2.5 px-3 whitespace-nowrap text-center align-middle">
-                              {docUrl ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(docUrl, '_blank', 'noopener,noreferrer');
-                                  }}
-                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
-                                  title="View Source FDR Receipt on Cloudinary"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>View Source FDR</span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium cursor-not-allowed opacity-60"
-                                  title="No supporting document uploaded for this legacy record"
-                                >
-                                  <EyeOff className="w-3.5 h-3.5" />
-                                  <span>No Document</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedVaultFdr({
+                                    ...node,
+                                    documentUrl: docUrl,
+                                    inst_principal_amount: node.principal_amount,
+                                    inst_bank_name: node.bank_name
+                                  });
+                                }}
+                                className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                                title="Open multi-file Digital Vault"
+                              >
+                                <Lock className="w-3.5 h-3.5" />
+                                <span>Open Digital Vault</span>
+                              </button>
                             </td>
 
                             <td className="py-2.5 px-3 whitespace-nowrap text-center">
@@ -1282,6 +1275,13 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
           </div>
         </div>
       )}
+
+      {/* Digital Vault Modal */}
+      <DigitalVaultModal
+        isOpen={!!selectedVaultFdr}
+        onClose={() => setSelectedVaultFdr(null)}
+        fdr={selectedVaultFdr}
+      />
 
     </div>
   );

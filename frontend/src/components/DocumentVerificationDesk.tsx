@@ -8,10 +8,12 @@ import {
   ExternalLink,
   Eye,
   CheckSquare,
-  Square
+  Square,
+  Lock
 } from 'lucide-react';
 import type { FDRInstrument, Institution } from '../types';
 import { getAssetUrl } from '../services/api';
+import { DigitalVaultModal } from './DigitalVaultModal';
 
 interface DocumentVerificationDeskProps {
   fdrs: FDRInstrument[];
@@ -41,6 +43,7 @@ export const DocumentVerificationDesk: React.FC<DocumentVerificationDeskProps> =
     message: string;
   } | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [showVaultModal, setShowVaultModal] = useState<boolean>(false);
 
   // Sync selected FDR when selectedInstitutionId changes
   useEffect(() => {
@@ -186,17 +189,33 @@ export const DocumentVerificationDesk: React.FC<DocumentVerificationDeskProps> =
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700">Scanned Security Deposit Certificate:</span>
-              {activeFdr?.document_path && (
-                <a
-                  href={getAssetUrl(activeFdr.document_path)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-semibold text-[#1E3A8A] hover:underline flex items-center space-x-1"
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowVaultModal(true)}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-md bg-blue-50 text-[#1E3A8A] border border-blue-200 hover:bg-blue-100 flex items-center space-x-1.5 cursor-pointer shadow-2xs"
+                  title="Open full Digital Vault for this FDR"
                 >
-                  <span>Open Full Resolution</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
+                  <Lock className="w-3 h-3 text-[#1E3A8A]" />
+                  <span>Open Digital Vault</span>
+                  {activeFdr?.digitalVault && activeFdr.digitalVault.length > 0 && (
+                    <span className="text-[10px] font-mono font-bold bg-[#1E3A8A] text-white px-1.5 py-0.2 rounded-full">
+                      {activeFdr.digitalVault.length}
+                    </span>
+                  )}
+                </button>
+                {activeFdr?.document_path && (
+                  <a
+                    href={getAssetUrl(activeFdr.document_path)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-[#1E3A8A] hover:underline flex items-center space-x-1"
+                  >
+                    <span>Open Full Resolution</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
             </div>
 
             <div className="rounded-lg overflow-hidden border border-slate-300 bg-slate-100 shadow-inner max-h-[380px] flex items-center justify-center p-2">
@@ -487,6 +506,13 @@ export const DocumentVerificationDesk: React.FC<DocumentVerificationDeskProps> =
         </div>
 
       </div>
+
+      {/* Digital Vault Modal */}
+      <DigitalVaultModal
+        isOpen={showVaultModal}
+        onClose={() => setShowVaultModal(false)}
+        fdr={activeFdr}
+      />
 
     </div>
   );

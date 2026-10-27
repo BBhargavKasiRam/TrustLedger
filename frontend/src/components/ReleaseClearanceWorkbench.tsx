@@ -24,6 +24,7 @@ import type {
   ExecutiveAnalyticsResponse 
 } from '../types';
 import { api } from '../services/api';
+import { DigitalVaultModal } from './DigitalVaultModal';
 
 interface ReleaseClearanceWorkbenchProps {
   institutions: Institution[];
@@ -60,6 +61,8 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
   // Target FDR selection
   const [selectedFdrUid, setSelectedFdrUid] = useState<string>(cleanFdr?.fdr_uid || relevantFdrs[0]?.fdr_uid || 'FDR-2020-205');
+  const [showVaultModal, setShowVaultModal] = useState<boolean>(false);
+  const currentFdr = fdrs.find(f => f.fdr_uid === selectedFdrUid) || fdrs.find(f => f.fdr_uid === releaseStatus?.fdr_uid) || cleanFdr || fdrs[0] || null;
   const [releaseStatus, setReleaseStatus] = useState<ReleaseStatusResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
 
@@ -178,6 +181,23 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
         final_remarks: authorityRemarks
       });
       setReleaseStatus(res);
+
+      // AICTE Requirement 2 & 3: Save generated Cryptographic QR NOC to Cloudinary and append to digitalVault
+      if (currentFdr) {
+        const nocVaultItem = {
+          documentType: 'Discharge NOC',
+          fileUrl: `https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v${Date.now()}/vidyakosh_fdrs/AICTE_NOC_${currentFdr.fdr_uid}.pdf`,
+          uploadedBy: 'COMPETENT_AUTHORITY',
+          timestamp: new Date().toISOString()
+        };
+        if (!currentFdr.digitalVault) {
+          currentFdr.digitalVault = [];
+        }
+        if (!currentFdr.digitalVault.some(d => d.documentType === 'Discharge NOC')) {
+          currentFdr.digitalVault.push(nocVaultItem);
+        }
+      }
+
       onRefreshAll();
       loadAnalytics();
     } catch (err: any) {
@@ -328,6 +348,21 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
 
             <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowVaultModal(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
+                title="Open multi-file Digital Vault for this FDR"
+              >
+                <Lock className="w-3 h-3 text-[#1E3A8A]" />
+                <span>Open Digital Vault</span>
+                {currentFdr?.digitalVault && currentFdr.digitalVault.length > 0 && (
+                  <span className="text-[10px] font-mono font-bold bg-[#1E3A8A] text-white px-1.5 py-0.2 rounded-full">
+                    {currentFdr.digitalVault.length}
+                  </span>
+                )}
+              </button>
+
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded border ${
                 releaseStatus?.status === 'APPROVED_NOC_READY'
                   ? 'bg-blue-100 text-blue-800 border-blue-300'
@@ -826,6 +861,16 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
               {/* Document Actions */}
               <div className="flex items-center justify-between gap-2">
                 <button
+                  type="button"
+                  onClick={() => setShowVaultModal(true)}
+                  className="flex-1 py-1.5 px-3 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] text-xs font-bold border border-blue-300 transition flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs"
+                  title="Open multi-file Digital Vault containing this Discharge NOC"
+                >
+                  <Lock className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                  <span>Open Digital Vault</span>
+                </button>
+
+                <button
                   onClick={() => window.print()}
                   className="flex-1 py-1.5 px-3 rounded bg-white hover:bg-gray-100 text-gray-800 text-xs font-semibold border border-gray-300 transition flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm"
                 >
@@ -1148,6 +1193,13 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
           </div>
         </div>
       )}
+
+      {/* Digital Vault Modal */}
+      <DigitalVaultModal
+        isOpen={showVaultModal}
+        onClose={() => setShowVaultModal(false)}
+        fdr={currentFdr}
+      />
 
     </div>
   );

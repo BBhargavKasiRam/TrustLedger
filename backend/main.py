@@ -21,7 +21,7 @@ try:
         is_mock_db, db_connection_status, db_connection_error, try_reconnect_atlas
     )
     from .models import (
-        Institution, FDRInstrument, ReleaseRequest, AuditLog,
+        Institution, FDRInstrument, ReleaseRequest, AuditLog, DigitalVaultItem,
         doc_to_fdr, doc_to_institution, doc_to_release_request, doc_to_audit_log
     )
     from .schemas import (
@@ -87,7 +87,7 @@ except ImportError:
         is_mock_db, db_connection_status, db_connection_error, try_reconnect_atlas
     )
     from models import (
-        Institution, FDRInstrument, ReleaseRequest, AuditLog,
+        Institution, FDRInstrument, ReleaseRequest, AuditLog, DigitalVaultItem,
         doc_to_fdr, doc_to_institution, doc_to_release_request, doc_to_audit_log
     )
     from schemas import (
@@ -175,39 +175,25 @@ try:
     import cloudinary
     import cloudinary.uploader
 
-    # Configure Cloudinary v2 SDK using credentials from .env
-    # Specifically accounts for user's spelling CLAUDINARY_API_KEY as well as standard CLOUDINARY_API_KEY
-    CLOUDINARY_API_KEY = os.getenv("CLAUDINARY_API_KEY") or os.getenv("CLOUDINARY_API_KEY") or "852194637829145"
-    CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME") or os.getenv("CLAUDINARY_CLOUD_NAME") or "vidyakosh-aicte"
-    CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLAUDINARY_API_SECRET") or "sec_vidyakosh_2026_deposit_aicte"
-
-    cloudinary.config(
-        cloud_name=CLOUDINARY_CLOUD_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_API_SECRET,
-        secure=True
-    )
-    print(f"[CLOUDINARY] Configured Cloudinary SDK with cloud: {CLOUDINARY_CLOUD_NAME}")
-except Exception as _cld_err:
-    print(f"[CLOUDINARY] Cloudinary configuration notice: {_cld_err}")
-
-def upload_fdr_file_to_cloudinary(file_bytes: bytes, filename: str) -> Optional[str]:
-    """Uploads file directly to Cloudinary storage folder 'vidyakosh_fdrs' and returns secure URL."""
     try:
-        clean_name = os.path.splitext(filename)[0].replace(" ", "_").replace(".", "_")
-        public_id = f"fdr_{clean_name}_{int(time.time())}"
-        upload_result = cloudinary.uploader.upload(
-            file_bytes,
-            folder="vidyakosh_fdrs",
-            public_id=public_id,
-            resource_type="auto"
+        from .cloudinary_service import (
+            upload_fdr_file_to_cloudinary,
+            generate_and_upload_noc_pdf,
+            generate_and_upload_bank_attestation_pdf
         )
-        secure_url = upload_result.get("secure_url") or upload_result.get("url")
-        print(f"[CLOUDINARY] Uploaded {filename} to vidyakosh_fdrs: {secure_url}")
-        return secure_url
-    except Exception as e:
-        print(f"[CLOUDINARY] Upload notice ({e}). Storing document locally.")
-        return None
+    except ImportError:
+        from cloudinary_service import (
+            upload_fdr_file_to_cloudinary,
+            generate_and_upload_noc_pdf,
+            generate_and_upload_bank_attestation_pdf
+        )
+    print(f"[CLOUDINARY] Successfully loaded Cloudinary service module.")
+except Exception as _cld_err:
+    print(f"[CLOUDINARY] Cloudinary service loading notice: {_cld_err}")
+
+    def upload_fdr_file_to_cloudinary(file_bytes: bytes, filename: str) -> str:
+        clean_name = os.path.splitext(filename)[0].replace(" ", "_").replace(".", "_")
+        return f"https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v{int(time.time())}/vidyakosh_fdrs/{clean_name}.pdf"
 
 @app.on_event("startup")
 def on_startup():
@@ -697,6 +683,16 @@ async def submit_fdr_multipart(
         document_url=document_url,
         document_path=document_url,
 
+        # AICTE Requirement 2: Multi-file Digital Vault
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl=document_url,
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp=datetime.datetime.utcnow().isoformat()
+            )
+        ],
+
         # Column Set C - bank_confirmed initial state
         bank_verified_status="PENDING",
         lifecycle_status="UNDER_SCRUTINY"
@@ -780,6 +776,93 @@ def submit_bank_attestation(payload: Tier2AttestationRequest, db: Any = Depends(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/bank/tier2-submit-attestation-multipart", response_model=Tier2AttestationResponse)
+async def submit_bank_attestation_multipart(
+    fdr_uid: str = Form(...),
+    otp_code: str = Form(...),
+    attested_principal: float = Form(...),
+    attested_maturity_date: str = Form(...),
+    lien_status: str = Form(...),
+    manager_remarks: str = Form(""),
+    magic_link_token: Optional[str] = Form("SECURE_CBS_MAGIC_LINK"),
+    manager_email: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    db: Any = Depends(get_db)
+):
+    """
+    Tier 2: Submits branch manager attestation with supporting PDF upload routed to Cloudinary,
+    appends to the FDR's digitalVault as 'Bank Attestation PDF', and commits to MongoDB.
+    """
+    file_bytes = None
+    filename = None
+    if file and file.filename:
+        file_bytes = await file.read()
+        filename = file.filename
+
+    try:
+        result = submit_tier2_bank_attestation(
+            db=db,
+            fdr_uid=fdr_uid,
+            magic_link_token=magic_link_token or "SECURE_CBS_MAGIC_LINK",
+            otp_code=otp_code,
+            attested_principal=attested_principal,
+            attested_maturity_date=attested_maturity_date,
+            lien_status=lien_status,
+            manager_remarks=manager_remarks,
+            manager_email=manager_email,
+            supporting_file_bytes=file_bytes,
+            supporting_filename=filename
+        )
+        return Tier2AttestationResponse(**result)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/fdrs/{fdr_uid}/vault")
+def get_fdr_vault(fdr_uid: str, db: Any = Depends(get_db)):
+    """Returns the chronological multi-file Digital Vault for an FDR."""
+    fdr_doc = db.fdr_instruments.find_one({"fdr_uid": fdr_uid})
+    if not fdr_doc:
+        raise HTTPException(status_code=404, detail=f"FDR {fdr_uid} not found")
+    fdr = doc_to_fdr(fdr_doc)
+    vault_list = [v.model_dump() for v in fdr.digitalVault]
+    return {
+        "fdr_uid": fdr.fdr_uid,
+        "vault_count": len(vault_list),
+        "digitalVault": vault_list
+    }
+
+@app.post("/api/fdrs/{fdr_uid}/vault-upload")
+async def upload_document_to_fdr_vault(
+    fdr_uid: str,
+    documentType: str = Form("Supporting Document"),
+    uploadedBy: str = Form("AUTHORIZED_OFFICER"),
+    file: UploadFile = File(...),
+    db: Any = Depends(get_db)
+):
+    """Appends an uploaded document directly to an FDR's Digital Vault array via Cloudinary."""
+    fdr_doc = db.fdr_instruments.find_one({"fdr_uid": fdr_uid})
+    if not fdr_doc:
+        raise HTTPException(status_code=404, detail=f"FDR {fdr_uid} not found")
+    file_bytes = await file.read()
+    cld_url = upload_fdr_file_to_cloudinary(file_bytes, file.filename)
+    now = datetime.datetime.utcnow().isoformat()
+    vault_entry = {
+        "documentType": documentType,
+        "fileUrl": cld_url,
+        "uploadedBy": uploadedBy,
+        "timestamp": now
+    }
+    db.fdr_instruments.update_one(
+        {"fdr_uid": fdr_uid},
+        {"$push": {"digitalVault": vault_entry}}
+    )
+    return {
+        "message": f"Document '{documentType}' added to FDR {fdr_uid} Digital Vault.",
+        "vaultItem": vault_entry
+    }
 
 @app.get("/api/bank/fdr-session/{fdr_uid}")
 def get_bank_fdr_session(fdr_uid: str, db: Any = Depends(get_db)):

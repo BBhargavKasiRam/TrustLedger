@@ -94,6 +94,13 @@ export interface RBIBankDirectory {
   mock_lien_status: string;
 }
 
+export interface DigitalVaultItem {
+  documentType: 'Initial FDR Scan' | 'Bank Attestation PDF' | 'Discharge NOC' | string;
+  fileUrl: string;
+  uploadedBy: string;
+  timestamp?: string;
+}
+
 export interface FDRInstrument {
   id: number;
   fdr_uid: string;
@@ -145,6 +152,7 @@ export interface FDRInstrument {
   document_path?: string | null;
   documentUrl?: string | null;
   document_url?: string | null;
+  digitalVault?: DigitalVaultItem[];
   created_at?: string;
   updated_at?: string;
   institution?: Institution;
@@ -427,6 +435,7 @@ export interface LineageGraphNode {
   document_path?: string | null;
   documentUrl?: string | null;
   document_url?: string | null;
+  digitalVault?: DigitalVaultItem[];
   audit_hash: string;
 }
 

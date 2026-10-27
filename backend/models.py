@@ -82,6 +82,13 @@ class BankConfirmedData(MongoBaseModel):
     magic_link_token: Optional[str] = None
 
 
+class DigitalVaultItem(MongoBaseModel):
+    documentType: str
+    fileUrl: str
+    uploadedBy: str
+    timestamp: Optional[str] = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
+
+
 class FDRInstrument(MongoBaseModel):
     id: Optional[Union[int, str]] = None
     _id: Optional[Any] = None
@@ -139,6 +146,8 @@ class FDRInstrument(MongoBaseModel):
     document_path: Optional[str] = None
     documentUrl: Optional[str] = None
     document_url: Optional[str] = None
+    # AICTE Requirement 2: Digital Vault
+    digitalVault: List[DigitalVaultItem] = Field(default_factory=list)
     created_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
     updated_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
 
@@ -359,6 +368,29 @@ def doc_to_fdr(doc: Optional[Dict[str, Any]]) -> Optional[FDRInstrument]:
     if doc_url:
         d["documentUrl"] = doc_url
         d["document_url"] = doc_url
+
+    vault_raw = d.get("digitalVault") or d.get("digital_vault") or []
+    if not vault_raw and doc_url:
+        created_time = d.get("created_at") or datetime.datetime.utcnow()
+        time_str = created_time.isoformat() if hasattr(created_time, "isoformat") else str(created_time)
+        vault_raw = [{
+            "documentType": "Initial FDR Scan",
+            "fileUrl": doc_url,
+            "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+            "timestamp": time_str
+        }]
+    parsed_vault = []
+    for item in vault_raw:
+        if isinstance(item, dict):
+            parsed_vault.append(DigitalVaultItem(**item))
+        elif isinstance(item, DigitalVaultItem):
+            parsed_vault.append(item)
+    d["digitalVault"] = parsed_vault
+
+    if not d.get("documentUrl") and parsed_vault:
+        d["documentUrl"] = parsed_vault[0].fileUrl
+        d["document_url"] = parsed_vault[0].fileUrl
+
     fdr = FDRInstrument(**d)
     fdr.sync_dual_truth()
     return fdr

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileCheck2, 
   Clock, 
@@ -9,9 +9,10 @@ import {
   ShieldCheck, 
   FileSpreadsheet,
   BadgeAlert,
-  Eye
+  Lock
 } from 'lucide-react';
 import type { FDRInstrument, Institution } from '../types';
+import { DigitalVaultModal } from './DigitalVaultModal';
 
 interface NodalStatusPipelineViewProps {
   fdrs: FDRInstrument[];
@@ -31,6 +32,8 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
   onNavigateToRelease,
   onNavigateToRenewal
 }) => {
+  const [selectedVaultFdr, setSelectedVaultFdr] = useState<FDRInstrument | null>(null);
+
   const formatCurrency = (amount?: number | null) => {
     if (amount === undefined || amount === null) return '—';
     return new Intl.NumberFormat('en-IN', {
@@ -269,17 +272,20 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
                       <span className="text-xs text-slate-700 font-semibold">
                         Receipt Ref: <span className="font-mono text-slate-900">{fdr.inst_fdr_number || 'FDR-REC-AICTE'}</span>
                       </span>
-                      {fdr.documentUrl && (
-                        <button
-                          type="button"
-                          onClick={() => window.open(fdr.documentUrl!, '_blank', 'noopener,noreferrer')}
-                          className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-[10px] font-semibold transition cursor-pointer ml-2 shadow-2xs"
-                          title="View Source FDR Receipt on Cloudinary"
-                        >
-                          <Eye className="w-3 h-3 text-[#1E3A8A]" />
-                          <span>View Source FDR</span>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVaultFdr(fdr)}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-[10px] font-semibold transition cursor-pointer ml-2 shadow-2xs"
+                        title="Open multi-file Digital Vault"
+                      >
+                        <Lock className="w-3 h-3 text-[#1E3A8A]" />
+                        <span>Open Digital Vault</span>
+                        {fdr.digitalVault && fdr.digitalVault.length > 0 && (
+                          <span className="text-[9px] font-mono font-bold bg-[#1E3A8A] text-white px-1 py-0.1 rounded-full">
+                            {fdr.digitalVault.length}
+                          </span>
+                        )}
+                      </button>
                     </div>
                     <div className="text-xs text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                       <span><strong>Bank:</strong> {fdr.inst_bank_name}</span>
@@ -470,6 +476,13 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
           );
         })}
       </div>
+
+      {/* Digital Vault Modal */}
+      <DigitalVaultModal
+        isOpen={!!selectedVaultFdr}
+        onClose={() => setSelectedVaultFdr(null)}
+        fdr={selectedVaultFdr}
+      />
 
     </div>
   );

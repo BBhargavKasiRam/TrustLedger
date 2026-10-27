@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { 
   Institution, 
   FDRInstrument, 
+  DigitalVaultItem,
   AuditLog, 
   AuditVerifyResponse, 
   DashboardSummary,
@@ -243,8 +244,30 @@ export const api = {
     lien_status: string;
     manager_remarks: string;
     manager_email?: string;
-  }): Promise<Tier2AttestationResponse> => {
+  } | FormData): Promise<Tier2AttestationResponse> => {
+    if (payload instanceof FormData) {
+      const res = await apiClient.post<Tier2AttestationResponse>(
+        '/bank/tier2-submit-attestation-multipart',
+        payload,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      return res.data;
+    }
     const res = await apiClient.post<Tier2AttestationResponse>('/bank/tier2-submit-attestation', payload);
+    return res.data;
+  },
+
+  getFDRVault: async (fdrUid: string): Promise<{ fdr_uid: string; vault_count: number; digitalVault: DigitalVaultItem[] }> => {
+    const res = await apiClient.get<{ fdr_uid: string; vault_count: number; digitalVault: DigitalVaultItem[] }>(`/fdrs/${fdrUid}/vault`);
+    return res.data;
+  },
+
+  uploadVaultDocument: async (fdrUid: string, formData: FormData): Promise<{ message: string; vaultItem: DigitalVaultItem }> => {
+    const res = await apiClient.post<{ message: string; vaultItem: DigitalVaultItem }>(
+      `/fdrs/${fdrUid}/vault-upload`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
     return res.data;
   },
 

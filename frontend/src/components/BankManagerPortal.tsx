@@ -9,7 +9,9 @@ import {
   FileCheck2,
   Building2,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  X
 } from 'lucide-react';
 import type { BankFDRSession, FDRInstrument } from '../types';
 import { api, getAssetUrl } from '../services/api';
@@ -46,6 +48,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
     'SBI Core Banking System alert: True deposit balance is Rs 15,00,000. Active overdraft loan of Rs 20,00,000 sanctioned against this deposit to college trust without AICTE NOC.'
   );
 
+  const [attestationPdf, setAttestationPdf] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [attestationSuccess, setAttestationSuccess] = useState<{
     verdict: string;
@@ -124,16 +127,31 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
     if (!session || !otpVerified) return;
     setSubmitting(true);
     try {
-      const res = await api.submitTier2Attestation({
-        fdr_uid: session.fdr_uid,
-        magic_link_token: session.magic_link_token || 'ml_demo_token',
-        otp_code: otpCode || '849201',
-        attested_principal: Number(actualPrincipal),
-        attested_maturity_date: actualMaturityDate,
-        lien_status: lienStatus,
-        manager_remarks: remarks,
-        manager_email: session.bank_manager_email || 'branch.manager@sbi.co.in'
-      });
+      let res;
+      if (attestationPdf) {
+        const formData = new FormData();
+        formData.append('fdr_uid', session.fdr_uid);
+        formData.append('magic_link_token', session.magic_link_token || 'ml_demo_token');
+        formData.append('otp_code', otpCode || '849201');
+        formData.append('attested_principal', String(Number(actualPrincipal)));
+        formData.append('attested_maturity_date', actualMaturityDate);
+        formData.append('lien_status', lienStatus);
+        formData.append('manager_remarks', remarks);
+        formData.append('manager_email', session.bank_manager_email || 'branch.manager@sbi.co.in');
+        formData.append('file', attestationPdf);
+        res = await api.submitTier2Attestation(formData);
+      } else {
+        res = await api.submitTier2Attestation({
+          fdr_uid: session.fdr_uid,
+          magic_link_token: session.magic_link_token || 'ml_demo_token',
+          otp_code: otpCode || '849201',
+          attested_principal: Number(actualPrincipal),
+          attested_maturity_date: actualMaturityDate,
+          lien_status: lienStatus,
+          manager_remarks: remarks,
+          manager_email: session.bank_manager_email || 'branch.manager@sbi.co.in'
+        });
+      }
 
       setAttestationSuccess({
         verdict: res.verdict,
@@ -617,6 +635,56 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                 placeholder="Enter core banking remarks and audit observations..."
                 className="w-full bg-gray-50 border border-gray-300 rounded p-3 text-xs text-gray-900 focus:outline-none focus:border-blue-900 font-sans"
               />
+            </div>
+
+            {/* Supporting CBS Attestation PDF Upload (AICTE Requirement 2 & 3) */}
+            <div>
+              <label className="text-[11px] text-gray-800 font-bold block mb-1">
+                Supporting Bank Attestation PDF (Signed Confirmation / Stamped CBS Statement)
+              </label>
+              <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-900 block truncate max-w-[260px]">
+                      {attestationPdf ? attestationPdf.name : 'Upload Official Bank Confirmation PDF'}
+                    </span>
+                    <span className="text-[10px] text-gray-500">
+                      {attestationPdf 
+                        ? `${(attestationPdf.size / 1024).toFixed(1)} KB • Routes to Cloudinary Digital Vault` 
+                        : 'Routes to Cloudinary & permanently attaches as "Bank Attestation PDF"'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <label className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs rounded border border-blue-200 cursor-pointer transition shrink-0">
+                    Browse PDF
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setAttestationPdf(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  {attestationPdf && (
+                    <button
+                      type="button"
+                      onClick={() => setAttestationPdf(null)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition"
+                      title="Clear file"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Submission Button */}

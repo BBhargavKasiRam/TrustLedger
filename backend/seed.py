@@ -5,7 +5,7 @@ try:
     from .models import (
         Institution, FDRInstrument, ReleaseRequest, AuditLog,
         UserRecord, EvaluationScenarioRecord, SystemStateRecord,
-        CircularRecord, RBIBankDirectoryRecord
+        CircularRecord, RBIBankDirectoryRecord, DigitalVaultItem
     )
     from .audit_service import record_audit_log, verify_audit_chain
 except ImportError:
@@ -13,7 +13,7 @@ except ImportError:
     from models import (
         Institution, FDRInstrument, ReleaseRequest, AuditLog,
         UserRecord, EvaluationScenarioRecord, SystemStateRecord,
-        CircularRecord, RBIBankDirectoryRecord
+        CircularRecord, RBIBankDirectoryRecord, DigitalVaultItem
     )
     from audit_service import record_audit_log, verify_audit_chain
 
@@ -400,7 +400,16 @@ def seed_database(force: bool = False, custom_db = None):
         bank_verified_at=datetime.datetime(2020, 4, 15, 10, 0, 0),
         magic_link_token="tok_syn_verified_2020",
         lifecycle_status="RENEWED_SUPERSEDED",
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp="2016-04-15T10:00:00Z"
+            )
+        ]
     )
 
     today = datetime.date.today()
@@ -462,7 +471,22 @@ def seed_database(force: bool = False, custom_db = None):
         bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=10),
         magic_link_token="tok_canara_verified_2026",
         lifecycle_status="MATURED_ACTION_PENDING",
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp="2020-04-15T11:00:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Bank Attestation PDF",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v1714000002/vidyakosh_fdrs/canara_cbs_attestation_fdr_2020_205.pdf",
+                uploadedBy="BANK_BRANCH_MANAGER",
+                timestamp="2020-04-16T15:30:00Z"
+            )
+        ]
     )
 
     # Scenario 2: Vanguard College Tampered Amount & Hidden Encumbrance
@@ -506,7 +530,16 @@ def seed_database(force: bool = False, custom_db = None):
         bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=70),
         magic_link_token="tok_vanguard_fraud_check",
         lifecycle_status="DISCREPANCY_FLAGGED",
-        document_path="/static/sample_fdrs/sample_2_tampered_amount.jpg"
+        document_path="/static/sample_fdrs/sample_2_tampered_amount.jpg",
+        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000003/vidyakosh_fdrs/sample_2_tampered_amount.jpg",
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000003/vidyakosh_fdrs/sample_2_tampered_amount.jpg",
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp=vanguard_issue_date + "T09:30:00Z"
+            )
+        ]
     )
 
     # Scenario 3: Deccan School of Management Approaching Maturity T-30 (Expires in 29 days)
@@ -550,7 +583,16 @@ def seed_database(force: bool = False, custom_db = None):
         bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=20),
         magic_link_token="tok_deccan_verified",
         lifecycle_status="APPROACHING_MATURITY_T30",
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp=deccan_issue_date + "T10:00:00Z"
+            )
+        ]
     )
 
     # Scenario 4: Shivalik Polytechnic Overdue Instrument (Expired 5 days ago)
@@ -594,7 +636,16 @@ def seed_database(force: bool = False, custom_db = None):
         bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=10),
         magic_link_token="tok_shivalik_verified",
         lifecycle_status="MATURED_ACTION_PENDING",
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        digitalVault=[
+            DigitalVaultItem(
+                documentType="Initial FDR Scan",
+                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                uploadedBy="INSTITUTE_NODAL_OFFICER",
+                timestamp=shivalik_issue_date + "T11:00:00Z"
+            )
+        ]
     )
 
     target_db.fdr_instruments.insert_many([
