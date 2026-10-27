@@ -47,7 +47,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
     ? fdrs.filter(f => f.institution?.pid === loggedInstitutionPid || f.institution_id === institutions.find(i => i.pid === loggedInstitutionPid)?.id)
     : fdrs;
 
-  // Derive scenario targets dynamically from loaded instruments and institutions
+  // Derive default target dynamically from loaded instruments and institutions
   const cleanFdr = isNodalOfficer
     ? relevantFdrs[0]
     : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2020-205') || 
@@ -55,22 +55,6 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
          const inst = institutions.find(i => i.id === f.institution_id);
          return inst && (inst.pending_pgrc_penalties === 0) && !inst.pending_court_cases;
        }) || relevantFdrs[0]);
-
-  const pgrcBlockedFdr = isNodalOfficer
-    ? null
-    : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2026-309') || 
-       relevantFdrs.find(f => {
-         const inst = institutions.find(i => i.id === f.institution_id);
-         return inst && (inst.pending_pgrc_penalties || 0) > 0;
-       }) || relevantFdrs[1]);
-
-  const legalStayFdr = isNodalOfficer
-    ? null
-    : (relevantFdrs.find(f => f.fdr_uid === 'FDR-2018-519') || 
-       relevantFdrs.find(f => {
-         const inst = institutions.find(i => i.id === f.institution_id);
-         return inst && (inst.pending_court_cases || (inst as any).legal_stay_active);
-       }) || relevantFdrs[2]);
 
   // Target FDR selection
   const [selectedFdrUid, setSelectedFdrUid] = useState<string>(cleanFdr?.fdr_uid || relevantFdrs[0]?.fdr_uid || 'FDR-2020-205');
@@ -81,8 +65,9 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
   const [isRequestingRelease, setIsRequestingRelease] = useState<boolean>(false);
   const [nodalRequestedSuccess, setNodalRequestedSuccess] = useState<boolean>(false);
 
-  // Gate 2 Demo Override (Disabled for Nodal Officer)
+  // Gate 2 Manual Scrutiny Checklist State
   const [overrideErp, setOverrideErp] = useState<boolean>(false);
+  const [manualChecks, setManualChecks] = useState<Record<string, boolean>>({});
 
   // Gate 3 inputs
   const [scrutinyOfficerName, setScrutinyOfficerName] = useState<string>('Dr. Rajesh Verma (Scrutiny Officer, AICTE North)');
@@ -273,67 +258,26 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 )}
               </div>
             ) : (
-              <>
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block w-full lg:w-auto">
-                  Select Institution Case:
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Select Deposit Case:
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {cleanFdr && (
-                    <button
-                      onClick={() => handleSelectScenario(cleanFdr.fdr_uid, false)}
-                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                        selectedFdrUid === cleanFdr.fdr_uid
-                          ? 'bg-green-700 text-white border-green-800 shadow-sm'
-                          : 'bg-white text-green-900 border-green-300 hover:bg-green-50'
-                      }`}
-                    >
-                      ✓ Scenario A: Clean Matured ({cleanFdr.fdr_uid})
-                    </button>
-                  )}
-
-                  {pgrcBlockedFdr && (
-                    <button
-                      onClick={() => handleSelectScenario(pgrcBlockedFdr.fdr_uid, false)}
-                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                        selectedFdrUid === pgrcBlockedFdr.fdr_uid
-                          ? 'bg-red-700 text-white border-red-800 shadow-sm'
-                          : 'bg-white text-red-900 border-red-300 hover:bg-red-50'
-                      }`}
-                    >
-                      ✕ Scenario B: PGRC Blocked ({pgrcBlockedFdr.fdr_uid})
-                    </button>
-                  )}
-
-                  {legalStayFdr && (
-                    <button
-                      onClick={() => handleSelectScenario(legalStayFdr.fdr_uid, false)}
-                      className={`px-3 py-1.5 rounded text-xs font-bold border transition cursor-pointer ${
-                        selectedFdrUid === legalStayFdr.fdr_uid
-                          ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
-                          : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50'
-                      }`}
-                    >
-                      ⚖️ Scenario C: Court Case ({legalStayFdr.fdr_uid})
-                    </button>
-                  )}
-
-                  <select
-                    aria-label="Select Target FDR"
-                    value={selectedFdrUid}
-                    onChange={(e) => handleSelectScenario(e.target.value, false)}
-                    className="bg-white border border-gray-300 text-xs text-gray-800 font-semibold px-2 py-1 rounded focus:outline-none cursor-pointer"
-                  >
-                    {fdrs.map((f) => {
-                      const inst = institutions.find(i => i.id === f.institution_id);
-                      return (
-                        <option key={f.id} value={f.fdr_uid} className="bg-white text-gray-900">
-                          {f.fdr_uid} — {inst ? inst.name.split(',')[0] : f.inst_bank_name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              </>
+                <select
+                  aria-label="Select Target FDR"
+                  value={selectedFdrUid}
+                  onChange={(e) => handleSelectScenario(e.target.value, false)}
+                  className="bg-white border border-gray-300 text-xs text-gray-900 font-mono font-bold px-3 py-1.5 rounded focus:outline-none focus:border-[#1E3A8A] cursor-pointer"
+                >
+                  {fdrs.map((f) => {
+                    const inst = institutions.find(i => i.id === f.institution_id);
+                    return (
+                      <option key={f.id} value={f.fdr_uid} className="bg-white text-gray-900 font-sans">
+                        {f.fdr_uid} — {inst ? inst.name.split(',')[0] : f.inst_bank_name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             )}
           </div>
         </div>
@@ -465,51 +409,48 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 </div>
               </div>
 
-              {/* Demo ERP Clearance Override Toggle (Admin Only) */}
-              {!isNodalOfficer && (
-                <div className="flex items-center space-x-2 bg-white border border-gray-300 px-2.5 py-1 rounded">
-                  <span className="text-[10px] text-gray-600 font-medium">Simulate ERP Clearance:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextVal = !overrideErp;
-                      setOverrideErp(nextVal);
-                      loadReleaseData(selectedFdrUid, nextVal);
-                    }}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${
-                      overrideErp 
-                        ? 'bg-green-700 text-white shadow-sm' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                    }`}
-                  >
-                    {overrideErp ? 'ON (CLEAR)' : 'OFF (REAL)'}
-                  </button>
-                </div>
-              )}
             </div>
 
-            {/* 4-Item ERP Registry Checklist */}
+            {/* 4-Item ERP Registry Checklist - Manual Scrutiny Verification */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-              {(releaseStatus?.gate2?.compliance_items || []).map((item, idx) => (
-                <div 
-                  key={idx}
-                  className={`p-2.5 rounded border flex items-start space-x-2 ${
-                    item.cleared 
-                      ? 'bg-white border-green-300 text-green-950 shadow-sm' 
-                      : 'bg-red-50 border-red-300 text-red-950 shadow-sm'
-                  }`}
-                >
-                  {item.cleared ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                  )}
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-[11px] block">{item.category}</span>
-                    <span className="text-[10px] text-gray-700 block">{item.details}</span>
+              {(releaseStatus?.gate2?.compliance_items || []).map((item, idx) => {
+                const isCleared = manualChecks[item.category] !== undefined ? manualChecks[item.category] : item.cleared;
+                return (
+                  <div 
+                    key={idx}
+                    onClick={() => {
+                      if (!isNodalOfficer) {
+                        setManualChecks(prev => ({
+                          ...prev,
+                          [item.category]: !isCleared
+                        }));
+                      }
+                    }}
+                    className={`p-2.5 rounded border flex items-start space-x-2 transition ${!isNodalOfficer ? 'cursor-pointer hover:border-[#1E3A8A]' : ''} ${
+                      isCleared 
+                        ? 'bg-white border-green-300 text-green-950 shadow-sm' 
+                        : 'bg-red-50 border-red-300 text-red-950 shadow-sm'
+                    }`}
+                  >
+                    {isCleared ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="space-y-0.5 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] block">{item.category}</span>
+                        {!isNodalOfficer && (
+                          <span className="text-[9px] font-mono text-gray-500">
+                            {isCleared ? '✓ Cleared' : '✗ Hold'}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-gray-700 block">{item.details}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-200">
@@ -670,7 +611,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                     <button
                       type="button"
                       onClick={handleGate3Signoff}
-                      disabled={isSubmittingGate3 || (!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed)}
+                      disabled={isSubmittingGate3 || (!releaseStatus?.gate1?.passed || (!releaseStatus?.gate2?.passed && !(releaseStatus?.gate2?.compliance_items && releaseStatus.gate2.compliance_items.every(i => manualChecks[i.category] !== undefined ? manualChecks[i.category] : i.cleared))))}
                       className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
                     >
                       {isSubmittingGate3 ? (

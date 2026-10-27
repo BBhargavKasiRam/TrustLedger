@@ -4,7 +4,7 @@ import { KPISummary } from './components/KPISummary';
 import { FDRRegistryTable } from './components/FDRRegistryTable';
 import { AuditLedgerViewer } from './components/AuditLedgerViewer';
 import { InstitutionsList } from './components/InstitutionsList';
-import { ForensicsWorkbench } from './components/ForensicsWorkbench';
+import { DocumentVerificationDesk } from './components/DocumentVerificationDesk';
 import { BankVerificationGateway } from './components/BankVerificationGateway';
 import { BankManagerPortal } from './components/BankManagerPortal';
 import { DAGLineageWorkbench } from './components/DAGLineageWorkbench';
@@ -207,7 +207,7 @@ export const App: React.FC = () => {
     switch (scenarioId) {
       case 1: // New FDR Submission: Links to Document Upload & Verification
         setScrutinySubMenu('FORENSICS');
-        scrollToTarget('forensics-workbench');
+        scrollToTarget('document-verification-desk');
         break;
 
       case 2: // Validity Tracking: Links to Centralized Repository / Bank Gateway
@@ -608,7 +608,7 @@ export const App: React.FC = () => {
                               Scrutiny Officer Desk — {currentSession.userName}
                             </h2>
                             <p className="text-xs text-slate-600 mt-0.5">
-                              Dual-Truth Registry verification, compound interest forensics, and CBS bank attestation oversight.
+                              Dual-Truth Registry verification, manual document cross-referencing, and CBS bank attestation oversight.
                             </p>
                           </div>
                         </div>
@@ -666,8 +666,8 @@ export const App: React.FC = () => {
                           }`}
                         >
                           <div className="flex items-center space-x-2.5">
-                            <Scan className={`w-4 h-4 ${scrutinySubMenu === 'FORENSICS' ? 'text-[#F59E0B]' : 'text-slate-400'}`} />
-                            <span>2. Document Forensics Lab</span>
+                            <FileCheck2 className={`w-4 h-4 ${scrutinySubMenu === 'FORENSICS' ? 'text-[#F59E0B]' : 'text-slate-400'}`} />
+                            <span>2. Document Verification</span>
                           </div>
                           <ChevronRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
@@ -726,11 +726,12 @@ export const App: React.FC = () => {
 
                         {scrutinySubMenu === 'FORENSICS' && (
                           <ErrorBoundary moduleName="Document Verification Desk">
-                            <ForensicsWorkbench
+                            <DocumentVerificationDesk
+                              fdrs={fdrs}
                               institutions={institutions}
                               selectedInstitutionId={selectedInstitutionId}
                               onSelectInstitution={setSelectedInstitutionId}
-                              onFDRSubmitted={loadData}
+                              onRefreshAll={loadData}
                             />
                           </ErrorBoundary>
                         )}

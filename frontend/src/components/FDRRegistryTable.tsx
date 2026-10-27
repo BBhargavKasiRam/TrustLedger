@@ -6,9 +6,7 @@ import {
   Landmark, 
   CheckCircle2, 
   Clock, 
-  ShieldAlert,
-  Building2,
-  Eye
+  Building2
 } from 'lucide-react';
 import type { FDRInstrument } from '../types';
 
@@ -96,11 +94,11 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
               <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 Centralized Security Deposit / FDR Repository
                 <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1E3A8A] border border-blue-200">
-                  Tri-Party Dual-Truth
+                  Dual-Truth Direct Comparison
                 </span>
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                Centralized statutory registry across all approved technical institutions under APH Norms. Explicitly isolates institution claims from AI forensics and authoritative bank confirmation.
+                Centralized statutory registry across all approved technical institutions under APH Norms. Direct side-by-side comparison of Institution Claim and Authoritative Bank Core Banking (CBS) Truth.
               </p>
             </div>
           </div>
@@ -122,7 +120,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
               <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700">FDR UID / Lineage</th>
               <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700">Institution</th>
               
-              {/* Distinct 3-Way Tri-Party Isolation Headers (Strictly UX4G Specification) */}
+              {/* Direct Dual-Truth Comparison Headers */}
               <th className="py-3 px-3.5 border-b-2 border-slate-400 bg-slate-100 text-slate-800 border-l border-slate-200 font-bold">
                 <div className="flex items-center space-x-1.5">
                   <Building2 className="w-3.5 h-3.5 text-slate-700" />
@@ -130,16 +128,6 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                 </div>
                 <span className="text-[9px] font-mono font-bold bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded mt-1 inline-block">
                   COLLEGE SUBMITTED
-                </span>
-              </th>
-
-              <th className="py-3 px-3.5 border-b-2 border-indigo-500 bg-indigo-50 text-indigo-950 border-l border-indigo-200 font-bold">
-                <div className="flex items-center space-x-1.5">
-                  <Eye className="w-3.5 h-3.5 text-indigo-700" />
-                  <span>COL B: AI FORENSICS</span>
-                </div>
-                <span className="text-[9px] font-mono font-bold bg-indigo-100 text-indigo-900 px-1.5 py-0.5 rounded mt-1 inline-block">
-                  VISION AI • OCR • MATH
                 </span>
               </th>
 
@@ -158,7 +146,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white">
             {fdrs.map((fdr) => {
-              const hasDiscrepancy = fdr.math_tamper_flag || fdr.bank_verified_status === 'MISMATCH_FLAGGED';
+              const hasDiscrepancy = fdr.bank_verified_status === 'MISMATCH_FLAGGED' || fdr.bank_lien_status === 'LOAN_TAKEN_ENCUMBERED' || (fdr.bank_confirmed_principal != null && fdr.bank_confirmed_principal !== fdr.inst_principal_amount);
               const hasLineageParent = !!fdr.parent_fdr_id;
 
               return (
@@ -203,34 +191,6 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                       Matures: {fdr.inst_maturity_date || '—'}
                     </div>
-                  </td>
-
-                  {/* Column Set B: AI Forensics */}
-                  <td className="py-3.5 px-3.5 whitespace-nowrap bg-indigo-50/30 border-l border-indigo-100">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900 text-sm">
-                        {formatCurrency(fdr.ocr_principal_amount)}
-                      </span>
-                      {fdr.math_tamper_flag ? (
-                        <span className="inline-flex items-center space-x-1 bg-red-50 text-red-800 border border-red-300 font-semibold px-2 py-0.5 rounded text-[10px]">
-                          <ShieldAlert className="w-3 h-3 text-red-600" />
-                          <span>Math Tamper Flag!</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold px-2 py-0.5 rounded text-[10px]">
-                          <span>Math Verified ✓</span>
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[10px] text-slate-600 mt-1">
-                      ELA Tamper Score: <strong className={fdr.ela_tamper_score && fdr.ela_tamper_score > 0.5 ? 'text-red-600 font-bold' : 'text-slate-800'}>{fdr.ela_tamper_score ?? '0.00'}</strong>
-                      {fdr.ocr_joint_clause_found && ' • Joint AICTE Clause ✓'}
-                    </div>
-                    {fdr.math_expected_maturity && (
-                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                        Calculated Yield: {formatCurrency(fdr.math_expected_maturity)}
-                      </div>
-                    )}
                   </td>
 
                   {/* Column Set C: Bank Truth */}
