@@ -119,9 +119,13 @@ def ensure_db_seeded():
             try:
                 from .seed import seed_database
                 seed_database(force=True, custom_db=db)
-            except ImportError:
-                from seed import seed_database
-                seed_database(force=True, custom_db=db)
+            except (ImportError, ValueError):
+                try:
+                    from seed import seed_database
+                    seed_database(force=True, custom_db=db)
+                except ImportError:
+                    from backend.seed import seed_database
+                    seed_database(force=True, custom_db=db)
     except Exception as e:
         print(f"[DATABASE NOTICE] ensure_db_seeded status: {e}")
 

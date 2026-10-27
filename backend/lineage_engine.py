@@ -32,7 +32,7 @@ def run_temporal_time_travel(
     Scans all FDRs in MongoDB, computes (maturity_date - simulated_date), transitions statuses,
     generates escalation notices, and logs state transitions to the SHA-256 ledger.
     """
-    base_date = datetime.date(2026, 10, 24)
+    base_date = datetime.date.today()
     if simulated_date_str:
         sim_date = parse_date(simulated_date_str) or base_date
     else:

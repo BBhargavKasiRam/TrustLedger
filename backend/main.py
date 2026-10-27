@@ -273,7 +273,7 @@ def get_dashboard_summary(db: Any = Depends(get_db)):
 
     audit_status = verify_audit_chain(db)
     sys_state = db.system_state.find_one({"id": 1}) or {}
-    simulated_system_date = sys_state.get("simulated_system_date", "2026-10-24")
+    simulated_system_date = sys_state.get("simulated_system_date") or datetime.date.today().strftime("%Y-%m-%d")
 
     return DashboardSummaryResponse(
         total_institutions=total_institutions,

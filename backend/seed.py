@@ -175,15 +175,6 @@ def seed_database(force: bool = False, custom_db = None):
             is_verified=True
         ),
         EvaluationScenarioRecord(
-            id=3,
-            title="Approaching Maturity & Temporal Watchdog",
-            subtitle="Time-Travel SLA Engine generating automated T-90, T-60, T-30, & Matured Overdue notices",
-            workflow_target="RELEASE_WATCHLIST",
-            target_fdr_uid="FDR-2020-205",
-            description="Temporal simulation engine that advances calendar time (+30d, +60d, +90d) and triggers priority-weighted statutory reminders.",
-            is_verified=True
-        ),
-        EvaluationScenarioRecord(
             id=4,
             title="Renewal/Replacement & DAG Lineage Graph",
             subtitle="Git-style Directed Acyclic Graph tracking 10-year lock-in & Syndicate-to-Canara merger",
@@ -213,10 +204,10 @@ def seed_database(force: bool = False, custom_db = None):
     ]
     target_db.evaluation_scenarios.insert_many([s.to_mongo_dict() for s in scenarios_data])
 
-    print("[SEED] Seeding System Simulated State into MongoDB...")
+    print("[SEED] Seeding System State into MongoDB...")
     sys_state = SystemStateRecord(
         id=1,
-        simulated_system_date="2026-10-24",
+        simulated_system_date=datetime.date.today().strftime("%Y-%m-%d"),
         days_offset=0,
         national_corpus_locked=13500000.0,
         active_institutions_count=4
@@ -412,6 +403,24 @@ def seed_database(force: bool = False, custom_db = None):
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
     )
 
+    today = datetime.date.today()
+
+    # Relative Dates computed dynamically from current system date:
+    # 1. Deccan FDR-2018-412: Expires exactly 29 days from today (T-30 Final Notice amber alert)
+    deccan_mat_date = (today + datetime.timedelta(days=29)).strftime("%Y-%m-%d")
+    deccan_issue_date = (today - datetime.timedelta(days=365 * 8) + datetime.timedelta(days=29)).strftime("%Y-%m-%d")
+
+    # 2. Shivalik FDR-2018-519: Expired 5 days ago ([LAPSED_OVERDUE] red alert & EoA soft-hold)
+    shivalik_mat_date = (today - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+    shivalik_issue_date = (today - datetime.timedelta(days=365 * 8) - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+
+    # 3. Apex Child FDR-2020-205: Matured 10 days ago (10-year lock-in fulfilled, ready for release)
+    apex2_mat_date = (today - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
+
+    # 4. Vanguard FDR-2026-309: Active 5-year tampered deposit
+    vanguard_issue_date = (today - datetime.timedelta(days=120)).strftime("%Y-%m-%d")
+    vanguard_mat_date = (today + datetime.timedelta(days=365 * 5)).strftime("%Y-%m-%d")
+
     # Node 2: Bank Merger Replacement 2020 in Canara Bank (Amalgamation of Syndicate into Canara)
     fdr_apex_2 = FDRInstrument(
         id=2,
@@ -426,7 +435,7 @@ def seed_database(force: bool = False, custom_db = None):
         inst_interest_rate=7.40,
         inst_maturity_amount=7850000,
         inst_issue_date="2020-04-15",
-        inst_maturity_date="2026-10-24",
+        inst_maturity_date=apex2_mat_date,
         inst_joint_holder_text="Member Secretary, AICTE & President, Apex Educational Society",
         inst_no_lien_declared=True,
         ocr_fdr_number="CNRB/2020/99241",
@@ -436,7 +445,7 @@ def seed_database(force: bool = False, custom_db = None):
         ocr_interest_rate=7.40,
         ocr_maturity_amount=7850000,
         ocr_issue_date="2020-04-15",
-        ocr_maturity_date="2026-10-24",
+        ocr_maturity_date=apex2_mat_date,
         ocr_joint_clause_found=True,
         ocr_no_lien_clause_found=True,
         math_expected_maturity=7850000,
@@ -447,10 +456,10 @@ def seed_database(force: bool = False, custom_db = None):
         duplicate_flag=False,
         bank_verified_status="VERIFIED_API",
         bank_confirmed_principal=3500000,
-        bank_confirmed_maturity_date="2026-10-24",
+        bank_confirmed_maturity_date=apex2_mat_date,
         bank_lien_status="ACTIVE_JOINT_AICTE",
         bank_manager_email="bm.hazratganj@canarabank.com",
-        bank_verified_at=datetime.datetime(2026, 10, 24, 8, 30, 0),
+        bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=10),
         magic_link_token="tok_canara_verified_2026",
         lifecycle_status="MATURED_ACTION_PENDING",
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
@@ -469,8 +478,8 @@ def seed_database(force: bool = False, custom_db = None):
         inst_principal_amount=3500000,
         inst_interest_rate=7.50,
         inst_maturity_amount=4987000,
-        inst_issue_date="2026-06-10",
-        inst_maturity_date="2031-06-09",
+        inst_issue_date=vanguard_issue_date,
+        inst_maturity_date=vanguard_mat_date,
         inst_joint_holder_text="Regional Officer, AICTE Western Region & Secretary, Vanguard Society",
         inst_no_lien_declared=True,
         ocr_fdr_number="SBI/2026/TAMPERED/902",
@@ -479,8 +488,8 @@ def seed_database(force: bool = False, custom_db = None):
         ocr_principal_amount=3500000,
         ocr_interest_rate=7.50,
         ocr_maturity_amount=4987000,
-        ocr_issue_date="2026-06-10",
-        ocr_maturity_date="2031-06-09",
+        ocr_issue_date=vanguard_issue_date,
+        ocr_maturity_date=vanguard_mat_date,
         ocr_joint_clause_found=True,
         ocr_no_lien_clause_found=True,
         math_expected_maturity=2171500,
@@ -491,16 +500,16 @@ def seed_database(force: bool = False, custom_db = None):
         duplicate_flag=False,
         bank_verified_status="MISMATCH_FLAGGED",
         bank_confirmed_principal=1500000,
-        bank_confirmed_maturity_date="2031-06-09",
+        bank_confirmed_maturity_date=vanguard_mat_date,
         bank_lien_status="LOAN_TAKEN_ENCUMBERED",
         bank_manager_email="mgr.pune@sbi.co.in",
-        bank_verified_at=datetime.datetime(2026, 8, 12, 16, 50, 44),
+        bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=70),
         magic_link_token="tok_vanguard_fraud_check",
         lifecycle_status="DISCREPANCY_FLAGGED",
         document_path="/static/sample_fdrs/sample_2_tampered_amount.jpg"
     )
 
-    # Scenario 3: Deccan School of Management Approaching Maturity T-30
+    # Scenario 3: Deccan School of Management Approaching Maturity T-30 (Expires in 29 days)
     fdr_deccan = FDRInstrument(
         id=4,
         fdr_uid="FDR-2018-412",
@@ -513,8 +522,8 @@ def seed_database(force: bool = False, custom_db = None):
         inst_principal_amount=1500000,
         inst_interest_rate=7.00,
         inst_maturity_amount=2602000,
-        inst_issue_date="2018-11-20",
-        inst_maturity_date="2026-11-20",
+        inst_issue_date=deccan_issue_date,
+        inst_maturity_date=deccan_mat_date,
         inst_joint_holder_text="Regional Officer, Southern Region, AICTE & Deccan Educational Trust",
         inst_no_lien_declared=True,
         ocr_fdr_number="HDFC/2018/88412",
@@ -523,8 +532,8 @@ def seed_database(force: bool = False, custom_db = None):
         ocr_principal_amount=1500000,
         ocr_interest_rate=7.00,
         ocr_maturity_amount=2602000,
-        ocr_issue_date="2018-11-20",
-        ocr_maturity_date="2026-11-20",
+        ocr_issue_date=deccan_issue_date,
+        ocr_maturity_date=deccan_mat_date,
         ocr_joint_clause_found=True,
         ocr_no_lien_clause_found=True,
         math_expected_maturity=2602000,
@@ -535,16 +544,16 @@ def seed_database(force: bool = False, custom_db = None):
         duplicate_flag=False,
         bank_verified_status="VERIFIED_API",
         bank_confirmed_principal=1500000,
-        bank_confirmed_maturity_date="2026-11-20",
+        bank_confirmed_maturity_date=deccan_mat_date,
         bank_lien_status="ACTIVE_JOINT_AICTE",
         bank_manager_email="cbs.api@hdfcbank.com",
-        bank_verified_at=datetime.datetime(2026, 10, 1, 9, 0, 0),
+        bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=20),
         magic_link_token="tok_deccan_verified",
         lifecycle_status="APPROACHING_MATURITY_T30",
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
     )
 
-    # Scenario 4: Shivalik Polytechnic Approaching Maturity T-60 with Court Stay
+    # Scenario 4: Shivalik Polytechnic Overdue Instrument (Expired 5 days ago)
     fdr_shivalik = FDRInstrument(
         id=5,
         fdr_uid="FDR-2018-519",
@@ -557,8 +566,8 @@ def seed_database(force: bool = False, custom_db = None):
         inst_principal_amount=1500000,
         inst_interest_rate=6.80,
         inst_maturity_amount=2535000,
-        inst_issue_date="2018-12-24",
-        inst_maturity_date="2026-12-24",
+        inst_issue_date=shivalik_issue_date,
+        inst_maturity_date=shivalik_mat_date,
         inst_joint_holder_text="Regional Officer, Northern Regional Office, AICTE & Shivalik Welfare Trust",
         inst_no_lien_declared=True,
         ocr_fdr_number="SBI/2018/SHIV/519",
@@ -567,8 +576,8 @@ def seed_database(force: bool = False, custom_db = None):
         ocr_principal_amount=1500000,
         ocr_interest_rate=6.80,
         ocr_maturity_amount=2535000,
-        ocr_issue_date="2018-12-24",
-        ocr_maturity_date="2026-12-24",
+        ocr_issue_date=shivalik_issue_date,
+        ocr_maturity_date=shivalik_mat_date,
         ocr_joint_clause_found=True,
         ocr_no_lien_clause_found=True,
         math_expected_maturity=2535000,
@@ -579,12 +588,12 @@ def seed_database(force: bool = False, custom_db = None):
         duplicate_flag=False,
         bank_verified_status="VERIFIED_API",
         bank_confirmed_principal=1500000,
-        bank_confirmed_maturity_date="2026-12-24",
+        bank_confirmed_maturity_date=shivalik_mat_date,
         bank_lien_status="ACTIVE_JOINT_AICTE",
         bank_manager_email="bm.dehradun@sbi.co.in",
-        bank_verified_at=datetime.datetime(2026, 10, 15, 11, 0, 0),
+        bank_verified_at=datetime.datetime.now() - datetime.timedelta(days=10),
         magic_link_token="tok_shivalik_verified",
-        lifecycle_status="APPROACHING_MATURITY_T60",
+        lifecycle_status="MATURED_ACTION_PENDING",
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg"
     )
 

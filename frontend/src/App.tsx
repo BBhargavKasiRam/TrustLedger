@@ -213,7 +213,7 @@ export const App: React.FC = () => {
         scrollToTarget('centralized-fdr-repository');
         break;
 
-      case 3: // Approaching Maturity: Links to Time-Travel Simulator & Alert Feed
+      case 3: // Approaching Maturity: Watchdog Surveillance Matrix & Alert Feed
         setScrutinySubMenu('RELEASE_WATCHLIST');
         scrollToTarget('countdown-matrix-section');
         break;
@@ -251,12 +251,12 @@ export const App: React.FC = () => {
     : fdrs;
 
   // Multi-Tier Escalation Engine state checks (X-Factor #6)
-  const activeSimDate = new Date(summary?.simulated_system_date || '2026-10-24');
+  const currentSystemDate = new Date();
   const hasOverdueFdr = collegeFdrs.some(f => {
     if (f.lifecycle_status === 'MATURED_ACTION_PENDING') return true;
     if (f.inst_maturity_date) {
       const mat = new Date(f.inst_maturity_date);
-      return mat <= activeSimDate && f.lifecycle_status !== 'RENEWED_SUPERSEDED' && f.lifecycle_status !== 'RELEASE_APPROVED_NOC_ISSUED';
+      return mat <= currentSystemDate && f.lifecycle_status !== 'RENEWED_SUPERSEDED' && f.lifecycle_status !== 'RELEASE_APPROVED_NOC_ISSUED';
     }
     return false;
   });
@@ -265,7 +265,7 @@ export const App: React.FC = () => {
     if (f.lifecycle_status === 'APPROACHING_MATURITY_T30') return true;
     if (f.inst_maturity_date) {
       const mat = new Date(f.inst_maturity_date);
-      const days = Math.ceil((mat.getTime() - activeSimDate.getTime()) / (1000 * 60 * 60 * 24));
+      const days = Math.ceil((mat.getTime() - currentSystemDate.getTime()) / (1000 * 60 * 60 * 24));
       return days > 0 && days <= 30 && f.lifecycle_status !== 'RENEWED_SUPERSEDED' && f.lifecycle_status !== 'RELEASE_APPROVED_NOC_ISSUED';
     }
     return false;
@@ -299,8 +299,6 @@ export const App: React.FC = () => {
             currentSession={currentSession}
             onLoginAs={handleLoginSuccess}
             onLogout={handleLogout}
-            simulatedDate={summary?.simulated_system_date || '2026-10-24'}
-            onDateChange={loadData}
             onResetSeed={handleResetSeed}
             isResetting={isResetting}
             onNavigateToScenario={handleNavigateToScenario}
@@ -1101,8 +1099,6 @@ export const App: React.FC = () => {
             currentSession={currentSession}
             onLoginAs={handleLoginSuccess}
             onLogout={handleLogout}
-            simulatedDate={summary?.simulated_system_date || '2026-10-24'}
-            onDateChange={loadData}
             onResetSeed={handleResetSeed}
             isResetting={isResetting}
             onNavigateToScenario={handleNavigateToScenario}

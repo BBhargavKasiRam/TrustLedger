@@ -81,21 +81,21 @@ export const TemporalWatchdogBar: React.FC<TemporalWatchdogBarProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-bold text-gray-900 tracking-wide uppercase">
-                  Temporal SLA Watchdog Simulator
+                  Temporal SLA Watchdog Surveillance
                 </span>
-                <span className="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-300 font-semibold">
-                  Feature 3 Active
+                <span className="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded border border-blue-300 font-semibold">
+                  SLA Active
                 </span>
               </div>
               <p className="text-[11px] text-gray-600">
-                Simulated Date: <span className="font-mono text-blue-900 font-bold">{currentSimulatedDate}</span> (Offset: {activeOffset > 0 ? `+${activeOffset}d` : 'Today'}) • Click to expand chronological sweep controls
+                System Date: <span className="font-mono text-blue-900 font-bold">{currentSimulatedDate}</span> (Offset: {activeOffset > 0 ? `+${activeOffset}d` : 'Today'}) • Click to expand chronological sweep controls
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <span className="text-xs text-blue-900 font-bold group-hover:underline transition-transform hidden sm:inline">
-              Open Time-Travel Console
+              Open SLA Watchdog Console
             </span>
             <ChevronDown className="w-4 h-4 text-blue-900" />
           </div>
@@ -116,11 +116,11 @@ export const TemporalWatchdogBar: React.FC<TemporalWatchdogBarProps> = ({
                     AICTE Temporal SLA Watchdog & Automated Escalation Engine
                   </h3>
                   <span className="text-[10px] bg-blue-50 text-[#1a365d] font-bold px-2 py-0.5 rounded border border-blue-200">
-                    CRON SIMULATOR
+                    CRON SURVEILLANCE
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 mt-0.5">
-                  Simulates daily chronological sweeps across all institutional deposits, recalculating <span className="font-mono text-gray-800 font-semibold">(maturity_date - simulated_date)</span> and triggering statutory T-90, T-60, T-30, and Lock-in Breach escalation notices.
+                  Executes daily chronological sweeps across all institutional deposits, calculating <span className="font-mono text-gray-800 font-semibold">(maturity_date - system_date)</span> and triggering statutory T-90, T-60, T-30, and Lock-in Breach escalation notices.
                 </p>
               </div>
             </div>
@@ -135,7 +135,7 @@ export const TemporalWatchdogBar: React.FC<TemporalWatchdogBarProps> = ({
               <button
                 onClick={onToggle}
                 className="p-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition border border-gray-300 cursor-pointer"
-                title="Collapse Time-Travel Bar"
+                title="Collapse SLA Watchdog Bar"
               >
                 <ChevronUp className="w-4 h-4" />
               </button>
@@ -250,7 +250,7 @@ export const TemporalWatchdogBar: React.FC<TemporalWatchdogBarProps> = ({
               {latestSweep.escalation_notices.length === 0 ? (
                 <div className="text-xs text-gray-600 flex items-center space-x-2 py-1">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span>All instruments already in synchronized equilibrium for this simulated date. No new transition threshold crossed.</span>
+                  <span>All instruments already in synchronized equilibrium for this system date. No new transition threshold crossed.</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">

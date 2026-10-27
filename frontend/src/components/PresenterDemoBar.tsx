@@ -2,21 +2,17 @@ import React, { useState } from 'react';
 import { 
   Settings, 
   X, 
-  Calendar, 
   RefreshCw, 
   LogOut,
   CheckSquare,
   ArrowRight
 } from 'lucide-react';
 import type { UserSession, UserPreset, EvaluationScenario } from '../types';
-import { api } from '../services/api';
 
 interface PresenterDemoBarProps {
   currentSession: UserSession | null;
   onLoginAs: (session: UserSession) => void;
   onLogout: () => void;
-  simulatedDate: string;
-  onDateChange: () => Promise<void>;
   onResetSeed: () => Promise<void>;
   isResetting: boolean;
   onNavigateToScenario?: (scenarioId: number) => void;
@@ -36,12 +32,6 @@ export const EVALUATION_SCENARIOS = [
     title: 'Validity Tracking',
     subtitle: 'Centralized Repository / Bank Gateway',
     badge: 'MANDATE 2'
-  },
-  {
-    id: 3,
-    title: 'Approaching Maturity',
-    subtitle: 'Time-Travel Simulator & Alert Feed',
-    badge: 'MANDATE 3'
   },
   {
     id: 4,
@@ -130,8 +120,6 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
   currentSession,
   onLoginAs,
   onLogout,
-  simulatedDate,
-  onDateChange,
   onResetSeed,
   isResetting,
   onNavigateToScenario,
@@ -139,12 +127,10 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
   scenarios
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isTraveling, setIsTraveling] = useState<boolean>(false);
-  const [customDate, setCustomDate] = useState<string>(simulatedDate);
 
   // Dynamically map scenarios and presets from backend DB if provided
   const activeScenarios = (scenarios && scenarios.length > 0)
-    ? scenarios.map(s => ({
+    ? scenarios.filter(s => s.id !== 3).map(s => ({
         id: s.id,
         title: s.title,
         subtitle: s.subtitle,
@@ -171,11 +157,10 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
       }))
     : DEMO_PRESETS;
 
-  // SIH26265 Evaluation Checklist State (All 6 scenarios verified by default)
+  // SIH26265 Evaluation Checklist State (Scenarios verified by default)
   const [checkedScenarios, setCheckedScenarios] = useState<Record<number, boolean>>({
     1: true,
     2: true,
-    3: true,
     4: true,
     5: true,
     6: true,
@@ -188,25 +173,13 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
     }));
   };
 
-  const handleTimeTravel = async (daysOffset: number, specificDate?: string) => {
-    setIsTraveling(true);
-    try {
-      await api.triggerTimeTravel(daysOffset, specificDate);
-      await onDateChange();
-    } catch (err) {
-      console.error('Time-travel trigger failed', err);
-    } finally {
-      setIsTraveling(false);
-    }
-  };
-
   return (
     <div className="fixed bottom-4 right-4 z-50 print:hidden font-sans">
       {/* Floating Dark Pill Trigger */}
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          title="Demo & Presentation Controls (Role Switcher & Time Simulator)"
+          title="Demo & Presentation Controls (Role Switcher & Scenario Jumps)"
           className="flex items-center space-x-2 bg-gray-900 hover:bg-black text-white px-4 py-2.5 rounded-full shadow-2xl border border-gray-700 cursor-pointer text-xs font-semibold transition-all hover:scale-105 group backdrop-blur-xs"
         >
           <Settings className="w-4 h-4 text-orange-400 group-hover:rotate-90 transition-transform" />
@@ -352,66 +325,6 @@ export const PresenterDemoBar: React.FC<PresenterDemoBarProps> = ({
                   </button>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Temporal SLA Time-Travel Shortcuts */}
-          <div className="border-t border-gray-200 pt-2.5">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                <span>2. Time-Travel Engine</span>
-              </label>
-              <span className="font-mono text-[11px] font-bold text-blue-900 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200">
-                {simulatedDate}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-1 mb-2">
-              <button
-                disabled={isTraveling}
-                onClick={() => handleTimeTravel(0, '2026-10-24')}
-                className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-semibold text-[10px] text-center border border-gray-300 cursor-pointer disabled:opacity-50"
-              >
-                Reset Today
-              </button>
-              <button
-                disabled={isTraveling}
-                onClick={() => handleTimeTravel(30)}
-                className="px-1.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded font-semibold text-[10px] text-center border border-amber-300 cursor-pointer disabled:opacity-50"
-              >
-                +30d (T-60)
-              </button>
-              <button
-                disabled={isTraveling}
-                onClick={() => handleTimeTravel(60)}
-                className="px-1.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-900 rounded font-semibold text-[10px] text-center border border-orange-300 cursor-pointer disabled:opacity-50"
-              >
-                +60d (T-30)
-              </button>
-              <button
-                disabled={isTraveling}
-                onClick={() => handleTimeTravel(90)}
-                className="px-1.5 py-1 bg-red-50 hover:bg-red-100 text-red-900 rounded font-semibold text-[10px] text-center border border-red-300 cursor-pointer disabled:opacity-50"
-              >
-                +90d (Matured)
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-1.5">
-              <input
-                type="date"
-                value={customDate}
-                onChange={(e) => setCustomDate(e.target.value)}
-                className="flex-1 bg-gray-50 border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-600 focus:outline-none"
-              />
-              <button
-                disabled={isTraveling}
-                onClick={() => handleTimeTravel(0, customDate)}
-                className="px-2.5 py-1 bg-[#1a365d] hover:bg-blue-900 text-white rounded font-semibold text-[11px] cursor-pointer shadow-sm disabled:opacity-50"
-              >
-                Set Date
-              </button>
             </div>
           </div>
 

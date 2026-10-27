@@ -35,7 +35,7 @@ def evaluate_gate1_lockin(db: Any, fdr: FDRInstrument, sim_date: Optional[dateti
     and verifies that bank CBS lien status is clean with zero encumbrance.
     """
     root_node = find_genesis_root_fdr(db, fdr)
-    base_date = sim_date or datetime.date(2026, 10, 24)
+    base_date = sim_date or datetime.date.today()
 
     root_start_date = parse_date(root_node.inst_issue_date) or parse_date(root_node.ocr_issue_date) or datetime.date(2016, 4, 15)
     fdr_mat_date = parse_date(fdr.inst_maturity_date) or parse_date(fdr.ocr_maturity_date) or (root_start_date + datetime.timedelta(days=3650))
