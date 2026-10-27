@@ -1048,6 +1048,7 @@ export const App: React.FC = () => {
                           <BankManagerPortal
                             fdrs={fdrs}
                             targetFdrUid={targetBankFdrUid}
+                            onSelectFdr={setTargetBankFdrUid}
                             onAttestationSubmitted={loadData}
                             onReturnToScrutiny={() => {
                               const dbOfficer = userPresets.find(p => p.role === 'AICTE_SCRUTINY_OFFICER');

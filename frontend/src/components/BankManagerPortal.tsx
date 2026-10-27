@@ -8,7 +8,8 @@ import {
   Eye, 
   FileCheck2,
   Building2,
-  Check
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import type { BankFDRSession, FDRInstrument } from '../types';
 import { api, getAssetUrl } from '../services/api';
@@ -16,6 +17,7 @@ import { api, getAssetUrl } from '../services/api';
 interface BankManagerPortalProps {
   fdrs: FDRInstrument[];
   targetFdrUid?: string;
+  onSelectFdr?: (uid: string) => void;
   onAttestationSubmitted: () => void;
   onReturnToScrutiny?: () => void;
 }
@@ -23,18 +25,20 @@ interface BankManagerPortalProps {
 export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
   fdrs,
   targetFdrUid,
+  onSelectFdr,
   onAttestationSubmitted,
   onReturnToScrutiny
 }) => {
-  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(targetFdrUid || 'FDR-2026-309');
+  const [selectedFdrUid, setSelectedFdrUid] = useState<string>(targetFdrUid || (fdrs[0]?.fdr_uid || 'FDR-2026-309'));
   const [session, setSession] = useState<BankFDRSession | null>(null);
   const [loadingSession, setLoadingSession] = useState<boolean>(true);
 
-  // OTP state
-  const [otpCode, setOtpCode] = useState<string>('849201');
-  const [otpVerified, setOtpVerified] = useState<boolean>(true);
+  // Secure 2FA Gateway State (Portal locked until OTP entered)
+  const [otpCode, setOtpCode] = useState<string>('');
+  const [otpVerified, setOtpVerified] = useState<boolean>(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
-  // Attestation form fields
+  // Attestation form fields (CBS Truth)
   const [actualPrincipal, setActualPrincipal] = useState<number>(1500000);
   const [actualMaturityDate, setActualMaturityDate] = useState<string>('2031-06-09');
   const [lienStatus, setLienStatus] = useState<string>('LOAN_TAKEN_ENCUMBERED');
@@ -64,7 +68,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
         const data = await api.getBankFDRSession(selectedFdrUid);
         setSession(data);
         
-        // Setup initial form based on scenario or bank truth from DB
+        // Setup initial form based on scenario or existing bank truth from DB
         const isDiscrepant = (data as any).discrepancy_flag || (data as any).math_tamper_flag || (data as any).verification_status === 'MISMATCH_FLAGGED' || ((data as any).bank_principal_amount != null && (data as any).bank_principal_amount !== data.inst_principal_amount);
 
         if ((data as any).bank_principal_amount != null) {
@@ -102,30 +106,18 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
     fetchSession();
   }, [selectedFdrUid]);
 
-  const handleApplyPreset = (type: 'CLEAN' | 'FRAUD') => {
-    if (type === 'CLEAN') {
-      setActualPrincipal(session?.inst_principal_amount || 3500000);
-      setActualMaturityDate(session?.inst_maturity_date || '2034-10-24');
-      setLienStatus('ACTIVE_JOINT_AICTE');
-      setRemarks(
-        'Core Banking balance and maturity match certificate. Security deposit jointly pledged to Member Secretary, AICTE with zero third-party encumbrances.'
-      );
+  const handleVerifyOtp = () => {
+    if (otpCode.trim().length === 6) {
+      setOtpVerified(true);
+      setOtpError(null);
     } else {
-      const claimed = session?.inst_principal_amount || 3500000;
-      const trueBal = (session as any)?.bank_principal_amount || Math.round(claimed * 0.42857);
-      setActualPrincipal(trueBal);
-      setActualMaturityDate((session as any)?.bank_maturity_date || session?.inst_maturity_date || '2031-06-09');
-      setLienStatus('LOAN_TAKEN_ENCUMBERED');
-      setRemarks(
-        `CBS Attestation Alert: True principal is Rs ${trueBal.toLocaleString('en-IN')} only. An unauthorized loan encumbrance is marked in favor of the college management.`
-      );
+      setOtpError('Please enter a valid 6-digit numeric authorization OTP.');
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode.length === 6) {
-      setOtpVerified(true);
-    }
+  const handleSelectFdr = (uid: string) => {
+    setSelectedFdrUid(uid);
+    onSelectFdr?.(uid);
   };
 
   const handleSubmitAttestation = async () => {
@@ -135,7 +127,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
       const res = await api.submitTier2Attestation({
         fdr_uid: session.fdr_uid,
         magic_link_token: session.magic_link_token || 'ml_demo_token',
-        otp_code: otpCode,
+        otp_code: otpCode || '849201',
         attested_principal: Number(actualPrincipal),
         attested_maturity_date: actualMaturityDate,
         lien_status: lienStatus,
@@ -166,10 +158,134 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
     }).format(amount);
   };
 
+  // 1. GATEWAY SCREEN: Render when OTP is not verified yet
+  if (!otpVerified) {
+    return (
+      <div id="bank-manager-gateway" className="max-w-2xl mx-auto my-6 space-y-6">
+        <div className="bg-white rounded-lg border-2 border-[#1E3A8A]/30 p-8 shadow-md">
+          {/* Gateway Header */}
+          <div className="flex items-start space-x-4 border-b border-gray-200 pb-5">
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 shadow-xs">
+              <ShieldCheck className="w-8 h-8 text-[#1E3A8A]" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200 font-mono">
+                  ZERO-LOGIN 2FA GATEWAY
+                </span>
+                <span className="text-[11px] font-bold text-gray-500">
+                  AICTE Regulation Bureau
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight mt-1">
+                Bank Branch Manager Attestation Gateway
+              </h2>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Official Depository Fixed Deposit Verification for Scheduled Commercial Banks
+              </p>
+            </div>
+          </div>
+
+          <div className="py-6 space-y-5">
+            {/* Regulatory Notice Banner */}
+            <div className="bg-amber-50 border border-amber-300 rounded p-4 text-xs text-amber-900 flex items-start space-x-3">
+              <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-950">
+                  Encrypted Regulatory Depository Session
+                </p>
+                <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                  You have accessed the secure depository attestation micro-portal via an encrypted, single-use regulatory link. To unlock institution deposit records and attest Core Banking System (CBS) balances, please enter the 6-digit One-Time Password (OTP) dispatched to your registered branch email.
+                </p>
+              </div>
+            </div>
+
+            {/* Session Recipient Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-gray-50 p-4 rounded border border-gray-200 font-sans">
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase font-bold block">Depository Bank:</span>
+                <span className="font-bold text-gray-900 text-sm">
+                  {session?.inst_bank_name || 'State Bank of India'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase font-bold block">Registered Branch Manager Email:</span>
+                <span className="font-mono text-blue-950 font-bold text-xs">
+                  {session?.bank_manager_email || 'bm.pune@sbi.co.in'}
+                </span>
+              </div>
+              <div className="sm:col-span-2 pt-2 border-t border-gray-200 flex flex-wrap items-center justify-between gap-1">
+                <span className="text-[10px] text-gray-500">Cryptographic Magic-Link Token:</span>
+                <span className="font-mono text-[10px] text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-300">
+                  {session?.magic_link_token ? `${session.magic_link_token.slice(0, 18)}...` : 'ml_sec_849201'}
+                </span>
+              </div>
+            </div>
+
+            {/* OTP Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyOtp();
+              }}
+              className="space-y-4 pt-2"
+            >
+              <div>
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2 text-center">
+                  Enter 6-Digit Authorization Code (OTP)
+                </label>
+                <div className="flex justify-center">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setOtpCode(val);
+                      if (otpError) setOtpError(null);
+                    }}
+                    placeholder="849201"
+                    autoFocus
+                    className="w-56 text-center text-2xl font-mono font-bold tracking-[0.3em] bg-gray-50 border-2 border-gray-300 focus:border-blue-900 focus:bg-white rounded-lg py-3 px-4 shadow-inner text-gray-900 focus:outline-none transition-all"
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 text-center mt-2">
+                  Authorization Code sent to registered branch email • Demo OTP: <strong className="font-mono text-gray-800">849201</strong>
+                </p>
+                {otpError && (
+                  <p className="text-xs text-red-600 font-bold text-center mt-2 flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {otpError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-bold text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <Key className="w-4 h-4 text-amber-300" />
+                <span>Verify OTP &amp; Open Attestation Desk</span>
+              </button>
+            </form>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4 flex items-center justify-between text-[11px] text-gray-500">
+            <span>Protected under Information Technology Act, 2000</span>
+            <span className="flex items-center gap-1 font-semibold text-green-700">
+              <CheckCircle2 className="w-3.5 h-3.5" /> 256-bit TLS Encrypted
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. MAIN DASHBOARD: Render only after OTP is verified
   return (
     <div id="bank-manager-portal" className="space-y-6">
       
-      {/* High-Trust Zero-Login Security Header */}
+      {/* High-Trust Authenticated Header */}
       <div className="bg-white rounded border border-gray-300 p-5 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
@@ -181,67 +297,161 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200">
                   Bank Attestation Gateway
                 </span>
-                <span className="text-[11px] font-mono text-green-800 bg-green-50 px-2 py-0.5 rounded border border-green-300 font-semibold">
-                  Session Token: {session?.magic_link_token ? `${session.magic_link_token.slice(0, 12)}...` : 'ml_verified_active'}
+                <span className="text-[11px] font-mono text-green-800 bg-green-50 px-2 py-0.5 rounded border border-green-300 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-green-600" />
+                  2FA Session Authenticated
                 </span>
               </div>
-              <h2 className="text-base font-bold text-gray-900 tracking-tight mt-0.5 flex items-center gap-2">
+              <h2 className="text-base font-bold text-gray-900 tracking-tight mt-0.5">
                 AICTE Regulatory Bureau — External Bank Branch Manager Attestation Micro-Portal
               </h2>
             </div>
           </div>
 
-          {/* 2FA OTP Step Box */}
-          <div className="flex items-center space-x-2 bg-gray-50 border border-gray-300 p-2 rounded">
-            <div className="text-right">
-              <div className="text-[10px] text-gray-600 uppercase font-bold">2FA SMS / Email OTP</div>
-              <div className="text-[11px] font-mono text-orange-700 font-bold">{session?.bank_manager_email || 'bm.pune@sbi.co.in'}</div>
+          {/* Authenticated Session Badge */}
+          <div className="flex items-center space-x-3 bg-gray-50 border border-gray-300 p-2.5 rounded text-xs min-w-max">
+            <div className="w-2.5 h-2.5 rounded-full bg-green-600 animate-pulse" />
+            <div>
+              <div className="text-[10px] text-gray-600 uppercase font-bold">Authenticated Branch Manager</div>
+              <div className="font-mono text-xs font-bold text-blue-950">
+                {session?.bank_manager_email || 'bm.pune@sbi.co.in'}
+              </div>
             </div>
-            <input
-              type="text"
-              maxLength={6}
-              value={otpCode}
-              onChange={(e) => {
-                const val = e.target.value;
-                setOtpCode(val);
-                if (val === '849201' || val.length === 6) {
-                  setOtpVerified(true);
-                }
-              }}
-              className="w-20 bg-white border border-gray-300 rounded px-2 py-1 text-center font-mono font-bold text-gray-900 text-xs focus:outline-none focus:border-blue-900"
-            />
-            <button
-              onClick={handleVerifyOtp}
-              className={`px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center space-x-1 ${
-                otpVerified
-                  ? 'bg-green-700 text-white'
-                  : 'bg-[#1a365d] hover:bg-blue-900 text-white'
-              }`}
-            >
-              {otpVerified ? <Check className="w-3.5 h-3.5" /> : <Key className="w-3.5 h-3.5" />}
-              <span>{otpVerified ? 'Verified ✓' : 'Verify'}</span>
-            </button>
+            <span className="text-[10px] font-mono text-green-900 bg-green-100 border border-green-300 px-2 py-0.5 rounded font-bold">
+              ACTIVE ✓
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Target Instrument Selector for Demo Ease */}
-      <div className="flex items-center justify-between bg-white rounded border border-gray-300 px-4 py-2.5 text-xs">
-        <span className="text-gray-600 font-semibold">Active Attestation Target:</span>
-        <div className="flex items-center space-x-2">
-          {fdrs.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setSelectedFdrUid(f.fdr_uid)}
-              className={`px-3 py-1 rounded font-mono text-xs font-bold transition cursor-pointer ${
-                selectedFdrUid === f.fdr_uid
-                  ? 'bg-[#1a365d] text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-              }`}
-            >
-              {f.fdr_uid}
-            </button>
-          ))}
+      {/* Vertical Data Table: Assigned FDR Attestation Queue */}
+      <div className="bg-white rounded border border-gray-300 p-5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
+          <div className="flex items-center space-x-2">
+            <Building2 className="w-5 h-5 text-blue-900" />
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                Assigned FDR Attestation Queue
+              </h3>
+              <p className="text-[11px] text-gray-500">
+                Select an FDR record from your branch queue below to review self-declared institution claims against Core Banking System (CBS) ledgers.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-mono font-bold text-blue-950 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded shrink-0">
+            {fdrs.length} Instruments in Queue
+          </span>
+        </div>
+
+        <div className="overflow-x-auto border border-gray-200 rounded">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-gray-300 text-[11px] text-gray-700 font-bold uppercase tracking-wider bg-gray-100">
+                <th className="py-2.5 px-3">FDR Receipt No</th>
+                <th className="py-2.5 px-3">Institution Name</th>
+                <th className="py-2.5 px-3">Claimed Principal</th>
+                <th className="py-2.5 px-3">Maturity Date</th>
+                <th className="py-2.5 px-3">Attestation Status</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 font-sans bg-white">
+              {fdrs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-6 text-gray-500">
+                    No deposit instruments found in your branch attestation queue.
+                  </td>
+                </tr>
+              ) : (
+                fdrs.map((f) => {
+                  const isSelected = selectedFdrUid === f.fdr_uid;
+                  const instName = f.institution?.name || `Institution #${f.institution_id}`;
+                  const fdrNumber = f.inst_fdr_number || f.fdr_uid;
+
+                  return (
+                    <tr
+                      key={f.id}
+                      onClick={() => handleSelectFdr(f.fdr_uid)}
+                      className={`transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-50/80 font-medium'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      {/* FDR Receipt No */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-mono font-bold text-blue-950">
+                            {fdrNumber}
+                          </span>
+                          <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                            {f.fdr_uid}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Institution Name */}
+                      <td className="py-3 px-3">
+                        <div className="font-medium text-gray-900 max-w-xs truncate" title={instName}>
+                          {instName}
+                        </div>
+                        {f.institution?.pid && (
+                          <span className="text-[10px] text-gray-500 font-mono">
+                            PID: {f.institution.pid}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Claimed Principal */}
+                      <td className="py-3 px-3 font-mono font-bold text-gray-900">
+                        {formatCurrency(f.inst_principal_amount)}
+                      </td>
+
+                      {/* Maturity Date */}
+                      <td className="py-3 px-3 font-mono text-gray-700">
+                        {f.inst_maturity_date || '—'}
+                      </td>
+
+                      {/* Attestation Status */}
+                      <td className="py-3 px-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                          f.bank_verified_status === 'VERIFIED_MATCH'
+                            ? 'bg-green-100 text-green-800 border-green-300'
+                            : f.bank_verified_status === 'MISMATCH_FLAGGED'
+                            ? 'bg-red-100 text-red-800 border-red-300'
+                            : 'bg-amber-100 text-amber-800 border-amber-300'
+                        }`}>
+                          {f.bank_verified_status === 'VERIFIED_MATCH'
+                            ? 'CBS Attested (Matched)'
+                            : f.bank_verified_status === 'MISMATCH_FLAGGED'
+                            ? 'Discrepancy Flagged'
+                            : 'Pending Attestation'}
+                        </span>
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectFdr(f.fdr_uid);
+                          }}
+                          className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#1E3A8A] text-white shadow-xs'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300'
+                          }`}
+                        >
+                          {isSelected ? 'Reviewing Form ↓' : 'Select for Attestation'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -290,7 +500,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Bank & Branch IFSC:</span>
+                  <span className="text-gray-600">Bank &amp; Branch IFSC:</span>
                   <span className="font-semibold text-gray-800">{session.inst_bank_name} ({session.inst_ifsc})</span>
                 </div>
                 <div className="flex justify-between">
@@ -328,27 +538,12 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
             <div className="flex items-center space-x-2">
               <FileCheck2 className="w-4 h-4 text-blue-900" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">
-                Official Core Banking System (CBS) Attestation
+                Official Core Banking System (CBS) Direct Attestation Form
               </h3>
             </div>
-            
-            {/* Quick Demo Pre-fill Presets */}
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('CLEAN')}
-                className="px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-300 rounded text-[11px] font-bold transition cursor-pointer"
-              >
-                Preset A: 100% Clean
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('FRAUD')}
-                className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded text-[11px] font-bold transition cursor-pointer"
-              >
-                Preset B: Flag Fraud (₹15L)
-              </button>
-            </div>
+            <span className="text-[10px] font-mono font-bold text-blue-950 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+              Depository CBS Terminal
+            </span>
           </div>
 
           <div className="space-y-4 text-xs">
@@ -366,8 +561,10 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
               />
               {session && actualPrincipal !== session.inst_principal_amount && (
                 <p className="text-[11px] text-red-700 font-semibold mt-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                  Discrepancy: College claimed {formatCurrency(session.inst_principal_amount)} vs Bank CBS Truth {formatCurrency(actualPrincipal)}
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <span>
+                    Discrepancy: College claimed {formatCurrency(session.inst_principal_amount)} vs Bank CBS Truth {formatCurrency(actualPrincipal)}
+                  </span>
                 </p>
               )}
             </div>
@@ -388,7 +585,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
             {/* Core Banking Lien Status Dropdown */}
             <div>
               <label className="text-[11px] text-gray-800 font-bold block mb-1">
-                Authoritative CBS Lien & Encumbrance Status <span className="text-red-600">*</span>
+                Authoritative CBS Lien &amp; Encumbrance Status <span className="text-red-600">*</span>
               </label>
               <select
                 aria-label="Core Banking Lien Status"
@@ -417,6 +614,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                 rows={3}
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Enter core banking remarks and audit observations..."
                 className="w-full bg-gray-50 border border-gray-300 rounded p-3 text-xs text-gray-900 focus:outline-none focus:border-blue-900 font-sans"
               />
             </div>
@@ -439,7 +637,7 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
             {attestationSuccess && (
               <div className="p-4 rounded bg-green-50 border border-green-300 text-green-900 text-xs space-y-2.5 shadow-sm">
                 <div className="flex items-center space-x-2 font-bold text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-700" />
+                  <CheckCircle2 className="w-5 h-5 text-green-700 shrink-0" />
                   <span>Attestation Registered on AICTE Ledger!</span>
                 </div>
                 <p>{attestationSuccess.message}</p>
@@ -454,7 +652,8 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                       onClick={onReturnToScrutiny}
                       className="px-3.5 py-1.5 rounded bg-[#1E3A8A] hover:bg-[#172554] text-white font-bold text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-xs"
                     >
-                      <span>Return to Central Scrutiny Desk →</span>
+                      <span>Return to Central Scrutiny Desk</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
