@@ -9,9 +9,11 @@ import {
   RefreshCw, 
   FileCheck2, 
   ArrowRight,
-  X
+  X,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
-import type { Institution, ForensicsAnalyzeResponse } from '../types';
+import type { Institution } from '../types';
 import { api } from '../services/api';
 
 interface NodalFDRSubmissionDeskProps {
@@ -53,6 +55,7 @@ export const NodalFDRSubmissionDesk: React.FC<NodalFDRSubmissionDeskProps> = ({
     auditHash: string;
     message: string;
     timestamp: string;
+    documentUrl?: string | null;
   } | null>(null);
 
   // File selection handler
@@ -94,101 +97,36 @@ export const NodalFDRSubmissionDesk: React.FC<NodalFDRSubmissionDeskProps> = ({
 
     setSubmitting(true);
     try {
-      // 1. Run Background Forensics & OCR Pipeline (Honoring Critical Guardrails)
+      // Assemble multipart/form-data with file and deposit parameters
       const formData = new FormData();
       formData.append('institution_id', institution.id.toString());
+      formData.append('inst_fdr_number', fdrNumber);
+      formData.append('inst_bank_name', bankName);
+      formData.append('inst_ifsc', ifsc.toUpperCase());
+      formData.append('inst_principal_amount', principalAmount.toString());
+      formData.append('inst_interest_rate', interestRate.toString());
+      const maturityAmount = Math.round(Number(principalAmount) * Math.pow(1 + (Number(interestRate) / 400), 4 * 8));
+      formData.append('inst_maturity_amount', maturityAmount.toString());
+      formData.append('inst_issue_date', issueDate);
+      formData.append('inst_maturity_date', maturityDate);
+      formData.append('inst_joint_holder_text', `JOINTLY IN THE NAME OF ${institution.name.toUpperCase()} AND REGIONAL OFFICER, AICTE`);
+      formData.append('inst_no_lien_declared', noLienDeclared ? 'true' : 'false');
+      formData.append('relation_type', 'INITIAL_DEPOSIT');
+
+      // Bind the file input so that the selected file is appended to FormData object
       if (selectedFile) {
         formData.append('file', selectedFile);
-      } else {
-        // Fallback to sample_1 genuine template if no raw file selected
-        formData.append('sample_id', 'sample_1');
       }
 
-      let analysisResult: ForensicsAnalyzeResponse;
-      try {
-        analysisResult = await api.analyzeFDRPreview(formData);
-      } catch (analysisErr) {
-        console.warn('Background preview analysis fallback triggered', analysisErr);
-        // Resilient fallback structure if background analysis warning
-        analysisResult = {
-          ocr_data: {
-            fdr_number: fdrNumber,
-            bank_name: bankName,
-            ifsc: ifsc,
-            principal_amount: principalAmount,
-            interest_rate: interestRate,
-            maturity_amount: Math.round(principalAmount * Math.pow(1 + (interestRate / 400), 4 * 8)),
-            issue_date: issueDate,
-            maturity_date: maturityDate,
-            holder_clause_text: `JOINTLY IN THE NAME OF ${institution.name.toUpperCase()} AND REGIONAL OFFICER, AICTE`,
-            no_lien_text: 'NO LIEN / NO PREMATURE ENCASHMENT ALLOWED WITHOUT PRIOR WRITTEN NOC FROM AICTE',
-            ocr_joint_clause_found: true,
-            ocr_no_lien_clause_found: true
-          },
-          ela_result: {
-            ela_score: 0.02,
-            heatmap_url: '/static/sample_fdrs/sample_1_genuine_sbi.jpg',
-            tamper_detected: false,
-            highlight_box: null
-          },
-          math_result: {
-            expected_maturity: Math.round(principalAmount * Math.pow(1 + (interestRate / 400), 4 * 8)),
-            math_tamper_flag: false,
-            variance_pct: 0,
-            tenure_years: 8.0,
-            inferred_principal: principalAmount,
-            formula: 'A = P * (1 + r/400)^(4t)',
-            explanation: 'Compound interest matches stated principal and maturity.'
-          },
-          clause_result: {
-            required_norm: institution.required_fdr_norm || 3500000,
-            principal: principalAmount,
-            shortfall: Math.max(0, (institution.required_fdr_norm || 3500000) - principalAmount),
-            norm_satisfied: principalAmount >= (institution.required_fdr_norm || 3500000),
-            joint_clause_valid: true,
-            no_lien_clause_valid: true,
-            all_clauses_valid: true,
-            deficiencies: []
-          },
-          phash_result: {
-            duplicate_flag: false,
-            phash_string: '0000000000000000',
-            hamming_distance: 0,
-            matched_fdr_uid: null,
-            matched_institution_name: null,
-            message: 'Unique document perceptual hash'
-          },
-          has_discrepancy: false,
-          recommended_status: 'UNDER_SCRUTINY',
-          document_path: '/static/sample_fdrs/sample_1_genuine_sbi.jpg'
-        };
-      }
-
-      // 2. Commit Verified Instrument to Dual-Truth Registry via live backend
-      const payload = {
-        institution_id: institution.id,
-        parent_fdr_id: null,
-        relation_type: 'INITIAL_DEPOSIT',
-        inst_fdr_number: fdrNumber,
-        inst_bank_name: bankName,
-        inst_ifsc: ifsc.toUpperCase(),
-        inst_principal_amount: Number(principalAmount),
-        inst_interest_rate: Number(interestRate),
-        inst_maturity_amount: Math.round(Number(principalAmount) * Math.pow(1 + (Number(interestRate) / 400), 4 * 8)),
-        inst_issue_date: issueDate,
-        inst_maturity_date: maturityDate,
-        inst_joint_holder_text: `JOINTLY IN THE NAME OF ${institution.name.toUpperCase()} AND REGIONAL OFFICER, AICTE`,
-        inst_no_lien_declared: noLienDeclared,
-        analysis: analysisResult
-      };
-
-      const res = await api.submitFDR(payload);
+      // Dispatch POST request with multipart/form-data encoding to backend
+      const res = await api.submitFDR(formData);
 
       setSubmissionReceipt({
         fdrUid: res.fdr.fdr_uid,
         auditHash: res.audit_entry_hash,
         message: res.message,
-        timestamp: new Date().toLocaleString('en-IN')
+        timestamp: new Date().toLocaleString('en-IN'),
+        documentUrl: res.documentUrl || res.fdr.documentUrl || (res.fdr as any)?.document_url
       });
 
       // Refresh parent lists
@@ -304,6 +242,25 @@ export const NodalFDRSubmissionDesk: React.FC<NodalFDRSubmissionDeskProps> = ({
                 {submissionReceipt.auditHash}
               </div>
             </div>
+
+            {submissionReceipt.documentUrl && (
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-slate-700 block">Supporting Document (Cloudinary Secure Storage):</span>
+                  <span className="text-[10px] text-slate-500 font-mono truncate max-w-xs block">{submissionReceipt.documentUrl}</span>
+                </div>
+                <a
+                  href={submissionReceipt.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-xs font-semibold transition shadow-2xs"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>View Source FDR</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-md text-xs text-blue-950 space-y-1">

@@ -1,0 +1,19 @@
+{
+  "name": "vidyakosh-backend",
+  "version": "1.0.0",
+  "description": "AICTE VidyaKosh - Centralized e-FDR & Security Deposit Portal Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "express": "^4.21.1",
+    "mongoose": "^8.8.0",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5"
+  }
+}

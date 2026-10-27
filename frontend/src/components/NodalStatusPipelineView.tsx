@@ -8,7 +8,8 @@ import {
   ChevronRight, 
   ShieldCheck, 
   FileSpreadsheet,
-  BadgeAlert
+  BadgeAlert,
+  Eye
 } from 'lucide-react';
 import type { FDRInstrument, Institution } from '../types';
 
@@ -268,6 +269,17 @@ export const NodalStatusPipelineView: React.FC<NodalStatusPipelineViewProps> = (
                       <span className="text-xs text-slate-700 font-semibold">
                         Receipt Ref: <span className="font-mono text-slate-900">{fdr.inst_fdr_number || 'FDR-REC-AICTE'}</span>
                       </span>
+                      {fdr.documentUrl && (
+                        <button
+                          type="button"
+                          onClick={() => window.open(fdr.documentUrl!, '_blank', 'noopener,noreferrer')}
+                          className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-[10px] font-semibold transition cursor-pointer ml-2 shadow-2xs"
+                          title="View Source FDR Receipt on Cloudinary"
+                        >
+                          <Eye className="w-3 h-3 text-[#1E3A8A]" />
+                          <span>View Source FDR</span>
+                        </button>
+                      )}
                     </div>
                     <div className="text-xs text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                       <span><strong>Bank:</strong> {fdr.inst_bank_name}</span>

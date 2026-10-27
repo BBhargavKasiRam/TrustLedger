@@ -199,8 +199,20 @@ export const api = {
     return res.data;
   },
 
-  submitFDR: async (payload: FDRSubmitRequest): Promise<{ message: string; fdr: FDRInstrument; audit_entry_hash: string }> => {
-    const res = await apiClient.post<{ message: string; fdr: FDRInstrument; audit_entry_hash: string }>('/fdrs/submit', payload);
+  submitFDR: async (payload: FDRSubmitRequest | FormData): Promise<{ message: string; fdr: FDRInstrument; audit_entry_hash: string; documentUrl?: string }> => {
+    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+    const url = isFormData ? '/fdrs/submit-multipart' : '/fdrs/submit';
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined;
+    const res = await apiClient.post<{ message: string; fdr: FDRInstrument; audit_entry_hash: string; documentUrl?: string }>(url, payload, config);
+    return res.data;
+  },
+
+  submitFDRMultipart: async (formData: FormData): Promise<{ message: string; fdr: FDRInstrument; audit_entry_hash: string; documentUrl?: string }> => {
+    const res = await apiClient.post<{ message: string; fdr: FDRInstrument; audit_entry_hash: string; documentUrl?: string }>('/fdrs/submit-multipart', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return res.data;
   },
 

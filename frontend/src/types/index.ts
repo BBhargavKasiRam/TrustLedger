@@ -140,9 +140,11 @@ export interface FDRInstrument {
   bank_verified_at?: string | null;
   magic_link_token?: string | null;
 
-  // Lifecycle
+  // Lifecycle & Supporting Document
   lifecycle_status: string;
   document_path?: string | null;
+  documentUrl?: string | null;
+  document_url?: string | null;
   created_at?: string;
   updated_at?: string;
   institution?: Institution;
@@ -423,6 +425,8 @@ export interface LineageGraphNode {
   depth: number;
   is_root: boolean;
   document_path?: string | null;
+  documentUrl?: string | null;
+  document_url?: string | null;
   audit_hash: string;
 }
 

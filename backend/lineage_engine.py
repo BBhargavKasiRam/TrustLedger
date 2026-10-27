@@ -236,6 +236,8 @@ def build_lineage_graph(
         is_root = f.parent_fdr_id is None
         is_active = f.lifecycle_status in ["ACTIVE_VERIFIED", "APPROACHING_MATURITY_T90", "APPROACHING_MATURITY_T60", "APPROACHING_MATURITY_T30"]
 
+        doc_url = getattr(f, "documentUrl", None) or getattr(f, "document_url", None) or getattr(f, "document_path", None)
+
         nodes.append({
             "id": str(f.id),
             "type": "customFdrNode",
@@ -251,7 +253,9 @@ def build_lineage_graph(
                 "relation_type": f.relation_type or ("INITIAL_DEPOSIT" if is_root else "RENEWAL"),
                 "is_root": is_root,
                 "is_active": is_active,
-                "level": lvl
+                "level": lvl,
+                "documentUrl": doc_url,
+                "document_url": doc_url
             }
         })
 

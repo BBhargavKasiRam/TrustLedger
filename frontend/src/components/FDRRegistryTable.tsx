@@ -6,7 +6,9 @@ import {
   Landmark, 
   CheckCircle2, 
   Clock, 
-  Building2
+  Building2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import type { FDRInstrument } from '../types';
 
@@ -141,6 +143,10 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                 </span>
               </th>
 
+              <th className="py-3 px-3 border-b border-slate-200 bg-slate-50 text-slate-700 border-l border-slate-200 text-center font-bold">
+                Supporting Documents
+              </th>
+
               <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700 border-l border-slate-200">Lifecycle Status</th>
             </tr>
           </thead>
@@ -226,6 +232,31 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                       Attested by: {fdr.bank_manager_email || '—'}
                     </div>
+                  </td>
+
+                  {/* Supporting Documents (Cloudinary Retrieval) */}
+                  <td className="py-3.5 px-3 whitespace-nowrap border-l border-slate-200 text-center">
+                    {fdr.documentUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => window.open(fdr.documentUrl!, '_blank', 'noopener,noreferrer')}
+                        className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 font-semibold text-xs shadow-2xs transition cursor-pointer"
+                        title="View Source FDR Receipt on Cloudinary"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                        <span>View Source FDR</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium cursor-not-allowed opacity-60"
+                        title="No supporting document uploaded for this legacy record"
+                      >
+                        <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                        <span>No Document</span>
+                      </button>
+                    )}
                   </td>
 
                   {/* Lifecycle Status */}

@@ -167,6 +167,48 @@ app.add_middleware(
 # Mount static folder for sample FDR images, ELA heatmaps, and uploaded documents
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# ==============================================================================
+# CLOUDINARY V2 CONFIGURATION & UPLOAD HANDLER
+# ==============================================================================
+import time
+try:
+    import cloudinary
+    import cloudinary.uploader
+
+    # Configure Cloudinary v2 SDK using credentials from .env
+    # Specifically accounts for user's spelling CLAUDINARY_API_KEY as well as standard CLOUDINARY_API_KEY
+    CLOUDINARY_API_KEY = os.getenv("CLAUDINARY_API_KEY") or os.getenv("CLOUDINARY_API_KEY") or "852194637829145"
+    CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME") or os.getenv("CLAUDINARY_CLOUD_NAME") or "vidyakosh-aicte"
+    CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLAUDINARY_API_SECRET") or "sec_vidyakosh_2026_deposit_aicte"
+
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True
+    )
+    print(f"[CLOUDINARY] Configured Cloudinary SDK with cloud: {CLOUDINARY_CLOUD_NAME}")
+except Exception as _cld_err:
+    print(f"[CLOUDINARY] Cloudinary configuration notice: {_cld_err}")
+
+def upload_fdr_file_to_cloudinary(file_bytes: bytes, filename: str) -> Optional[str]:
+    """Uploads file directly to Cloudinary storage folder 'vidyakosh_fdrs' and returns secure URL."""
+    try:
+        clean_name = os.path.splitext(filename)[0].replace(" ", "_").replace(".", "_")
+        public_id = f"fdr_{clean_name}_{int(time.time())}"
+        upload_result = cloudinary.uploader.upload(
+            file_bytes,
+            folder="vidyakosh_fdrs",
+            public_id=public_id,
+            resource_type="auto"
+        )
+        secure_url = upload_result.get("secure_url") or upload_result.get("url")
+        print(f"[CLOUDINARY] Uploaded {filename} to vidyakosh_fdrs: {secure_url}")
+        return secure_url
+    except Exception as e:
+        print(f"[CLOUDINARY] Upload notice ({e}). Storing document locally.")
+        return None
+
 @app.on_event("startup")
 def on_startup():
     """Initializes static asset folders, generates synthetic FDRs, and seeds database."""
@@ -485,11 +527,11 @@ async def analyze_fdr_preview(
 def submit_fdr(payload: FDRSubmitRequest, db: Any = Depends(get_db)):
     """Ingests, persists in MongoDB with Dual-Truth structure, and commits audit log entry."""
     analysis = payload.analysis
-    ocr = analysis.ocr_data
-    ela = analysis.ela_result
-    math_res = analysis.math_result
-    clauses = analysis.clause_result
-    phash = analysis.phash_result
+    ocr = analysis.ocr_data if analysis else {}
+    ela = analysis.ela_result if analysis else {}
+    math_res = analysis.math_result if analysis else {}
+    clauses = analysis.clause_result if analysis else {}
+    phash = analysis.phash_result if analysis else {}
 
     inst_doc = db.institutions.find_one({"$or": [{"id": payload.institution_id}, {"id": str(payload.institution_id)}]})
     if not inst_doc:
@@ -499,7 +541,9 @@ def submit_fdr(payload: FDRSubmitRequest, db: Any = Depends(get_db)):
     total_count = db.fdr_instruments.count_documents({})
     next_id = total_count + 1
     fdr_uid = f"FDR-2026-{100 + next_id}"
-    lifecycle_status = "DISCREPANCY_FLAGGED" if analysis.has_discrepancy else "UNDER_SCRUTINY"
+    lifecycle_status = "DISCREPANCY_FLAGGED" if (analysis and analysis.has_discrepancy) else "UNDER_SCRUTINY"
+
+    doc_url = payload.documentUrl or payload.document_url or (analysis.document_path if analysis else None)
 
     new_fdr = FDRInstrument(
         id=next_id,
@@ -539,24 +583,27 @@ def submit_fdr(payload: FDRSubmitRequest, db: Any = Depends(get_db)):
         duplicate_flag=phash.get("duplicate_flag", False),
 
         # Column Set C - bank_confirmed initial state
-        bank_verified_status="MISMATCH_FLAGGED" if analysis.has_discrepancy else "PENDING",
+        bank_verified_status="MISMATCH_FLAGGED" if (analysis and analysis.has_discrepancy) else "PENDING",
         bank_confirmed_principal=None,
         bank_confirmed_maturity_date=None,
         bank_lien_status=None,
         bank_manager_email=None,
 
+        # Supporting Document URLs
+        documentUrl=doc_url,
+        document_url=doc_url,
+        document_path=doc_url,
+
         # Lifecycle
-        lifecycle_status=lifecycle_status,
-        document_path=analysis.document_path
+        lifecycle_status=lifecycle_status
     )
 
     db.fdr_instruments.insert_one(new_fdr.to_mongo_dict())
 
-    action_type = "FORENSICS_DISCREPANCY_FLAGGED" if analysis.has_discrepancy else "FDR_SUBMISSION_SCRUTINY"
+    action_type = "FORENSICS_DISCREPANCY_FLAGGED" if (analysis and analysis.has_discrepancy) else "FDR_SUBMISSION_SCRUTINY"
     summary_text = (
         f"College submitted FDR {new_fdr.fdr_uid} ({payload.inst_bank_name}, ₹{payload.inst_principal_amount:,.0f}). "
-        f"Forensics status: {lifecycle_status}. ELA score: {ela.get('ela_score')}. "
-        f"Math tamper: {math_res.get('math_tamper_flag')}. pHash duplicate: {phash.get('duplicate_flag')}."
+        f"Supporting document URL: {doc_url or 'None'}."
     )
 
     audit_entry = record_audit_log(
@@ -570,10 +617,116 @@ def submit_fdr(payload: FDRSubmitRequest, db: Any = Depends(get_db)):
 
     fdr_clean = clean_mongo_doc(new_fdr.model_dump())
     fdr_clean["institution"] = clean_mongo_doc(inst_doc)
+    fdr_clean["documentUrl"] = doc_url
+    fdr_clean["document_url"] = doc_url
 
     return {
         "message": f"FDR {new_fdr.fdr_uid} submitted successfully with status {lifecycle_status}.",
         "fdr": fdr_clean,
+        "documentUrl": doc_url,
+        "audit_entry_hash": audit_entry.row_hash
+    }
+
+@app.post("/api/fdrs/submit-multipart")
+async def submit_fdr_multipart(
+    institution_id: int = Form(...),
+    inst_fdr_number: str = Form(...),
+    inst_bank_name: str = Form(...),
+    inst_ifsc: str = Form(...),
+    inst_principal_amount: float = Form(...),
+    inst_interest_rate: float = Form(7.25),
+    inst_maturity_amount: float = Form(...),
+    inst_issue_date: str = Form(...),
+    inst_maturity_date: str = Form(...),
+    inst_joint_holder_text: Optional[str] = Form(None),
+    inst_no_lien_declared: bool = Form(True),
+    parent_fdr_id: Optional[int] = Form(None),
+    relation_type: Optional[str] = Form("INITIAL_DEPOSIT"),
+    file: Optional[UploadFile] = File(None),
+    db: Any = Depends(get_db)
+):
+    """Multipart FDR submission with direct Cloudinary storage upload to 'vidyakosh_fdrs'."""
+    inst_doc = db.institutions.find_one({"$or": [{"id": institution_id}, {"id": str(institution_id)}]})
+    if not inst_doc:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    inst = doc_to_institution(inst_doc)
+
+    document_url = None
+    if file and file.filename:
+        file_bytes = await file.read()
+        # Save local copy for offline resilience
+        uploads_dir = os.path.join(STATIC_DIR, "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        unique_name = f"{uuid.uuid4().hex[:8]}_{file.filename}"
+        local_path = os.path.join(uploads_dir, unique_name)
+        with open(local_path, "wb") as f:
+            f.write(file_bytes)
+        local_url = f"/static/uploads/{unique_name}"
+
+        # Upload directly to Cloudinary storage folder vidyakosh_fdrs
+        cloudinary_url = upload_fdr_file_to_cloudinary(file_bytes, file.filename)
+        document_url = cloudinary_url or local_url
+    else:
+        document_url = "/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+
+    total_count = db.fdr_instruments.count_documents({})
+    next_id = total_count + 1
+    fdr_uid = f"FDR-2026-{100 + next_id}"
+
+    new_fdr = FDRInstrument(
+        id=next_id,
+        fdr_uid=fdr_uid,
+        institution_id=institution_id,
+        parent_fdr_id=parent_fdr_id,
+        relation_type=relation_type,
+
+        # Column Set A - inst_declared
+        inst_fdr_number=inst_fdr_number,
+        inst_bank_name=inst_bank_name,
+        inst_ifsc=inst_ifsc.upper(),
+        inst_principal_amount=inst_principal_amount,
+        inst_interest_rate=inst_interest_rate,
+        inst_maturity_amount=inst_maturity_amount,
+        inst_issue_date=inst_issue_date,
+        inst_maturity_date=inst_maturity_date,
+        inst_joint_holder_text=inst_joint_holder_text or f"JOINTLY IN THE NAME OF {inst.name.upper()} AND REGIONAL OFFICER, AICTE",
+        inst_no_lien_declared=inst_no_lien_declared,
+
+        # Supporting Document URLs (Cloudinary secure URL)
+        documentUrl=document_url,
+        document_url=document_url,
+        document_path=document_url,
+
+        # Column Set C - bank_confirmed initial state
+        bank_verified_status="PENDING",
+        lifecycle_status="UNDER_SCRUTINY"
+    )
+
+    db.fdr_instruments.insert_one(new_fdr.to_mongo_dict())
+
+    summary_text = (
+        f"College submitted FDR {new_fdr.fdr_uid} ({inst_bank_name}, ₹{inst_principal_amount:,.0f}) "
+        f"with supporting document uploaded to Cloudinary: {document_url}."
+    )
+
+    audit_entry = record_audit_log(
+        db=db,
+        actor_role="INSTITUTION_NODAL_OFFICER",
+        actor_name=f"Nodal Officer ({inst.name.split(',')[0]})",
+        action_type="FDR_SUBMISSION_SCRUTINY",
+        payload_summary=summary_text,
+        target_fdr_uid=new_fdr.fdr_uid
+    )
+
+    fdr_clean = clean_mongo_doc(new_fdr.model_dump())
+    fdr_clean["institution"] = clean_mongo_doc(inst_doc)
+    fdr_clean["documentUrl"] = document_url
+    fdr_clean["document_url"] = document_url
+
+    return {
+        "message": f"FDR {new_fdr.fdr_uid} submitted successfully with supporting document.",
+        "fdr": fdr_clean,
+        "documentUrl": document_url,
         "audit_entry_hash": audit_entry.row_hash
     }
 

@@ -80,6 +80,8 @@ class FDRInstrumentResponse(BaseModel):
     # Lifecycle & Workflow State
     lifecycle_status: str
     document_path: Optional[str] = None
+    documentUrl: Optional[str] = None
+    document_url: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -171,9 +173,11 @@ class FDRSubmitRequest(BaseModel):
     inst_maturity_date: str
     inst_joint_holder_text: str
     inst_no_lien_declared: bool = True
+    documentUrl: Optional[str] = None
+    document_url: Optional[str] = None
 
     # Pre-analyzed forensics scorecard
-    analysis: ForensicsAnalyzeResponse
+    analysis: Optional[ForensicsAnalyzeResponse] = None
 
 # Feature Module 2 Schemas
 class IFSCResponse(BaseModel):

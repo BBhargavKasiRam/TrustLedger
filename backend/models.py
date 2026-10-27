@@ -137,6 +137,8 @@ class FDRInstrument(MongoBaseModel):
     # Lifecycle & Workflow State
     lifecycle_status: str = "SUBMITTED"
     document_path: Optional[str] = None
+    documentUrl: Optional[str] = None
+    document_url: Optional[str] = None
     created_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
     updated_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
 
@@ -353,6 +355,10 @@ def doc_to_fdr(doc: Optional[Dict[str, Any]]) -> Optional[FDRInstrument]:
         d["_id"] = oid
         if "id" not in d or d["id"] is None:
             d["id"] = oid
+    doc_url = d.get("documentUrl") or d.get("document_url") or d.get("document_path")
+    if doc_url:
+        d["documentUrl"] = doc_url
+        d["document_url"] = doc_url
     fdr = FDRInstrument(**d)
     fdr.sync_dual_truth()
     return fdr

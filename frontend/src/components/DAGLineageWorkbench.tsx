@@ -18,7 +18,9 @@ import {
   MessageSquare,
   AlertTriangle,
   History,
-  UploadCloud
+  UploadCloud,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import type { 
   Institution, 
@@ -495,7 +497,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-3.5">
+              <div className="overflow-x-auto rounded border border-gray-200">
                 {loadingGraph ? (
                   <div className="flex flex-col items-center justify-center space-y-2 py-16">
                     <RefreshCw className="w-8 h-8 text-blue-900 animate-spin" />
@@ -506,95 +508,130 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                     No past deposit records found for this institution.
                   </div>
                 ) : (
-                  graphData.nodes.map((node, index) => {
-                    const isSelected = selectedNode?.id === node.id;
-                    const isLatest = index === graphData.nodes.length - 1;
-                    const isSuperseded = node.lifecycle_status === 'RENEWED_SUPERSEDED';
+                  <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
+                      <tr>
+                        <th className="py-2.5 px-3 border-b border-gray-200"># / UID</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200">Bank &amp; IFSC</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200 text-right">Principal</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200">Lock-In Window</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200">Status</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200 text-center">Supporting Documents</th>
+                        <th className="py-2.5 px-3 border-b border-gray-200 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {graphData.nodes.map((node, index) => {
+                        const isSelected = selectedNode?.id === node.id;
+                        const isLatest = index === graphData.nodes.length - 1;
+                        const isSuperseded = node.lifecycle_status === 'RENEWED_SUPERSEDED';
+                        const docUrl = node.documentUrl || (node as any).document_url;
 
-                    return (
-                      <div
-                        key={node.id}
-                        onClick={() => {
-                          setSelectedNode(node);
-                          setParentFdrUid(node.fdr_uid);
-                          setNewBankName(node.bank_name || 'Canara Bank');
-                          setNewIfsc(node.ifsc || 'CNRB0001234');
-                          setNewPrincipal(node.principal_amount || 3500000);
-                        }}
-                        className={`p-4 rounded border-2 transition-all cursor-pointer relative shadow-sm ${
-                          isSelected
-                            ? 'bg-blue-50/50 border-[#1a365d] ring-1 ring-[#1a365d]'
-                            : 'bg-white border-gray-200 hover:border-blue-400 hover:bg-gray-50/50'
-                        }`}
-                      >
-                        {/* Header Row */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2.5 mb-2.5">
-                          <div className="flex items-center space-x-2.5">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              isLatest ? 'bg-blue-900 text-white' : 'bg-gray-200 text-gray-700'
-                            }`}>
-                              {index + 1}
-                            </div>
-                            <div>
-                              <span className="font-bold text-gray-900 text-sm">{node.bank_name}</span>
-                              <span className="text-[11px] text-gray-500 font-mono ml-2">IFSC: {node.ifsc || '—'}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono text-xs font-bold text-blue-950 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                              {node.fdr_uid}
-                            </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                              isSuperseded
-                                ? 'bg-gray-100 text-gray-700 border-gray-300'
-                                : node.lifecycle_status === 'MATURED_ACTION_PENDING'
-                                ? 'bg-red-100 text-red-800 border-red-300'
-                                : node.lifecycle_status.includes('APPROACHING')
-                                ? 'bg-orange-100 text-orange-800 border-orange-300'
-                                : 'bg-green-100 text-green-800 border-green-300'
-                            }`}>
-                              {isSuperseded ? 'Renewed & Superseded' : node.lifecycle_status.replace(/_/g, ' ')}
-                            </span>
-                          </div>
-                        </div>
+                        return (
+                          <tr
+                            key={node.id}
+                            onClick={() => {
+                              setSelectedNode(node);
+                              setParentFdrUid(node.fdr_uid);
+                              setNewBankName(node.bank_name || 'Canara Bank');
+                              setNewIfsc(node.ifsc || 'CNRB0001234');
+                              setNewPrincipal(node.principal_amount || 3500000);
+                            }}
+                            className={`transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-50/70 font-medium border-l-4 border-l-[#1E3A8A]'
+                                : 'hover:bg-slate-50/80'
+                            }`}
+                          >
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <div className="flex items-center space-x-1.5">
+                                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                  isLatest ? 'bg-[#1E3A8A] text-white' : 'bg-gray-200 text-gray-700'
+                                }`}>
+                                  {index + 1}
+                                </span>
+                                <span className="font-mono text-xs font-bold text-blue-950">
+                                  {node.fdr_uid}
+                                </span>
+                              </div>
+                            </td>
 
-                        {/* Financial and Lock-In Details */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                          <div>
-                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Deposit Amount</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <div className="font-bold text-gray-900">{node.bank_name}</div>
+                              <div className="text-[10px] text-gray-500 font-mono">{node.ifsc || '—'}</div>
+                            </td>
+
+                            <td className="py-2.5 px-3 whitespace-nowrap text-right font-mono font-bold text-gray-900">
                               ₹{(node.principal_amount || 0).toLocaleString('en-IN')}
-                            </span>
-                            <span className="text-[11px] text-gray-600 block">Interest: {node.interest_rate}% p.a.</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Lock-In Window</span>
-                            <span className="font-mono text-gray-800 font-semibold text-xs block">
-                              {node.issue_date} → {node.maturity_date}
-                            </span>
-                            <span className="text-[11px] text-gray-500 block">
-                              {node.is_root ? 'Genesis Initial Deposit' : node.relation_type.replace(/_/g, ' ')}
-                            </span>
-                          </div>
-                          <div className="col-span-2 sm:col-span-1 flex flex-col justify-center items-start sm:items-end">
-                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Status</span>
-                            <span className="text-xs font-medium text-gray-700">
-                              {isLatest ? '● Current Active Deposit' : '✓ Superseded by Renewal'}
-                            </span>
-                            {isSelected ? (
-                              <span className="text-[10px] text-blue-900 font-semibold mt-1 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
-                                Selected for Renewal
+                            </td>
+
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <span className="font-mono text-[11px] text-gray-800">
+                                {node.issue_date} → {node.maturity_date}
                               </span>
-                            ) : (
-                              <span className="text-[10px] text-blue-700 font-medium mt-1 hover:underline">
-                                Click to Select for Renewal →
+                              <span className="text-[10px] text-gray-500 block">
+                                {node.is_root ? 'Genesis Deposit' : node.relation_type.replace(/_/g, ' ')}
                               </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
+                            </td>
+
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                isSuperseded
+                                  ? 'bg-gray-100 text-gray-700 border-gray-300'
+                                  : node.lifecycle_status === 'MATURED_ACTION_PENDING'
+                                  ? 'bg-red-100 text-red-800 border-red-300'
+                                  : node.lifecycle_status.includes('APPROACHING')
+                                  ? 'bg-orange-100 text-orange-800 border-orange-300'
+                                  : 'bg-green-100 text-green-800 border-green-300'
+                              }`}>
+                                {isSuperseded ? 'Renewed & Superseded' : node.lifecycle_status.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+
+                            {/* Supporting Documents (Cloudinary Retrieval) */}
+                            <td className="py-2.5 px-3 whitespace-nowrap text-center align-middle">
+                              {docUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(docUrl, '_blank', 'noopener,noreferrer');
+                                  }}
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                                  title="View Source FDR Receipt on Cloudinary"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>View Source FDR</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium cursor-not-allowed opacity-60"
+                                  title="No supporting document uploaded for this legacy record"
+                                >
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>No Document</span>
+                                </button>
+                              )}
+                            </td>
+
+                            <td className="py-2.5 px-3 whitespace-nowrap text-center">
+                              {isSelected ? (
+                                <span className="text-[10px] font-bold text-[#1E3A8A] bg-blue-100 px-2 py-0.5 rounded border border-blue-300">
+                                  Selected
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-blue-700 hover:underline font-semibold">
+                                  Select →
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 )}
               </div>
             </>
