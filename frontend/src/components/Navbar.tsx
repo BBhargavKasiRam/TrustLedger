@@ -9,7 +9,12 @@ import {
   LogOut,
   Sparkles,
   CheckCircle2,
-  Volume2
+  Volume2,
+  Bell,
+  AlertTriangle,
+  Clock,
+  ShieldAlert,
+  X
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
 import { EmblemOfIndia } from './EmblemOfIndia';
@@ -27,6 +32,94 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI'>('EN');
+  const [showNotificationMenu, setShowNotificationMenu] = useState<boolean>(false);
+
+  // AICTE Requirement 7: Role-Specific Notification Alerts
+  const getRoleNotifications = (role?: UserRole) => {
+    switch (role) {
+      case 'INSTITUTION_NODAL_OFFICER':
+        return [
+          {
+            id: 'n-1',
+            type: 'URGENT',
+            title: 'Statutory Maturity Notice (T-30)',
+            message: 'Deposit FDR-2015-7731 matures in 29 days. 5-year renewal window is now open.',
+            time: '10m ago',
+            tag: 'RENEWAL_REQUIRED'
+          },
+          {
+            id: 'n-2',
+            type: 'INFO',
+            title: 'Bank Verification Attested',
+            message: 'SBI Branch Manager attested ₹35,00,000 principal with Joint AICTE lien.',
+            time: '2h ago',
+            tag: 'CBS_CONFIRMED'
+          }
+        ];
+      case 'AICTE_SCRUTINY_OFFICER':
+        return [
+          {
+            id: 'n-3',
+            type: 'CRITICAL',
+            title: 'SLA Breach: Unreviewed Discrepancy > 7 Days',
+            message: 'State Institute of Tech (PID 1-2003): ₹35L claimed vs ₹15L bank confirmed.',
+            time: '1h ago',
+            tag: 'SLA_BREACH_ESCALATION'
+          },
+          {
+            id: 'n-4',
+            type: 'ACTION',
+            title: 'Release Clearance Request',
+            message: 'Shivalik Polytechnic (PID 1-4004) completed 10-year lock-in. Gate 3 review pending.',
+            time: '3h ago',
+            tag: 'GATE_3_REVIEW'
+          }
+        ];
+      case 'COMPETENT_AUTHORITY':
+        return [
+          {
+            id: 'n-5',
+            type: 'CRITICAL',
+            title: 'Executive DSC PIN Sign-Off Required',
+            message: 'Gate 3 cleared for Shivalik Polytechnic (PID 1-4004). Authorize final Discharge NOC.',
+            time: '30m ago',
+            tag: 'GATE_4_PENDING'
+          },
+          {
+            id: 'n-6',
+            type: 'WARNING',
+            title: 'Statutory Regulatory Hold Imposed',
+            message: 'Soft-hold on Annual EoA placed on overdue institutions under APH Clause 2.14.',
+            time: '1d ago',
+            tag: 'SOFT_HOLD_EOA'
+          }
+        ];
+      case 'BANK_BRANCH_MANAGER':
+        return [
+          {
+            id: 'n-7',
+            type: 'WARNING',
+            title: 'Attestation SLA Reminder (72h)',
+            message: 'Security deposit verification for Vanguard College pending Branch Manager CBS review.',
+            time: '4h ago',
+            tag: 'MAGIC_LINK_PENDING'
+          }
+        ];
+      default:
+        return [
+          {
+            id: 'n-8',
+            type: 'INFO',
+            title: 'AICTE VidyaKosh Operational',
+            message: 'All cryptographic audit chains verified from Genesis block.',
+            time: 'Just now',
+            tag: 'SYSTEM_OK'
+          }
+        ];
+    }
+  };
+
+  const notifications = getRoleNotifications(currentSession?.role);
 
   const handleFontSize = (delta: number) => {
     const newOffset = Math.max(-2, Math.min(2, fontSizeOffset + delta));
@@ -218,6 +311,77 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
             )}
+
+            {/* AICTE Requirement 7: In-App Notification Center Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+                title="SLA Alerts & Regulatory Escalations"
+                className="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-300 transition cursor-pointer"
+              >
+                <Bell className="w-4 h-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-white animate-pulse">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown Drawer */}
+              {showNotificationMenu && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg bg-white shadow-xl border border-slate-300 z-50 overflow-hidden text-xs">
+                  <div className="bg-[#1E3A8A] text-white px-3.5 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Bell className="w-4 h-4 text-amber-400" />
+                      <span className="font-bold tracking-tight">AICTE Statutory Escalations &amp; Notices</span>
+                    </div>
+                    <button
+                      onClick={() => setShowNotificationMenu(false)}
+                      className="text-white hover:text-amber-300 p-0.5 rounded cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-2 divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400">
+                        Zero pending statutory alerts.
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} className="py-2.5 px-2 hover:bg-slate-50 rounded transition flex items-start space-x-2.5">
+                          <div className="mt-0.5 shrink-0">
+                            {n.type === 'CRITICAL' ? (
+                              <ShieldAlert className="w-4 h-4 text-red-600" />
+                            ) : n.type === 'URGENT' || n.type === 'WARNING' ? (
+                              <AlertTriangle className="w-4 h-4 text-amber-600" />
+                            ) : (
+                              <Clock className="w-4 h-4 text-blue-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-slate-900 truncate text-[11px]">{n.title}</span>
+                              <span className="text-[9px] font-mono font-semibold text-slate-400 shrink-0">{n.time}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{n.message}</p>
+                            <span className="inline-block mt-1 text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                              {n.tag}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="bg-slate-50 px-3 py-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                    <span>Role: <strong className="text-slate-800">{getRoleDisplayName(currentSession?.role)}</strong></span>
+                    <span className="font-mono text-emerald-700 font-bold">LIVE TELEMETRY ✓</span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Authenticated User Session Profile Chip */}
             {currentSession ? (

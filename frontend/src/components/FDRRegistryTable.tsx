@@ -9,7 +9,8 @@ import {
   Building2,
   Lock,
   Filter,
-  ShieldAlert
+  ShieldAlert,
+  Download
 } from 'lucide-react';
 import type { FDRInstrument } from '../types';
 import { DigitalVaultModal } from './DigitalVaultModal';
@@ -247,6 +248,19 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
 
         {/* Quick-Filter & Metric Counters */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs shrink-0">
+          {/* AICTE Requirement 8: Consolidated Management Report CSV Export */}
+          <button
+            type="button"
+            onClick={() => {
+              window.open('/api/reports/export-csv', '_blank');
+            }}
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md font-bold text-xs bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-800 shadow-2xs cursor-pointer transition"
+            title="Download Consolidated Management Report (CSV) containing full institution & deposit truth"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download Management Report (CSV)</span>
+          </button>
+
           {/* AICTE Requirement 4: Maturity Countdown Sort Button */}
           <button
             type="button"
@@ -340,12 +354,17 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
             {processedFdrs.map(({ fdr, flags, daysRemaining }) => {
               const hasFlags = flags.length > 0;
               const hasLineageParent = !!fdr.parent_fdr_id;
+              const isSlaBreached = !!((fdr as any).slaBreached || (fdr as any).sla_breached);
 
               return (
                 <tr 
                   key={fdr.id} 
                   className={`hover:bg-slate-50/80 transition-colors ${
-                    hasFlags ? 'bg-red-50/30 border-l-4 border-l-red-500' : ''
+                    isSlaBreached
+                      ? 'bg-red-100/50 border-l-4 border-l-red-700 ring-1 ring-red-400'
+                      : hasFlags 
+                      ? 'bg-red-50/30 border-l-4 border-l-red-500' 
+                      : ''
                   }`}
                 >
                   
@@ -353,6 +372,15 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                   <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
                     <div className="font-mono font-bold text-[#1E3A8A] text-sm">{fdr.fdr_uid}</div>
                     
+                    {isSlaBreached && (
+                      <div className="mt-1">
+                        <span className="inline-flex items-center space-x-1 bg-red-600 text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shadow-2xs animate-pulse">
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          <span>CRITICAL SLA BREACH</span>
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center space-x-1.5 mt-1">
                       {hasLineageParent ? (
                         <span className="inline-flex items-center space-x-1 text-[10px] text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 font-semibold">

@@ -12,9 +12,10 @@ import {
   RefreshCw, 
   FileText, 
   Crown, 
-  BarChart3,
-  Layers,
-  Clock
+  BarChart3, 
+  Layers, 
+  Clock,
+  Download
 } from 'lucide-react';
 import type { 
   Institution, 
@@ -535,37 +536,138 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 </div>
               </div>
 
-              {releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || releaseStatus?.gate4_competent_authority_approved ? (
-                <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-md text-xs text-emerald-900 space-y-2">
-                  <div className="flex items-center space-x-2 font-bold text-emerald-950">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                    <span>Release Application Approved by AICTE Competent Authority!</span>
+              {/* AICTE Requirement 6: Amazon-Style 4-Step Release Pipeline Progress Tracker */}
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between relative px-2 sm:px-6">
+                  {/* Background Track Line */}
+                  <div className="absolute top-4 left-6 right-6 h-1 bg-slate-200 z-0" />
+                  
+                  {/* Progress Line */}
+                  {(() => {
+                    const isStep4 = releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || releaseStatus?.gate4_competent_authority_approved || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED';
+                    const isStep3 = isStep4 || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY';
+                    const isStep2 = isStep3 || releaseStatus?.status === 'PENDING_SCRUTINY';
+                    const isStep1 = isStep2 || nodalRequestedSuccess || (currentFdr as any)?.lifecycleState === 'NOC_RELEASE_REQUESTED';
+                    
+                    const progressWidth = isStep4 ? '100%' : isStep3 ? '66%' : isStep1 ? '33%' : '0%';
+
+                    return (
+                      <div 
+                        className="absolute top-4 left-6 h-1 bg-emerald-600 z-0 transition-all duration-500" 
+                        style={{ width: progressWidth }} 
+                      />
+                    );
+                  })()}
+
+                  {/* Step 1: Request Submitted */}
+                  {(() => {
+                    const s1Done = nodalRequestedSuccess || releaseStatus?.status === 'PENDING_SCRUTINY' || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' || releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || (currentFdr as any)?.lifecycleState === 'NOC_RELEASE_REQUESTED' || (currentFdr as any)?.lifecycleState === 'PENDING_COMPETENT_AUTHORITY' || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED';
+                    return (
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-2xs ${
+                          s1Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {s1Done ? '✓' : '1'}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-slate-800 text-center">1. Request Submitted</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Step 2: Scrutiny & ERP Clearance */}
+                  {(() => {
+                    const s2Done = releaseStatus?.gate3_scrutiny_officer_approved || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' || releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || (currentFdr as any)?.lifecycleState === 'PENDING_COMPETENT_AUTHORITY' || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED';
+                    const s2Active = !s2Done && (nodalRequestedSuccess || releaseStatus?.status === 'PENDING_SCRUTINY');
+                    return (
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-2xs ${
+                          s2Done ? 'bg-emerald-600 text-white' : s2Active ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {s2Done ? '✓' : '2'}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-slate-800 text-center">2. Scrutiny &amp; ERP</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Step 3: Final Authority Sign-Off */}
+                  {(() => {
+                    const s3Done = releaseStatus?.gate4_competent_authority_approved || releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED';
+                    const s3Active = !s3Done && (releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' || (currentFdr as any)?.lifecycleState === 'PENDING_COMPETENT_AUTHORITY');
+                    return (
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-2xs ${
+                          s3Done ? 'bg-emerald-600 text-white' : s3Active ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {s3Done ? '✓' : '3'}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-slate-800 text-center">3. Authority Sign-Off</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Step 4: NOC Issued */}
+                  {(() => {
+                    const s4Done = releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || releaseStatus?.gate4_competent_authority_approved || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED';
+                    return (
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-2xs ${
+                          s4Done ? 'bg-emerald-600 text-white ring-2 ring-emerald-300' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {s4Done ? '✓' : '4'}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-slate-800 text-center">4. NOC Issued</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {releaseStatus?.status === 'RELEASE_APPROVED_NOC_ISSUED' || releaseStatus?.gate4_competent_authority_approved || (currentFdr as any)?.lifecycleState === 'NOC_ISSUED' ? (
+                <div className="p-5 bg-emerald-50 border-2 border-emerald-400 rounded-lg text-xs text-emerald-950 space-y-3 shadow-sm">
+                  <div className="flex items-center space-x-2 font-bold text-emerald-950 text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                    <span>Statutory Release Approved — Official Discharge NOC Issued!</span>
                   </div>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Your statutory security deposit release has been fully authorized and digitally signed. An official Cryptographic AICTE Discharge NOC Certificate has been generated. You may download and submit this certificate to your issuing bank branch to discharge the deposit.
+                  <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                    Your security deposit lien has been unconditionally discharged by the AICTE Competent Authority. The official cryptographically sealed Discharge NOC Certificate is now ready for download. Submit this certificate to your bank branch to release deposit funds.
                   </p>
-                  <div className="flex items-center space-x-2 text-[10px] font-mono text-emerald-900 bg-white/80 p-2 rounded border border-emerald-200">
-                    <span className="font-bold">NOC Certificate Hash:</span>
-                    <span className="truncate max-w-[280px]">{releaseStatus?.noc_certificate_hash}</span>
+                  
+                  <div className="p-3 bg-white rounded border border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="text-[11px] font-mono text-emerald-950">
+                      <span className="text-slate-500 block text-[10px]">NOC CERTIFICATE HASH:</span>
+                      <span className="font-bold">{releaseStatus?.noc_certificate_hash || (currentFdr as any)?.noc_certificate_hash || 'SHA-256: 8f9b1c2e4a6d701835...'}</span>
+                    </div>
+
+                    <a
+                      href={(currentFdr as any)?.noc_certificate_url || (currentFdr?.digitalVault?.find(d => d.documentType === 'Discharge NOC')?.fileUrl) || `https://res.cloudinary.com/vidyakosh-aicte/raw/upload/vidyakosh_fdrs/Discharge_NOC_${selectedFdrUid}.pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center space-x-2 py-2 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm transition cursor-pointer shrink-0"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download Official Discharge NOC (PDF)</span>
+                    </a>
                   </div>
                 </div>
-              ) : nodalRequestedSuccess || releaseStatus?.status === 'PENDING_SCRUTINY' || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' ? (
+              ) : nodalRequestedSuccess || releaseStatus?.status === 'PENDING_SCRUTINY' || releaseStatus?.status === 'PENDING_COMPETENT_AUTHORITY' || (currentFdr as any)?.lifecycleState === 'PENDING_COMPETENT_AUTHORITY' || (currentFdr as any)?.lifecycleState === 'NOC_RELEASE_REQUESTED' ? (
                 <div className="p-4 bg-amber-50 border border-amber-300 rounded-md text-xs text-amber-950 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 font-bold text-amber-900">
                       <Clock className="w-4 h-4 text-amber-700 animate-spin" />
-                      <span>Application Status: Pending AICTE Approval</span>
+                      <span>Application Status: Pending AICTE Executive Approval</span>
                     </div>
                     <span className="text-[10px] bg-amber-200 text-amber-900 font-mono px-2 py-0.5 rounded font-bold">
-                      UNDER REGULATORY REVIEW
+                      {(currentFdr as any)?.lifecycleState || releaseStatus?.status || 'UNDER REVIEW'}
                     </span>
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
-                    Your release request for <strong>{selectedFdrUid}</strong> has been logged in the AICTE Regulation Bureau queue. Regional Scrutiny Officer verification and Member Secretary / Competent Authority digital sign-off are currently in progress.
+                    Your release request for <strong>{selectedFdrUid}</strong> has been received by AICTE. Scrutiny clearance and Member Secretary DSC PIN authorization are currently processing in the executive queue.
                   </p>
                   <div className="text-[10px] text-slate-500 pt-1 border-t border-amber-200/60 flex items-center justify-between">
                     <span>Gate 1 (Lock-in): {releaseStatus?.gate1?.passed ? 'PASSED ✓' : 'UNDER REVIEW'}</span>
                     <span>Gate 2 (Zero Dues): {releaseStatus?.gate2?.passed ? 'PASSED ✓' : 'PENDING'}</span>
+                    <span>Gate 3 (Scrutiny): {releaseStatus?.gate3_scrutiny_officer_approved ? 'APPROVED ✓' : 'PENDING'}</span>
                   </div>
                 </div>
               ) : (
@@ -578,7 +680,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-500">Lock-in Tenure Check (Gate 1):</span>
                       <span className={`font-bold ${releaseStatus?.gate1?.passed ? 'text-emerald-700' : 'text-red-700'}`}>
-                        {releaseStatus?.gate1?.passed ? 'COMPLETED ✓' : 'HOLD / PENDING'}
+                        {releaseStatus?.gate1?.passed ? 'COMPLETED (T-0) ✓' : 'HOLD / NOT MATURED'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
@@ -610,7 +712,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
                   {(!releaseStatus?.gate1?.passed || !releaseStatus?.gate2?.passed) && (
                     <div className="p-2.5 bg-red-50 border border-red-200 rounded text-[11px] text-red-800 text-center font-medium">
-                      Release application locked: Complete 8-year lock-in tenure and clear all regulatory ERP dues before requesting release.
+                      Release application locked: Complete 8-year lock-in tenure (T-0) and clear all regulatory ERP dues before requesting release.
                     </div>
                   )}
                 </div>

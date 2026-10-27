@@ -1,10 +1,9 @@
 const cron = require('node-cron');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
 const FDRInstrument = require('../models/FDRInstrument');
+const { dispatchAlert } = require('../utils/notifier');
 
 /**
- * Standard pure JavaScript Date math with uniform UTC handling.
+ * Pure JavaScript Date math with uniform UTC handling.
  * Calculates exact difference in calendar days between Date.now() and maturityDateStr.
  */
 function calculateDaysRemainingUtc(maturityDateStr) {
@@ -18,7 +17,7 @@ function calculateDaysRemainingUtc(maturityDateStr) {
     if (parts.length < 3) return 9999;
 
     const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+    const month = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
 
     const matUtc = Date.UTC(year, month, day);
@@ -29,148 +28,137 @@ function calculateDaysRemainingUtc(maturityDateStr) {
 }
 
 /**
- * Automated Reminder Dispatcher (AICTE Requirement 4.2)
- * Simulated SMS/Email notification dispatcher and cryptographic audit log recorder.
- */
-async function dispatchAutomatedAlert(instituteEmail, state, fdrUid, institutionName, daysRemaining) {
-  const timestamp = new Date();
-  const recipient = instituteEmail || 'nodal.officer@apex.edu.in';
-  const instLabel = institutionName || 'Approved Technical Institution';
-
-  // 1. Console.log simulated SMS/Email payload
-  console.log('================================================================================');
-  console.log(`[AUTOMATED SLA DISPATCHER] Automated Statutory Maturity Alert Dispatched`);
-  console.log(`[TIMESTAMP] ${timestamp.toISOString()}`);
-  console.log(`[RECIPIENT] ${recipient} (Institute Nodal Officer)`);
-  console.log(`[INSTITUTION] ${instLabel}`);
-  console.log(`[TARGET FDR UID] ${fdrUid}`);
-  console.log(`[TRANSITION STATE] ${state}`);
-  console.log(`[DAYS REMAINING] ${daysRemaining} days`);
-  console.log(`[PAYLOAD] ALERT: AICTE Security Deposit (${fdrUid}) maturing in ${daysRemaining} days (Lifecycle: ${state}). Mandatory renewal under Approval Process Handbook (APH 2026-31) Clause 2.14 is required. Failure to renew triggers regulatory soft-hold on Annual Extension of Approval (EoA).`);
-  console.log('================================================================================');
-
-  // 2. Log dispatch event in the "Audit & Defaulter Registry" (audit_logs collection)
-  try {
-    const db = mongoose.connection.db;
-    if (db) {
-      const auditCollection = db.collection('audit_logs');
-      const lastLog = await auditCollection.find().sort({ id: -1 }).limit(1).toArray();
-      const prevHash = (lastLog.length > 0 && lastLog[0].row_hash) ? lastLog[0].row_hash : ('0'.repeat(64));
-      const nextId = (lastLog.length > 0 && typeof lastLog[0].id === 'number') ? lastLog[0].id + 1 : 1;
-
-      const actionType = state === 'EXPIRED_ACTION_REQUIRED' ? 'ESCALATION_DEFAULT_NOTICE' : 'AUTOMATED_MATURITY_ALERT';
-      const payloadSummary = `Automated ${state} statutory reminder dispatched to ${recipient} for ${fdrUid}. Lock-in balance: ${daysRemaining} days remaining. Regulatory audit entry recorded.`;
-
-      const rawData = `${prevHash}AUTOMATED_CRON_ENGINE${actionType}${payloadSummary}${timestamp.toISOString().replace(/\.\d+Z$/, '')}`;
-      const rowHash = crypto.createHash('sha256').update(rawData).digest('hex');
-
-      await auditCollection.insertOne({
-        id: nextId,
-        timestamp,
-        actor_role: 'AUTOMATED_CRON_ENGINE',
-        actor_name: 'AICTE Temporal Validity Watchdog',
-        action_type: actionType,
-        target_fdr_uid: fdrUid,
-        payload_summary: payloadSummary,
-        prev_hash: prevHash,
-        row_hash: rowHash
-      });
-    }
-  } catch (err) {
-    console.warn('[dispatchAutomatedAlert] Audit log recording warning:', err.message);
-  }
-}
-
-/**
- * Sweeps all FDRs, computes remaining days, transitions states, and dispatches reminders.
+ * AICTE Requirement 4 & 7: Automated Validity Sweep & Multi-Tier Escalation Matrix
  */
 async function runDailyValidityTrackingSweep() {
-  console.log(`[Validity Tracking Engine] Starting chronological validity sweep at ${new Date().toISOString()} (UTC)...`);
-  
+  console.log(`[Validity Tracking Engine] Running automated validity & SLA escalation sweep at ${new Date().toISOString()}...`);
+
   try {
     const fdrs = await FDRInstrument.find({});
     let scannedCount = 0;
-    let transitionsTriggered = 0;
+    let alertsTriggered = 0;
+    let softHoldsApplied = 0;
+    let slaBreachesDetected = 0;
+    const now = Date.now();
     const sweepResults = [];
 
     for (const fdr of fdrs) {
       scannedCount++;
       // Skip already superseded or discharged instruments
-      if (fdr.lifecycle_status === 'RENEWED_SUPERSEDED' || fdr.lifecycle_status === 'RELEASE_APPROVED_NOC_ISSUED') {
+      if (['SUPERSEDED_BY_RENEWAL', 'RENEWED_SUPERSEDED', 'NOC_ISSUED', 'RELEASE_APPROVED_NOC_ISSUED'].includes(fdr.lifecycleState)) {
         continue;
       }
 
-      // Check authoritative bank attested maturity date first, then fall back to college claimed date
       const matDateStr = fdr.bankAttestedMaturityDate || fdr.bank_confirmed_maturity_date || fdr.inst_maturity_date;
-      if (!matDateStr) continue;
-
       const daysRemaining = calculateDaysRemainingUtc(matDateStr);
-      let targetLifecycleState = 'ACTIVE_COMPLIANT';
-      let targetLifecycleStatus = fdr.lifecycle_status || 'ACTIVE';
+      let targetState = fdr.lifecycleState || 'ACTIVE_COMPLIANT';
 
-      // Determine state according to strict AICTE Requirement 4 rules
+      // 1. Calculate Maturity Transitions
       if (daysRemaining < 0) {
-        targetLifecycleState = 'EXPIRED_ACTION_REQUIRED';
-        targetLifecycleStatus = 'MATURED_ACTION_PENDING';
+        targetState = 'EXPIRED_ACTION_REQUIRED';
+        // AICTE Requirement 7: Overdue maturity without renewal -> Apply regulatory soft-hold on EoA
+        if (!fdr.softHoldEoa) {
+          fdr.softHoldEoa = true;
+          softHoldsApplied++;
+          await dispatchAlert({
+            recipient: 'ro.north@aicte-india.org',
+            role: 'AICTE_REGIONAL_OFFICER',
+            alertType: 'REGULATORY_SOFT_HOLD_EOA',
+            fdrUid: fdr.fdr_uid,
+            message: `URGENT REGULATORY ACTION: FDR ${fdr.fdr_uid} for ${fdr.institution_name} (PID: ${fdr.pid}) has expired (${Math.abs(daysRemaining)} days overdue). Institutional Soft-Hold placed on Annual Extension of Approval (EoA).`
+          });
+          alertsTriggered++;
+        }
       } else if (daysRemaining <= 30) {
-        targetLifecycleState = 'MATURITY_T30';
-        targetLifecycleStatus = 'APPROACHING_MATURITY_T30';
+        targetState = 'MATURITY_T30';
       } else if (daysRemaining <= 60) {
-        targetLifecycleState = 'MATURITY_T60';
-        targetLifecycleStatus = 'APPROACHING_MATURITY_T60';
+        targetState = 'MATURITY_T60';
       } else if (daysRemaining <= 90) {
-        targetLifecycleState = 'MATURITY_T90';
-        targetLifecycleStatus = 'APPROACHING_MATURITY_T90';
-      } else {
-        targetLifecycleState = 'ACTIVE_COMPLIANT';
-        if (fdr.lifecycle_status === 'MATURED_ACTION_PENDING' || fdr.lifecycle_status?.startsWith('APPROACHING_MATURITY')) {
-          targetLifecycleStatus = 'ACTIVE';
+        targetState = 'MATURITY_T90';
+      }
+
+      // 2. AICTE Requirement 7: Escalation Rule - Pending Bank Attestation > 72 hours (3 days)
+      const createdAt = new Date(fdr.created_at || fdr.createdAt || Date.now()).getTime();
+      const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+
+      if ((fdr.bank_verified_status === 'PENDING' || fdr.lifecycleState === 'SUBMITTED') && hoursSinceCreation > 72) {
+        fdr.slaBreached = true;
+        fdr.slaBreachReason = 'BANK_ATTESTATION_OVERDUE_72H';
+        slaBreachesDetected++;
+        await dispatchAlert({
+          recipient: fdr.bank_manager_email || 'branchmgr.sbi@bank.co.in',
+          role: 'BANK_BRANCH_MANAGER',
+          alertType: 'BANK_MAGIC_LINK_REMINDER',
+          fdrUid: fdr.fdr_uid,
+          message: `URGENT: AICTE Security Deposit attestation for ${fdr.fdr_uid} (${fdr.institution_name}) is pending > 72 hours. Please access the secure magic link to verify principal & lien immediately.`
+        });
+        alertsTriggered++;
+      }
+
+      // 3. AICTE Requirement 7: Escalation Rule - Unreviewed Discrepancy > 7 days (168 hours)
+      if (fdr.flags && fdr.flags.length > 0) {
+        const lastAction = new Date(fdr.lastActionTimestamp || fdr.updated_at || Date.now()).getTime();
+        const daysUnresolved = (now - lastAction) / (1000 * 60 * 60 * 24);
+
+        if (daysUnresolved > 7 && !fdr.gate3_scrutiny_officer_approved) {
+          fdr.slaBreached = true;
+          fdr.slaBreachReason = 'UNREVIEWED_DISCREPANCY_7_DAYS';
+          slaBreachesDetected++;
+          await dispatchAlert({
+            recipient: 'ms@aicte-india.org',
+            role: 'COMPETENT_AUTHORITY',
+            alertType: 'DISCREPANCY_SLA_BREACH',
+            fdrUid: fdr.fdr_uid,
+            message: `CRITICAL SLA BREACH: Discrepancy flags [${fdr.flags.join(', ')}] on FDR ${fdr.fdr_uid} (${fdr.institution_name}) have remained unreviewed for > 7 days. Member Secretary executive intervention required.`
+          });
+          alertsTriggered++;
         }
       }
 
-      const currentState = fdr.lifecycleState || fdr.lifecycle_status;
-      const stateChanged = currentState !== targetLifecycleState;
+      // 4. AICTE Requirement 4 & 7: T-90 and T-30 Reminders
+      const isApproachingWarning = (targetState === 'MATURITY_T90' || targetState === 'MATURITY_T30');
+      if (isApproachingWarning && fdr.lifecycleState !== targetState) {
+        await dispatchAlert({
+          recipient: `nodal.${fdr.pid || 'officer'}@apex.edu.in`,
+          role: 'INSTITUTE_NODAL_OFFICER',
+          alertType: targetState === 'MATURITY_T30' ? 'MATURITY_T30_URGENT_RENEWAL' : 'MATURITY_T90_RENEWAL_WINDOW_OPEN',
+          fdrUid: fdr.fdr_uid,
+          message: `AICTE Deposit Alert: Instrument ${fdr.fdr_uid} matures in ${daysRemaining} days (${targetState}). Renewal submission portal is now active. Complete renewal to avoid EoA hold.`
+        });
+        alertsTriggered++;
+      }
 
-      // Update document fields in MongoDB
-      fdr.lifecycleState = targetLifecycleState;
-      fdr.lifecycle_status = targetLifecycleStatus;
+      // Save updated state
+      fdr.lifecycleState = targetState;
       fdr.daysRemaining = daysRemaining;
-
-      // Ensure bankAttestedMaturityDate is populated
-      if (!fdr.bankAttestedMaturityDate && (fdr.bank_confirmed_maturity_date || fdr.inst_maturity_date)) {
-        fdr.bankAttestedMaturityDate = fdr.bank_confirmed_maturity_date || fdr.inst_maturity_date;
+      if (!fdr.bankAttestedMaturityDate && matDateStr) {
+        fdr.bankAttestedMaturityDate = matDateStr;
       }
 
       await fdr.save();
-
-      // If transitioning into one of the warning states (T-90, T-60, T-30, Expired), trigger notification
-      const isWarningState = ['MATURITY_T90', 'MATURITY_T60', 'MATURITY_T30', 'EXPIRED_ACTION_REQUIRED'].includes(targetLifecycleState);
-      
-      if (isWarningState) {
-        transitionsTriggered++;
-        const instituteEmail = `nodal.${fdr.inst_fdr_number ? fdr.inst_fdr_number.toLowerCase() : 'officer'}@aicte-india.org`;
-        await dispatchAutomatedAlert(instituteEmail, targetLifecycleState, fdr.fdr_uid, fdr.inst_bank_name, daysRemaining);
-      }
 
       sweepResults.push({
         fdr_uid: fdr.fdr_uid,
         maturity_date: matDateStr,
         days_remaining: daysRemaining,
-        lifecycleState: targetLifecycleState,
-        lifecycle_status: targetLifecycleStatus,
-        stateChanged
+        lifecycleState: targetState,
+        softHoldEoa: fdr.softHoldEoa,
+        slaBreached: fdr.slaBreached
       });
     }
 
-    console.log(`[Validity Tracking Engine] Sweep completed: ${scannedCount} scanned, ${transitionsTriggered} warning transitions processed.`);
+    console.log(`[Validity Tracking Engine] Sweep complete: ${scannedCount} scanned, ${alertsTriggered} alerts dispatched, ${softHoldsApplied} soft-holds, ${slaBreachesDetected} SLA breaches.`);
+
     return {
       timestamp: new Date().toISOString(),
       scanned_count: scannedCount,
-      transitions_triggered: transitionsTriggered,
+      alerts_dispatched: alertsTriggered,
+      soft_holds_applied: softHoldsApplied,
+      sla_breaches_detected: slaBreachesDetected,
       results: sweepResults
     };
   } catch (error) {
-    console.error('[Validity Tracking Engine] Error during sweep:', error);
+    console.error('[Validity Tracking Engine] Sweep error:', error);
     throw error;
   }
 }
@@ -181,13 +169,12 @@ async function runDailyValidityTrackingSweep() {
 function initValidityTrackingCron() {
   console.log('[Cron Scheduler] Initializing Automated Validity & Maturity Tracking Daily Cron (0 0 * * *)...');
   
-  // Schedule midnight job in UTC (0 0 * * *)
   const job = cron.schedule('0 0 * * *', async () => {
     console.log('[Cron Scheduler] Firing Midnight UTC Automated Validity & Maturity Sweep (0 0 * * *)...');
     try {
       await runDailyValidityTrackingSweep();
     } catch (err) {
-      console.error('[Cron Scheduler] Cron job sweep failed:', err);
+      console.error('[Cron Scheduler] Cron sweep error:', err);
     }
   }, {
     scheduled: true,
@@ -199,7 +186,6 @@ function initValidityTrackingCron() {
 
 module.exports = {
   calculateDaysRemainingUtc,
-  dispatchAutomatedAlert,
   runDailyValidityTrackingSweep,
   initValidityTrackingCron
 };
