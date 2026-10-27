@@ -441,7 +441,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
                 className="px-3 py-2 bg-[#1a365d] hover:bg-blue-900 text-white rounded text-xs font-semibold transition cursor-pointer flex items-center space-x-1"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${ifscLoading ? 'animate-spin' : ''}`} />
-                <span>Verify</span>
+                <span>Lookup IFSC (RBI Directory)</span>
               </button>
             </div>
 
@@ -502,7 +502,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
               className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Terminal className={`w-3.5 h-3.5 ${cbsLoading ? 'animate-spin' : ''}`} />
-              <span>{cbsLoading ? 'Handshaking with Core Banking...' : 'Run Instant CBS / NeSL API Handshake'}</span>
+              <span>{cbsLoading ? 'Handshaking with Core Banking...' : 'Run Tier 1 Automated CBS API Query'}</span>
             </button>
 
             {/* Live Terminal Output */}
@@ -578,7 +578,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
               className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Key className={`w-3.5 h-3.5 ${mlLoading ? 'animate-spin' : ''}`} />
-              <span>{mlLoading ? 'Generating Cryptographic Token...' : 'Generate Cryptographic Magic Link'}</span>
+              <span>{mlLoading ? 'Generating Cryptographic Token...' : 'Generate Cryptographic Magic-Link & Dispatch OTP'}</span>
             </button>
 
             {/* Generated Magic Link Card */}
@@ -607,7 +607,7 @@ export const BankVerificationGateway: React.FC<BankVerificationGatewayProps> = (
                   className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 rounded bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition cursor-pointer shadow-sm"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in Zero-Login Bank Manager View</span>
+                  <span>Open Bank Branch Manager Attestation Portal</span>
                 </button>
               </div>
             )}

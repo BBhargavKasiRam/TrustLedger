@@ -712,7 +712,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               ) : (
                 <>
                   <GitCommit className="w-4 h-4 text-orange-400" />
-                  <span>Commit Child FDR to Lineage DAG & Supersede Parent</span>
+                  <span>Link Child Instrument to DAG Tree &amp; Seal Ledger Block</span>
                 </>
               )}
             </button>

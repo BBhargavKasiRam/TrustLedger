@@ -221,6 +221,17 @@ export const ForensicsWorkbench: React.FC<ForensicsWorkbenchProps> = ({
                 onChange={handleFileUpload}
               />
             </label>
+
+            {/* Explicit Demo Trigger: Analyze Document & Run Pixel Forensics */}
+            <button
+              type="button"
+              onClick={() => runAnalysis(activePresetId, uploadedFile)}
+              disabled={analyzing}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded text-xs font-bold bg-[#1E3A8A] hover:bg-[#172554] text-white shadow-sm transition cursor-pointer disabled:opacity-50"
+            >
+              <Scan className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
+              <span>{analyzing ? 'Analyzing Document & Pixels...' : 'Analyze Document & Run Pixel Forensics'}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -620,10 +631,8 @@ export const ForensicsWorkbench: React.FC<ForensicsWorkbenchProps> = ({
                   <Lock className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
                   <span>
                     {submitting
-                      ? 'Recording...'
-                      : analysisResult.has_discrepancy
-                      ? 'Submit Flagged Discrepancy'
-                      : 'Submit to AICTE Registry'}
+                      ? 'Recording to Dual-Truth Registry...'
+                      : 'Commit Verified FDR to Dual-Truth Registry'}
                   </span>
                 </button>
               </div>

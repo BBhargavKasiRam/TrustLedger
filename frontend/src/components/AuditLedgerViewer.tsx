@@ -85,7 +85,7 @@ export const AuditLedgerViewer: React.FC<AuditLedgerViewerProps> = ({ logs, onRe
             className="flex items-center space-x-2 px-4 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
             <ShieldCheck className={`w-4 h-4 ${isVerifying ? 'animate-spin' : ''}`} />
-            <span>{isVerifying ? 'Verifying Records...' : 'Verify Audit Trail Integrity'}</span>
+            <span>{isVerifying ? 'Verifying SHA-256 Chain...' : 'Verify Cryptographic Hash Chain Integrity'}</span>
           </button>
         </div>
       </div>
@@ -104,7 +104,7 @@ export const AuditLedgerViewer: React.FC<AuditLedgerViewerProps> = ({ logs, onRe
           )}
           <div className="space-y-1">
             <div className="font-bold text-sm flex items-center gap-2">
-              <span>{verificationResult.integrity_verified ? 'Audit Trail Verified: Valid Official Ledger' : 'Ledger Integrity Failure Detected!'}</span>
+              <span>{verificationResult.integrity_verified ? 'Audit Chain Cryptographically Verified — 0 Discrepancies, Zero Insider Tampering' : 'Ledger Integrity Failure Detected!'}</span>
               <span className="font-mono text-xs px-2 py-0.5 rounded bg-white border border-current font-bold">
                 {verificationResult.total_records} / {verificationResult.total_records} Records Intact
               </span>

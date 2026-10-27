@@ -512,7 +512,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                   ) : (
                     <>
                       <FileCheck className="w-4 h-4 text-amber-400" />
-                      <span>Approve Gate 3 &amp; Forward to Member Secretary</span>
+                      <span>Submit Gate 3 Scrutiny Sign-Off</span>
                     </>
                   )}
                 </button>

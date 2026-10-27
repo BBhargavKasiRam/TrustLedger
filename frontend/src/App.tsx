@@ -748,8 +748,29 @@ export const App: React.FC = () => {
                               fdrs={fdrs}
                               targetFdrUid={targetBankFdrUid}
                               onRefresh={loadData}
-                              onSwitchRole={(_, targetUid) => {
+                              onSwitchRole={(role, targetUid) => {
                                 if (targetUid) setTargetBankFdrUid(targetUid);
+                                if (role === 'BANK_BRANCH_MANAGER') {
+                                  const dbPreset = userPresets.find(p => p.role === 'BANK_BRANCH_MANAGER');
+                                  if (dbPreset) {
+                                    setCurrentSession({
+                                      role: dbPreset.role,
+                                      userId: dbPreset.user_id,
+                                      userName: dbPreset.user_name,
+                                      designation: dbPreset.designation,
+                                      department: dbPreset.department,
+                                      bankName: dbPreset.bank_name,
+                                      branchName: dbPreset.branch_name,
+                                    });
+                                  } else {
+                                    const bankPreset = DEMO_PRESETS.find(p => p.session.role === 'BANK_BRANCH_MANAGER');
+                                    if (bankPreset) {
+                                      setCurrentSession(bankPreset.session);
+                                    }
+                                  }
+                                  setBankSubMenu('CBS_ATTESTATION');
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
                               }}
                             />
                           </ErrorBoundary>
@@ -1035,6 +1056,30 @@ export const App: React.FC = () => {
                             fdrs={fdrs}
                             targetFdrUid={targetBankFdrUid}
                             onAttestationSubmitted={loadData}
+                            onReturnToScrutiny={() => {
+                              const dbOfficer = userPresets.find(p => p.role === 'AICTE_SCRUTINY_OFFICER');
+                              if (dbOfficer) {
+                                setCurrentSession({
+                                  role: dbOfficer.role,
+                                  userId: dbOfficer.user_id,
+                                  userName: dbOfficer.user_name,
+                                  designation: dbOfficer.designation,
+                                  department: dbOfficer.department,
+                                  institutionId: dbOfficer.institution_id,
+                                  institutionPid: dbOfficer.institution_pid,
+                                  institutionName: dbOfficer.institution_name,
+                                  bankName: dbOfficer.bank_name,
+                                  branchName: dbOfficer.branch_name,
+                                });
+                              } else {
+                                const officerPreset = DEMO_PRESETS.find(p => p.session.role === 'AICTE_SCRUTINY_OFFICER');
+                                if (officerPreset) {
+                                  setCurrentSession(officerPreset.session);
+                                }
+                              }
+                              setScrutinySubMenu('BANK_GATEWAY');
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
                           />
                         </ErrorBoundary>
                       </div>
