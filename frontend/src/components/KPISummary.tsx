@@ -36,7 +36,7 @@ export const KPISummary: React.FC<KPISummaryProps> = ({ summary, loading }) => {
     {
       title: 'Total Locked Security Deposit',
       value: formatCurrency(summary.total_security_deposit_locked),
-      subtext: `Across ${summary.total_institutions} AICTE Institutions`,
+      subtext: `Across ${summary.total_institutions} Institutions in VidyaKosh`,
       icon: <IndianRupee className="w-5 h-5 text-[#1E3A8A]" />,
       topBorderColor: 'border-t-[#1E3A8A]',
       valueColor: 'text-slate-900',

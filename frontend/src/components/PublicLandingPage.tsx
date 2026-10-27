@@ -282,7 +282,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               <div className="flex items-center space-x-2.5">
                 <span className="h-4 w-1 bg-amber-500 rounded-full" />
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                  AICTE Regulation Bureau Mandate — Problem Statement SIH26265
+                  VidyaKosh Portal • AICTE Regulation Bureau Mandate (SIH26265)
                 </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -607,7 +607,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-blue-100 mt-1">
-                  National Single Window System (NSWS) • AICTE Regulation Bureau
+                  VidyaKosh • National Single Window System (NSWS) • AICTE Regulation Bureau
                 </p>
               </div>
 
@@ -762,7 +762,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   className="w-full py-2.5 bg-[#1E3A8A] hover:bg-[#172554] text-white rounded-md font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center justify-center space-x-2 mt-4"
                 >
                   <Lock className="w-4 h-4 text-amber-400" />
-                  <span>Authenticate &amp; Access Portal ({getRoleTabLabel(activeTab)})</span>
+                  <span>Authenticate &amp; Access VidyaKosh Portal ({getRoleTabLabel(activeTab)})</span>
                 </button>
 
                 {/* Fast Evaluator 1-Click Login Shortcuts */}

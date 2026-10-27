@@ -453,7 +453,7 @@ export const App: React.FC = () => {
                       <div className="lg:col-span-3 bg-[#0F2547] text-slate-100 rounded-lg border border-slate-800 shadow-md p-3.5 space-y-2">
                         <div className="px-3 py-2 border-b border-slate-700/60 mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 block">
-                            Institution Services
+                            VidyaKosh Services
                           </span>
                           <h4 className="text-xs font-bold text-white tracking-tight">FDR Lifecycle Desk</h4>
                         </div>
@@ -640,7 +640,7 @@ export const App: React.FC = () => {
                       <div className="lg:col-span-3 bg-[#0F2547] text-slate-100 rounded-lg border border-slate-800 shadow-md p-3.5 space-y-2">
                         <div className="px-3 py-2 border-b border-slate-700/60 mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 block">
-                            Regulation Desk
+                            VidyaKosh Regulation
                           </span>
                           <h4 className="text-xs font-bold text-white tracking-tight">Officer Scrutiny Desk</h4>
                         </div>
@@ -831,7 +831,7 @@ export const App: React.FC = () => {
                       <div className="lg:col-span-3 bg-[#0F2547] text-slate-100 rounded-lg border border-slate-800 shadow-md p-3.5 space-y-2">
                         <div className="px-3 py-2 border-b border-slate-700/60 mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 block">
-                            Executive Council
+                            VidyaKosh Authority
                           </span>
                           <h4 className="text-xs font-bold text-white tracking-tight">Authority Console</h4>
                         </div>
@@ -892,6 +892,19 @@ export const App: React.FC = () => {
                         {authoritySubMenu === 'EXECUTIVE_SUMMARY' && (
                           <ErrorBoundary moduleName="Executive Summary & Release Cockpit">
                             <div className="space-y-6">
+                              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-bold text-sm text-slate-900">
+                                    VidyaKosh Executive KPI Dashboard &amp; National Corpus Cockpit
+                                  </h3>
+                                  <p className="text-xs text-slate-500 mt-0.5">
+                                    Real-time statutory security deposit corpus monitoring, automated T-90/T-30 watchdog tracking, and 4-gate release clearance.
+                                  </p>
+                                </div>
+                                <span className="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 px-2.5 py-1 rounded-full font-mono">
+                                  EXECUTIVE OVERSIGHT
+                                </span>
+                              </div>
                               <KPISummary summary={summary} loading={loading} />
                               <ReleaseClearanceWorkbench
                                 institutions={institutions}
@@ -992,7 +1005,7 @@ export const App: React.FC = () => {
                       <div className="lg:col-span-3 bg-[#0F2547] text-slate-100 rounded-lg border border-slate-800 shadow-md p-3.5 space-y-2">
                         <div className="px-3 py-2 border-b border-slate-700/60 mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 block">
-                            Bank Services
+                            VidyaKosh Bank Gateway
                           </span>
                           <h4 className="text-xs font-bold text-white tracking-tight">Core Banking Attestation</h4>
                         </div>

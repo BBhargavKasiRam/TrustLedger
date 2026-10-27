@@ -1,6 +1,6 @@
-# TrustLedger — Frontend Client (GIGW 3.0)
+# VidyaKosh — Frontend Client (GIGW 3.0)
 
-Frontend administrative user interface for **TrustLedger (SIH26265)**, designed in strict adherence with the **Guidelines for Indian Government Websites (GIGW 3.0)** light theme and AICTE corporate identity standards.
+Frontend administrative user interface for **VidyaKosh (SIH26265)**, designed in strict adherence with the **Guidelines for Indian Government Websites (GIGW 3.0)** light theme and AICTE corporate identity standards.
 
 ---
 

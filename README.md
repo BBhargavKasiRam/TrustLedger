@@ -1,4 +1,4 @@
-# TrustLedger — AICTE Centralized Security Deposit / FDR Management Portal
+# VidyaKosh — AICTE Centralized Security Deposit / FDR Management Portal
 
 **Smart India Hackathon Prototype | Problem Statement ID: SIH26265**  
 *Organization: All India Council for Technical Education (AICTE), Ministry of Education, Government of India*
@@ -31,11 +31,11 @@ Historically, the manual processing of thousands of physical and scanned FDR cer
 
 ## ⚡ Core Technical Architecture & Features
 
-TrustLedger addresses the mandate of SIH26265 through six integrated subsystems:
+VidyaKosh addresses the mandate of SIH26265 through six integrated subsystems:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                            TRUSTLEDGER ARCHITECTURE                         │
+│                             VIDYAKOSH ARCHITECTURE                          │
 ├───────────────────────────────┬─────────────────────────────────────────────┤
 │ 1. Centralized Repository     │ Tri-Party data model isolating College      │
 │    (Instrument-wise Records)  │ Claim, Machine Forensics, and Bank Truth.   │
@@ -177,7 +177,7 @@ The prototype includes built-in scenarios directly aligned with the Smart India 
 ## 📁 Repository Structure
 
 ```
-TrustLedger/
+VidyaKosh/
 ├── backend/
 │   ├── main.py                 # FastAPI application routes & endpoints
 │   ├── database.py             # MongoDB Atlas connection & collection refs

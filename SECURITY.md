@@ -1,7 +1,7 @@
 # Security Policy & Governance
 
 ## Overview
-**TrustLedger** manages statutory fixed deposit instruments (FDRs) locked for 10-year lock-in periods under Chapter IV of the AICTE Approval Process Handbook (APH). Security, integrity, and anti-tampering are fundamental architectural tenets.
+**VidyaKosh** manages statutory fixed deposit instruments (FDRs) locked for 10-year lock-in periods under Chapter IV of the AICTE Approval Process Handbook (APH). Security, integrity, and anti-tampering are fundamental architectural tenets.
 
 ## Core Security Pillars
 1. **Immutable Cryptographic Audit Trail**:

@@ -190,7 +190,7 @@ def health_check():
     """Health check endpoint for Render / cloud monitoring services."""
     return {
         "status": "HEALTHY",
-        "service": "TrustLedger AICTE Regulatory Portal",
+        "service": "VidyaKosh AICTE Regulatory Portal",
         "database_status": db_connection_status,
         "database_engine": "In-Memory Resilient Mock (Auto-Seeded)" if is_mock_db else "MongoDB Atlas Cloud",
         "atlas_ip_whitelist_tip": "If running on Render and Atlas is disconnected, add '0.0.0.0/0' to MongoDB Atlas -> Network Access." if is_mock_db else "Atlas Cloud Active",

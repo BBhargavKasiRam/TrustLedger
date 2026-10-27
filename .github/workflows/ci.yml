@@ -1,4 +1,4 @@
-name: TrustLedger CI / Build Verification
+name: VidyaKosh CI / Build Verification
 
 on:
   push:

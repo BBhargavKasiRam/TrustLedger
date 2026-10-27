@@ -172,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="bg-white border-b border-slate-200 py-3 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          {/* Left: State Emblem of India + Official AICTE TrustLedger Identity */}
+          {/* Left: State Emblem of India + Official AICTE VidyaKosh Identity */}
           <div className="flex items-center space-x-3.5">
             <div className="shrink-0 flex items-center justify-center p-0.5 bg-slate-50 border border-slate-200 rounded">
               <EmblemOfIndia size={42} color="#1E3A8A" />
@@ -187,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <span>TrustLedger — Centralized e-FDR &amp; Security Deposit Portal</span>
+                <span>VidyaKosh — Centralized e-FDR &amp; Security Deposit Portal</span>
               </h1>
               <p className="text-[11px] text-slate-500 font-sans hidden md:block">
                 Statutory Regulatory Corpus under Approval Process Handbook (APH 2026-31) • National Single Window System (NSWS)

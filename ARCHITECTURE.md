@@ -1,4 +1,4 @@
-# TrustLedger — Technical Architecture Deep Dive
+# VidyaKosh — Technical Architecture Deep Dive
 
 ## System Architectural Topology
 
@@ -43,7 +43,7 @@ flowchart TD
 ---
 
 ## 1. Tri-Party Dual-Truth Data Architecture
-In traditional government portals, an institution uploads a scan and types in an amount, and officers manually eyeball it. TrustLedger separates each instrument record into three isolated, authoritative columns stored within MongoDB documents:
+In traditional government portals, an institution uploads a scan and types in an amount, and officers manually eyeball it. VidyaKosh separates each instrument record into three isolated, authoritative columns stored within MongoDB documents:
 
 1. **`inst_declared` (Column Set A)**: Self-submitted particulars declared by the College Principal.
 2. **`ocr_extracted` (Column Set B)**: Machine-verified facts extracted via Google Gemini GenAI, OpenCV Error Level Analysis (ELA), and perceptual hashing.
@@ -72,7 +72,7 @@ $$A = P \times \left(1 + \frac{r}{400}\right)^{4 \times t}$$
 ## 3. Git-Style Directed Acyclic Graph (DAG) Lineage
 During the 10-year lock-in period, institutions often face bank mergers (e.g., Syndicate Bank amalgamating into Canara Bank) or required statutory 5-year maturity renewals. 
 
-TrustLedger models the deposit lifecycle as a Directed Acyclic Graph:
+VidyaKosh models the deposit lifecycle as a Directed Acyclic Graph:
 - **Root Node**: Genesis fixed deposit filed at initial college approval.
 - **Child Nodes**: Replacements issued post-merger or renewals.
 - Parent nodes are transitioned to `RENEWED_SUPERSEDED` while preserving historical scans, OCR metadata, and audit logs.
