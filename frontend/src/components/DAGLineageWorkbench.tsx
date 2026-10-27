@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Zap,
   MessageSquare,
-  AlertTriangle
+  AlertTriangle,
+  History,
+  UploadCloud
 } from 'lucide-react';
 import type { 
   Institution, 
@@ -62,6 +64,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
   const [submittingRenewal, setSubmittingRenewal] = useState<boolean>(false);
   const [commitSuccessHash, setCommitSuccessHash] = useState<string | null>(null);
   const [commitMessage, setCommitMessage] = useState<string | null>(null);
+  const [renewalFile, setRenewalFile] = useState<File | null>(null);
 
   // Countdown Matrix state
   const [countdownList, setCountdownList] = useState<any[]>([]);
@@ -246,6 +249,160 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
     }
   };
 
+  // Compute personalized maturity banner data for the logged-in institution
+  const getPersonalizedBannerData = () => {
+    const currentInst = institutions.find(i => i.id === selectedInstitutionId) || institutions[0];
+    const instNodes = graphData?.nodes || [];
+    
+    // Find active/current deposit (not superseded, or the leaf node)
+    const activeDeposit = instNodes.find(n => n.lifecycle_status !== 'RENEWED_SUPERSEDED') || instNodes[instNodes.length - 1];
+    
+    // Check countdownList matching this institution or active deposit UID
+    const matchingCountdown = countdownList.find(c => 
+      (activeDeposit && c.fdr_uid === activeDeposit.fdr_uid) ||
+      (currentInst && c.institution_name?.toLowerCase().includes(currentInst.name?.toLowerCase().split(',')[0]))
+    );
+
+    let daysRemaining = 999;
+    let fdrUid = activeDeposit?.fdr_uid || 'FDR-DEPOSIT';
+    let matDate = activeDeposit?.maturity_date || '';
+    let bankName = activeDeposit?.bank_name || 'Scheduled Bank';
+    let status = activeDeposit?.lifecycle_status || 'ACTIVE_VERIFIED';
+
+    if (matchingCountdown) {
+      daysRemaining = matchingCountdown.days_remaining;
+      fdrUid = matchingCountdown.fdr_uid || fdrUid;
+      matDate = matchingCountdown.maturity_date || matDate;
+      bankName = matchingCountdown.bank_name || bankName;
+      status = matchingCountdown.status || status;
+    } else if (activeDeposit?.maturity_date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const mDate = new Date(activeDeposit.maturity_date);
+      daysRemaining = Math.ceil((mDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    return {
+      currentInst,
+      activeDeposit,
+      daysRemaining,
+      fdrUid,
+      matDate,
+      bankName,
+      status
+    };
+  };
+
+  const renderNodalAlertBanner = () => {
+    const { daysRemaining, fdrUid, matDate, bankName } = getPersonalizedBannerData();
+
+    if (daysRemaining <= 0) {
+      const overdueDays = Math.abs(daysRemaining);
+      return (
+        <div className="bg-red-50 border-2 border-red-500 rounded p-4 shadow-sm flex items-start space-x-3.5">
+          <div className="p-2 rounded bg-red-100 text-red-700 shrink-0 mt-0.5">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-red-950">
+                Notice: Security Deposit Has Matured — Renewal Required
+              </h4>
+              <span className="text-[10px] font-mono font-bold bg-red-600 text-white px-2 py-0.5 rounded shadow-sm">
+                LAPSED / ACTION PENDING
+              </span>
+            </div>
+            <p className="text-xs text-red-900 mt-1 font-medium">
+              Notice: Your deposit {fdrUid ? `(${fdrUid})` : ''} matured {overdueDays > 0 ? `${overdueDays} days ago` : 'recently'} ({matDate}). Please submit a renewal below.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-red-200 text-[11px] text-red-800 flex flex-wrap items-center justify-between gap-2">
+              <span>Bank: <strong>{bankName}</strong></span>
+              <span>Instrument UID: <strong className="font-mono">{fdrUid}</strong></span>
+              <span className="font-semibold text-red-950">Please upload your renewal below ↓</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (daysRemaining <= 30) {
+      return (
+        <div className="bg-amber-50 border-2 border-amber-400 rounded p-4 shadow-sm flex items-start space-x-3.5">
+          <div className="p-2 rounded bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+            <AlertTriangle className="w-5 h-5 text-amber-700" />
+          </div>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-amber-950">
+                Warning: Deposit Approaching Maturity (T-30 Statutory Notice)
+              </h4>
+              <span className="text-[10px] font-mono font-bold bg-amber-500 text-white px-2 py-0.5 rounded shadow-sm">
+                EXPIRES IN {daysRemaining} DAYS
+              </span>
+            </div>
+            <p className="text-xs text-amber-950 mt-1 font-medium">
+              Warning: Your current deposit {fdrUid ? `(${fdrUid})` : ''} expires in {daysRemaining} days ({matDate}). Please upload your renewal below.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-amber-200 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
+              <span>Bank: <strong>{bankName}</strong></span>
+              <span>Maturity Date: <strong className="font-mono">{matDate}</strong></span>
+              <span className="font-semibold text-amber-950">Please upload your renewal below ↓</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (daysRemaining <= 90) {
+      return (
+        <div className="bg-blue-50 border border-blue-300 rounded p-4 shadow-sm flex items-start space-x-3.5">
+          <div className="p-2 rounded bg-blue-100 text-blue-800 shrink-0 mt-0.5">
+            <Clock className="w-5 h-5 text-blue-700" />
+          </div>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-blue-950">
+                Advisory: Upcoming Deposit Maturity
+              </h4>
+              <span className="text-[10px] font-mono font-bold bg-blue-600 text-white px-2 py-0.5 rounded shadow-sm">
+                {daysRemaining} DAYS REMAINING
+              </span>
+            </div>
+            <p className="text-xs text-blue-900 mt-1 font-medium">
+              Advisory: Your deposit {fdrUid ? `(${fdrUid})` : ''} will mature in {daysRemaining} days ({matDate}). You may prepare and submit your 5-year renewal below.
+            </p>
+            <div className="mt-2.5 pt-2 border-t border-blue-200 text-[11px] text-blue-800 flex flex-wrap items-center justify-between gap-2">
+              <span>Bank: <strong>{bankName}</strong></span>
+              <span>Maturity Date: <strong className="font-mono">{matDate}</strong></span>
+              <span className="font-semibold text-blue-900">Renewal form available below ↓</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-green-50 border border-green-300 rounded p-4 shadow-sm flex items-start space-x-3.5">
+        <div className="p-2 rounded bg-green-100 text-green-800 shrink-0 mt-0.5">
+          <CheckCircle2 className="w-5 h-5 text-green-700" />
+        </div>
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-sm font-bold text-green-950">
+              Deposit Status: Fully Compliant &amp; Active
+            </h4>
+            <span className="text-[10px] font-mono font-bold bg-green-600 text-white px-2 py-0.5 rounded shadow-sm">
+              ACTIVE &amp; COMPLIANT
+            </span>
+          </div>
+          <p className="text-xs text-green-900 mt-1 font-medium">
+            Your security deposit {fdrUid ? `(${fdrUid})` : ''} with {bankName} is active and meets all statutory requirements. Maturity date: {matDate || 'Active'} ({daysRemaining} days remaining).
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div id="dag-lineage-workbench" className="space-y-6">
       
@@ -254,22 +411,24 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start space-x-3.5">
             <div className="p-2.5 rounded bg-blue-50 border border-blue-200 text-blue-900 mt-0.5">
-              <GitBranch className="w-6 h-6" />
+              {isNodalOfficer ? <History className="w-6 h-6" /> : <GitBranch className="w-6 h-6" />}
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-mono">
-                  STATUTORY RECORDS
+                  {isNodalOfficer ? 'INSTITUTION PORTAL' : 'STATUTORY RECORDS'}
                 </span>
                 <span className="text-xs font-bold text-gray-600">
-                  Deposit History &amp; Provenance
+                  {isNodalOfficer ? 'Deposit History & Renewal Desk' : 'Deposit History & Provenance'}
                 </span>
               </div>
               <h2 className="text-lg font-bold text-gray-900 tracking-tight mt-0.5">
-                Deposit History &amp; Maturity Surveillance
+                {isNodalOfficer ? 'Deposit History & Renewal' : 'Deposit History & Maturity Surveillance'}
               </h2>
               <p className="text-xs text-gray-600 mt-1 max-w-3xl">
-                Maintains an unbroken chronological deposit history across institutional mergers, bank amalgamations, and statutory 5-year renewals to verify 8/10-year lock-in compliance.
+                {isNodalOfficer
+                  ? "View your institution's past deposit history and submit renewals or bank updates to maintain continuous regulatory compliance."
+                  : "Maintains an unbroken chronological deposit history across institutional mergers, bank amalgamations, and statutory 5-year renewals to verify 8/10-year lock-in compliance."}
               </p>
             </div>
           </div>
@@ -304,12 +463,145 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
         </div>
       </div>
 
+      {/* Personalized Maturity Banner for Institute Nodal Officer */}
+      {isNodalOfficer && renderNodalAlertBanner()}
+
       {/* Main Split-Screen Section: Visual DAG Canvas (Left) & Renewal Linker (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* LEFT / TOP CANVAS: Visual DAG Graph (7 Columns) */}
+        {/* LEFT / TOP CANVAS: Visual DAG Graph (For Admin) OR Past Deposit History Timeline (For Nodal Officer) */}
         <div className="lg:col-span-7 bg-white border border-gray-300 rounded p-5 shadow-sm flex flex-col space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+          {isNodalOfficer ? (
+            /* Clean "Past Deposit History" Timeline for Institute Nodal Officer */
+            <>
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <div className="flex items-center space-x-2">
+                  <History className="w-5 h-5 text-blue-900" />
+                  <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                    Past Deposit History
+                  </h3>
+                  <span className="text-[10px] bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200 font-mono font-medium">
+                    {graphData?.nodes.length || 0} Records on File
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => loadGraph()}
+                  disabled={loadingGraph}
+                  className="flex items-center space-x-1 text-xs text-gray-700 hover:text-gray-900 px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 border border-gray-300 transition cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${loadingGraph ? 'animate-spin' : ''}`} />
+                  <span>Refresh Records</span>
+                </button>
+              </div>
+
+              <div className="space-y-3.5">
+                {loadingGraph ? (
+                  <div className="flex flex-col items-center justify-center space-y-2 py-16">
+                    <RefreshCw className="w-8 h-8 text-blue-900 animate-spin" />
+                    <span className="text-xs text-gray-600">Loading deposit history...</span>
+                  </div>
+                ) : !graphData || graphData.nodes.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 text-xs">
+                    No past deposit records found for this institution.
+                  </div>
+                ) : (
+                  graphData.nodes.map((node, index) => {
+                    const isSelected = selectedNode?.id === node.id;
+                    const isLatest = index === graphData.nodes.length - 1;
+                    const isSuperseded = node.lifecycle_status === 'RENEWED_SUPERSEDED';
+
+                    return (
+                      <div
+                        key={node.id}
+                        onClick={() => {
+                          setSelectedNode(node);
+                          setParentFdrUid(node.fdr_uid);
+                          setNewBankName(node.bank_name || 'Canara Bank');
+                          setNewIfsc(node.ifsc || 'CNRB0001234');
+                          setNewPrincipal(node.principal_amount || 3500000);
+                        }}
+                        className={`p-4 rounded border-2 transition-all cursor-pointer relative shadow-sm ${
+                          isSelected
+                            ? 'bg-blue-50/50 border-[#1a365d] ring-1 ring-[#1a365d]'
+                            : 'bg-white border-gray-200 hover:border-blue-400 hover:bg-gray-50/50'
+                        }`}
+                      >
+                        {/* Header Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2.5 mb-2.5">
+                          <div className="flex items-center space-x-2.5">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                              isLatest ? 'bg-blue-900 text-white' : 'bg-gray-200 text-gray-700'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <div>
+                              <span className="font-bold text-gray-900 text-sm">{node.bank_name}</span>
+                              <span className="text-[11px] text-gray-500 font-mono ml-2">IFSC: {node.ifsc || '—'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-xs font-bold text-blue-950 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                              {node.fdr_uid}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                              isSuperseded
+                                ? 'bg-gray-100 text-gray-700 border-gray-300'
+                                : node.lifecycle_status === 'MATURED_ACTION_PENDING'
+                                ? 'bg-red-100 text-red-800 border-red-300'
+                                : node.lifecycle_status.includes('APPROACHING')
+                                ? 'bg-orange-100 text-orange-800 border-orange-300'
+                                : 'bg-green-100 text-green-800 border-green-300'
+                            }`}>
+                              {isSuperseded ? 'Renewed & Superseded' : node.lifecycle_status.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Financial and Lock-In Details */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                          <div>
+                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Deposit Amount</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              ₹{(node.principal_amount || 0).toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-[11px] text-gray-600 block">Interest: {node.interest_rate}% p.a.</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Lock-In Window</span>
+                            <span className="font-mono text-gray-800 font-semibold text-xs block">
+                              {node.issue_date} → {node.maturity_date}
+                            </span>
+                            <span className="text-[11px] text-gray-500 block">
+                              {node.is_root ? 'Genesis Initial Deposit' : node.relation_type.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <div className="col-span-2 sm:col-span-1 flex flex-col justify-center items-start sm:items-end">
+                            <span className="text-[10px] text-gray-500 uppercase font-semibold block">Status</span>
+                            <span className="text-xs font-medium text-gray-700">
+                              {isLatest ? '● Current Active Deposit' : '✓ Superseded by Renewal'}
+                            </span>
+                            {isSelected ? (
+                              <span className="text-[10px] text-blue-900 font-semibold mt-1 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
+                                Selected for Renewal
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-blue-700 font-medium mt-1 hover:underline">
+                                Click to Select for Renewal →
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          ) : (
+            /* Visual DAG Canvas & Node Provenance Certificate for AICTE Scrutiny Officer / Competent Authority */
+            <>
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
             <div className="flex items-center space-x-2">
               <GitMerge className="w-5 h-5 text-blue-900" />
               <h3 className="text-sm font-bold text-gray-900 tracking-tight">
@@ -534,61 +826,73 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
 
-        {/* RIGHT PANE: 1-Click Renewal & Bank Merger Replacement Linker (5 Columns) */}
+        {/* RIGHT PANE: Renewal Linker (5 Columns) */}
         <div className="lg:col-span-5 bg-white border border-gray-300 rounded p-5 shadow-sm flex flex-col space-y-4">
           <div className="flex items-center justify-between border-b border-gray-200 pb-3">
             <div className="flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-orange-600" />
+              {isNodalOfficer ? (
+                <FileText className="w-5 h-5 text-blue-900" />
+              ) : (
+                <Zap className="w-5 h-5 text-orange-600" />
+              )}
               <h3 className="text-sm font-bold text-gray-900 tracking-tight">
-                1-Click Lineage Linker & Renewal Form
+                {isNodalOfficer ? 'Submit Deposit Renewal' : '1-Click Lineage Linker & Renewal Form'}
               </h3>
             </div>
-            <span className="text-[10px] bg-orange-50 text-orange-800 px-2 py-0.5 rounded font-mono border border-orange-300 font-bold">
-              RENEWAL WORKBENCH
+            <span className={`text-[10px] px-2 py-0.5 rounded font-mono border font-bold ${
+              isNodalOfficer
+                ? 'bg-blue-50 text-blue-900 border-blue-200'
+                : 'bg-orange-50 text-orange-800 border-orange-300'
+            }`}>
+              {isNodalOfficer ? 'RENEWAL DESK' : 'RENEWAL WORKBENCH'}
             </span>
           </div>
 
-          {/* Live 1-Click Auto-Fill Demo Presets */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
-              1-Click Demo Evaluation Presets:
-            </span>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={handleAutoFillRenewal}
-                className="w-full text-left p-2.5 rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
-              >
-                <div>
-                  <div className="font-bold text-orange-900">
-                    ⚡ Auto-Fill 2026→2031 Canara Bank Renewal (FDR-2026-710)
+          {/* Live 1-Click Auto-Fill Demo Presets - Hidden for Nodal Officer */}
+          {!isNodalOfficer && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
+                1-Click Demo Evaluation Presets:
+              </span>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={handleAutoFillRenewal}
+                  className="w-full text-left p-2.5 rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
+                >
+                  <div>
+                    <div className="font-bold text-orange-900">
+                      ⚡ Auto-Fill 2026→2031 Canara Bank Renewal (FDR-2026-710)
+                    </div>
+                    <div className="text-[10px] text-gray-600">
+                      Supersedes expiring FDR-2020-205, extends lock-in by 5 years @ 7.40%
+                    </div>
                   </div>
-                  <div className="text-[10px] text-gray-600">
-                    Supersedes expiring FDR-2020-205, extends lock-in by 5 years @ 7.40%
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-orange-600 group-hover:translate-x-1 transition-transform" />
-              </button>
+                  <ArrowRight className="w-4 h-4 text-orange-600 group-hover:translate-x-1 transition-transform" />
+                </button>
 
-              <button
-                type="button"
-                onClick={handleAutoFillMerger}
-                className="w-full text-left p-2 rounded bg-gray-50 hover:bg-gray-100 border border-gray-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
-              >
-                <div>
-                  <div className="font-semibold text-gray-800">
-                    ⚡ Auto-Fill Bank Merger Migration (Syndicate → Canara)
+                <button
+                  type="button"
+                  onClick={handleAutoFillMerger}
+                  className="w-full text-left p-2 rounded bg-gray-50 hover:bg-gray-100 border border-gray-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
+                >
+                  <div>
+                    <div className="font-semibold text-gray-800">
+                      ⚡ Auto-Fill Bank Merger Migration (Syndicate → Canara)
+                    </div>
+                    <div className="text-[10px] text-gray-600">
+                      Links FDR-2016-101 (Syndicate) to FDR-2020-205 (Canara)
+                    </div>
                   </div>
-                  <div className="text-[10px] text-gray-600">
-                    Links FDR-2016-101 (Syndicate) to FDR-2020-205 (Canara)
-                  </div>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-gray-500 group-hover:translate-x-1 transition-transform" />
-              </button>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-500 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleCommitRenewal} className="space-y-3 text-xs">
@@ -596,7 +900,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             {/* Parent Selector */}
             <div>
               <label className="text-gray-700 block mb-1 font-semibold">
-                Parent Instrument to Supersede:
+                {isNodalOfficer ? 'Existing Deposit to Renew:' : 'Parent Instrument to Supersede:'}
               </label>
               <select
                 aria-label="Parent Instrument"
@@ -606,7 +910,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               >
                 {graphData?.nodes.map((n) => (
                   <option key={n.id} value={n.fdr_uid}>
-                    {n.fdr_uid} — {n.bank_name} (₹{(n.principal_amount || 0).toLocaleString('en-IN')}) [{n.lifecycle_status}]
+                    {n.fdr_uid} — {n.bank_name} (₹{(n.principal_amount || 0).toLocaleString('en-IN')}) [{n.lifecycle_status.replace(/_/g, ' ')}]
                   </option>
                 ))}
               </select>
@@ -615,7 +919,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             {/* Relation Type */}
             <div>
               <label className="text-gray-700 block mb-1 font-semibold">
-                Record Re-issuance Type:
+                {isNodalOfficer ? 'Renewal Type:' : 'Record Re-issuance Type:'}
               </label>
               <select
                 aria-label="Relation Type"
@@ -624,14 +928,18 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                 className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-blue-950 font-bold focus:border-blue-900 focus:outline-none"
               >
                 <option value="MATURITY_RENEWAL">Renewal (5-Year Statutory Extension)</option>
-                <option value="BANK_MERGER_REPLACEMENT">Status: Re-issued (Bank Merger)</option>
+                <option value="BANK_MERGER_REPLACEMENT">
+                  {isNodalOfficer ? 'Bank Merger / Amalgamation Replacement' : 'Status: Re-issued (Bank Merger)'}
+                </option>
               </select>
             </div>
 
             {/* Child FDR UID & Bank Name */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-gray-700 block mb-1 font-medium">Re-issued / Renewal FDR UID:</label>
+                <label className="text-gray-700 block mb-1 font-medium">
+                  {isNodalOfficer ? 'New FDR Receipt No:' : 'Re-issued / Renewal FDR UID:'}
+                </label>
                 <input
                   type="text"
                   value={newFdrNumber}
@@ -695,9 +1003,37 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               </div>
             </div>
 
+            {/* Standard Upload File Input */}
+            <div>
+              <label className="text-gray-700 mb-1 font-semibold flex items-center space-x-1.5">
+                <UploadCloud className="w-3.5 h-3.5 text-blue-900" />
+                <span>Upload Renewed FDR Certificate / Deposit Receipt:</span>
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setRenewalFile(e.target.files[0]);
+                    }
+                  }}
+                  className="block w-full text-xs text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100 border border-gray-300 rounded cursor-pointer bg-gray-50"
+                />
+              </div>
+              {renewalFile && (
+                <p className="text-[11px] text-green-700 mt-1 flex items-center gap-1 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  Selected File: {renewalFile.name} ({(renewalFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+
             {/* Renewal Reason */}
             <div>
-              <label className="text-gray-700 block mb-1 font-medium">Statutory Renewal Reason:</label>
+              <label className="text-gray-700 block mb-1 font-medium">
+                {isNodalOfficer ? 'Renewal Remarks / Justification:' : 'Statutory Renewal Reason:'}
+              </label>
               <textarea
                 rows={2}
                 value={renewalReason}
@@ -715,12 +1051,23 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               {submittingRenewal ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Mining SHA-256 Block & Linking DAG Node...</span>
+                  <span>
+                    {isNodalOfficer ? 'Submitting Renewed Deposit...' : 'Mining SHA-256 Block & Linking DAG Node...'}
+                  </span>
                 </>
               ) : (
                 <>
-                  <GitCommit className="w-4 h-4 text-orange-400" />
-                  <span>Link Child Instrument to DAG Tree &amp; Seal Ledger Block</span>
+                  {isNodalOfficer ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-green-400" />
+                      <span>Submit Renewed Deposit</span>
+                    </>
+                  ) : (
+                    <>
+                      <GitCommit className="w-4 h-4 text-orange-400" />
+                      <span>Link Child Instrument to DAG Tree &amp; Seal Ledger Block</span>
+                    </>
+                  )}
                 </>
               )}
             </button>
@@ -731,156 +1078,173 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             <div className="bg-green-50 border border-green-300 rounded p-3 space-y-2 text-xs">
               <div className="flex items-center space-x-2 text-green-800 font-bold">
                 <CheckCircle2 className="w-4 h-4 text-green-700" />
-                <span>Deposit Record Appended Successfully!</span>
-              </div>
-              <p className="text-[11px] text-gray-700">{commitMessage}</p>
-              <div className="pt-1.5 border-t border-green-200 flex items-center space-x-1.5">
-                <Lock className="w-3.5 h-3.5 text-green-700" />
-                <span className="text-[10px] text-gray-600">Minted Audit Block Hash:</span>
-                <span className="font-mono text-[9px] text-green-900 bg-white px-1.5 py-0.5 rounded border border-green-300 truncate max-w-[200px]">
-                  {commitSuccessHash}
+                <span>
+                  {isNodalOfficer ? 'Deposit Renewal Submitted Successfully!' : 'Deposit Record Appended Successfully!'}
                 </span>
               </div>
+              <p className="text-[11px] text-gray-700">
+                {isNodalOfficer 
+                  ? 'Your renewal instrument has been linked to your institution deposit record and queued for regulatory verification.'
+                  : commitMessage}
+              </p>
+              {!isNodalOfficer ? (
+                <div className="pt-1.5 border-t border-green-200 flex items-center space-x-1.5">
+                  <Lock className="w-3.5 h-3.5 text-green-700" />
+                  <span className="text-[10px] text-gray-600">Minted Audit Block Hash:</span>
+                  <span className="font-mono text-[9px] text-green-900 bg-white px-1.5 py-0.5 rounded border border-green-300 truncate max-w-[200px]">
+                    {commitSuccessHash}
+                  </span>
+                </div>
+              ) : (
+                <div className="pt-1.5 border-t border-green-200 flex items-center justify-between text-[11px]">
+                  <span className="text-gray-600">FDR Reference:</span>
+                  <span className="font-mono text-[10px] font-bold text-green-900 bg-white px-2 py-0.5 rounded border border-green-300">
+                    {newFdrNumber}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* BOTTOM SECTION: T-90 / T-60 / T-30 Maturity Countdown Matrix */}
-      <div id="countdown-matrix-section" className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
-          <div className="flex items-center space-x-2">
-            <Clock className="w-5 h-5 text-blue-900" />
-            <h3 className="text-sm font-bold text-gray-900 tracking-tight">
-              T-90 / T-60 / T-30 Maturity Countdown & Escalation Surveillance Matrix
-            </h3>
+      {/* BOTTOM SECTION: T-90 / T-60 / T-30 Maturity Countdown Matrix (Hidden for Nodal Officer) */}
+      {!isNodalOfficer && (
+        <div id="countdown-matrix-section" className="bg-white border border-gray-300 rounded p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-5 h-5 text-blue-900" />
+              <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                T-90 / T-60 / T-30 Maturity Countdown & Escalation Surveillance Matrix
+              </h3>
+            </div>
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-gray-600">Sorted by Days Remaining (Ascending)</span>
+              <button
+                onClick={loadCountdown}
+                disabled={loadingCountdown}
+                className="text-xs text-gray-700 hover:text-gray-900 px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 border border-gray-300 transition cursor-pointer"
+              >
+                <RefreshCw className={`w-3 h-3 ${loadingCountdown ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-gray-600">Sorted by Days Remaining (Ascending)</span>
-            <button
-              onClick={loadCountdown}
-              disabled={loadingCountdown}
-              className="text-xs text-gray-700 hover:text-gray-900 px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 border border-gray-300 transition cursor-pointer"
-            >
-              <RefreshCw className={`w-3 h-3 ${loadingCountdown ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
 
-        {/* Matrix Table */}
-        <div className="overflow-x-auto border border-gray-300 rounded">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-gray-300 text-[11px] text-gray-700 font-bold uppercase tracking-wider bg-gray-100">
-                <th className="py-2.5 px-3 border-b border-gray-300">FDR Instrument</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">Institution</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">Bank & Principal</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">Maturity Date</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">Days Remaining</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">SLA Alert Status</th>
-                <th className="py-2.5 px-3 border-b border-gray-300">Automated Escalation Recipient</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 font-sans bg-white">
-              {countdownList.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-6 text-gray-500">
-                    Loading countdown surveillance matrix...
-                  </td>
+          {/* Matrix Table */}
+          <div className="overflow-x-auto border border-gray-300 rounded">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-gray-300 text-[11px] text-gray-700 font-bold uppercase tracking-wider bg-gray-100">
+                  <th className="py-2.5 px-3 border-b border-gray-300">FDR Instrument</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">Institution</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">Bank & Principal</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">Maturity Date</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">Days Remaining</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">SLA Alert Status</th>
+                  <th className="py-2.5 px-3 border-b border-gray-300">Automated Escalation Recipient</th>
                 </tr>
-              ) : (
-                countdownList.map((item, idx) => {
-                  const sla = getSlaBadge(item.days_remaining);
-                  return (
-                    <tr 
-                      key={idx}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      {/* FDR UID */}
-                      <td className="py-2.5 px-3 font-mono font-bold text-blue-900">
-                        {item.fdr_uid}
-                      </td>
+              </thead>
+              <tbody className="divide-y divide-gray-200 font-sans bg-white">
+                {countdownList.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-6 text-gray-500">
+                      Loading countdown surveillance matrix...
+                    </td>
+                  </tr>
+                ) : (
+                  countdownList.map((item, idx) => {
+                    const sla = getSlaBadge(item.days_remaining);
+                    return (
+                      <tr 
+                        key={idx}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        {/* FDR UID */}
+                        <td className="py-2.5 px-3 font-mono font-bold text-blue-900">
+                          {item.fdr_uid}
+                        </td>
 
-                      {/* Institution */}
-                      <td className="py-2.5 px-3 font-medium text-gray-900">
-                        {item.institution_name}
-                      </td>
+                        {/* Institution */}
+                        <td className="py-2.5 px-3 font-medium text-gray-900">
+                          {item.institution_name}
+                        </td>
 
-                      {/* Bank & Principal */}
-                      <td className="py-2.5 px-3">
-                        <span className="font-semibold text-gray-800 block">{item.bank_name || 'Scheduled Bank'}</span>
-                        <span className="font-mono text-[11px] text-green-700 font-bold">
-                          ₹{(item.principal || 0).toLocaleString('en-IN')}
-                        </span>
-                      </td>
-
-                      {/* Maturity Date */}
-                      <td className="py-2.5 px-3 font-mono text-gray-700">
-                        {item.maturity_date}
-                      </td>
-
-                      {/* Days Remaining & Visual Progress Bar */}
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${sla.style}`}>
-                            {sla.text}
+                        {/* Bank & Principal */}
+                        <td className="py-2.5 px-3">
+                          <span className="font-semibold text-gray-800 block">{item.bank_name || 'Scheduled Bank'}</span>
+                          <span className="font-mono text-[11px] text-green-700 font-bold">
+                            ₹{(item.principal || 0).toLocaleString('en-IN')}
                           </span>
-                        </div>
-                        <div className="w-24 bg-gray-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                          <div
-                            className={`h-full ${
-                              item.days_remaining <= 0 
-                                ? 'bg-red-600 w-full' 
-                                : item.days_remaining <= 30 
-                                ? 'bg-orange-500 w-3/4' 
-                                : item.days_remaining <= 60 
-                                ? 'bg-amber-500 w-1/2' 
-                                : item.days_remaining <= 90 
-                                ? 'bg-blue-600 w-1/3' 
-                                : 'bg-green-600 w-1/4'
-                            }`}
-                          />
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* SLA Alert Status */}
-                      <td className="py-2.5 px-3">
-                        <span className="text-[11px] font-bold text-gray-900 block">
-                          {item.status}
-                        </span>
+                        {/* Maturity Date */}
+                        <td className="py-2.5 px-3 font-mono text-gray-700">
+                          {item.maturity_date}
+                        </td>
 
-                        {/* Regulatory Escalation Action Badges (X-Factor #6) */}
-                        {item.days_remaining <= 30 && item.days_remaining > 0 && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-300">
-                              <MessageSquare className="w-3 h-3 text-green-700 shrink-0" />
-                              <span>WhatsApp & SMS Alert Automatically Dispatched to College Principal</span>
+                        {/* Days Remaining & Visual Progress Bar */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${sla.style}`}>
+                              {sla.text}
                             </span>
                           </div>
-                        )}
-
-                        {item.days_remaining <= 0 && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white border border-red-700 shadow-sm animate-pulse">
-                              <AlertTriangle className="w-3 h-3 text-white shrink-0" />
-                              <span>⚠ COMPLIANCE AT RISK: Soft-Hold Applied to Annual Extension of Approval (EoA)</span>
-                            </span>
+                          <div className="w-24 bg-gray-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                item.days_remaining <= 0 
+                                  ? 'bg-red-600 w-full' 
+                                  : item.days_remaining <= 30 
+                                  ? 'bg-orange-500 w-3/4' 
+                                  : item.days_remaining <= 60 
+                                  ? 'bg-amber-500 w-1/2' 
+                                  : item.days_remaining <= 90 
+                                  ? 'bg-blue-600 w-1/3' 
+                                  : 'bg-green-600 w-1/4'
+                              }`}
+                            />
                           </div>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Automated Escalation Recipient */}
-                      <td className="py-2.5 px-3 text-[11px] text-[#1a365d] font-semibold">
-                        {item.recipient}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        {/* SLA Alert Status */}
+                        <td className="py-2.5 px-3">
+                          <span className="text-[11px] font-bold text-gray-900 block">
+                            {item.status}
+                          </span>
+
+                          {/* Regulatory Escalation Action Badges (X-Factor #6) */}
+                          {item.days_remaining <= 30 && item.days_remaining > 0 && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-300">
+                                <MessageSquare className="w-3 h-3 text-green-700 shrink-0" />
+                                <span>WhatsApp & SMS Alert Automatically Dispatched to College Principal</span>
+                              </span>
+                            </div>
+                          )}
+
+                          {item.days_remaining <= 0 && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white border border-red-700 shadow-sm animate-pulse">
+                                <AlertTriangle className="w-3 h-3 text-white shrink-0" />
+                                <span>⚠ COMPLIANCE AT RISK: Soft-Hold Applied to Annual Extension of Approval (EoA)</span>
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Automated Escalation Recipient */}
+                        <td className="py-2.5 px-3 text-[11px] text-[#1a365d] font-semibold">
+                          {item.recipient}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );
