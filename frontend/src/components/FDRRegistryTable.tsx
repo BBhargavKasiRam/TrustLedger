@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FileCheck, 
   AlertTriangle, 
@@ -7,7 +7,9 @@ import {
   CheckCircle2, 
   Clock, 
   Building2,
-  Lock
+  Lock,
+  Filter,
+  ShieldAlert
 } from 'lucide-react';
 import type { FDRInstrument } from '../types';
 import { DigitalVaultModal } from './DigitalVaultModal';
@@ -18,8 +20,88 @@ interface FDRRegistryTableProps {
   onRefresh?: () => void;
 }
 
+export interface DeterministicFlag {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export const getDeterministicFlags = (fdr: FDRInstrument): DeterministicFlag[] => {
+  const flags: DeterministicFlag[] = [];
+  const rawFlags = fdr.flags || [];
+
+  // 1. Cryptographic Duplicate File Hashing
+  if (fdr.duplicate_flag || rawFlags.includes('DUPLICATE_FILE_FRAUD')) {
+    flags.push({
+      id: 'DUPLICATE_FILE_FRAUD',
+      label: '⚠️ DUPLICATE HASH DETECTED',
+      description: 'Identical SHA-256 cryptographic file digest detected across multiple submissions.',
+    });
+  }
+
+  // 2. Chronological Rule Engine: 10-Year (120 Month) Tenure Validation
+  let isTenureViolation = fdr.tenure_violation_flag || rawFlags.includes('TENURE_VIOLATION_FLAG');
+  if (!isTenureViolation && fdr.inst_issue_date && fdr.inst_maturity_date) {
+    const start = new Date(fdr.inst_issue_date);
+    const end = new Date(fdr.inst_maturity_date);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      if (months < 120) {
+        isTenureViolation = true;
+      }
+    }
+  }
+  if (isTenureViolation) {
+    flags.push({
+      id: 'TENURE_VIOLATION_FLAG',
+      label: '⚠️ TENURE VIOLATION',
+      description: `Deposit lock-in period (${fdr.tenure_months || '<120'} months) fails mandatory 10-year (120-month) APH requirement.`,
+    });
+  }
+
+  // 3. Dual-Blind Delta Comparison: Principal or Maturity Mismatch
+  const hasDataMismatch = fdr.data_mismatch_flag || 
+    rawFlags.includes('DATA_MISMATCH_FLAG') || 
+    fdr.bank_verified_status === 'MISMATCH_FLAGGED' ||
+    (fdr.bank_confirmed_principal != null && fdr.bank_confirmed_principal !== fdr.inst_principal_amount) ||
+    (fdr.bank_confirmed_maturity_date && fdr.inst_maturity_date && fdr.bank_confirmed_maturity_date !== fdr.inst_maturity_date);
+
+  if (hasDataMismatch) {
+    flags.push({
+      id: 'DATA_MISMATCH_FLAG',
+      label: '⚠️ DATA MISMATCH',
+      description: 'College claimed principal or maturity date deviates from Authoritative Core Banking (CBS) record.',
+    });
+  }
+
+  // 4. Lien & Encumbrance Detection
+  const hasLienViolation = fdr.lien_encumbrance_flag || 
+    rawFlags.includes('LIEN_ENCUMBRANCE_FLAG') || 
+    (fdr.bank_lien_status && fdr.bank_lien_status !== 'ACTIVE_JOINT_AICTE');
+
+  if (hasLienViolation) {
+    flags.push({
+      id: 'LIEN_ENCUMBRANCE_FLAG',
+      label: '⚠️ LIEN ACTIVE',
+      description: 'Depository bank indicates unauthorized lien or loan facility sanctioned against FDR.',
+    });
+  }
+
+  // 5. Cross-Registry AICTE ERP Hold
+  if (fdr.cross_registry_hold_flag || rawFlags.includes('CROSS_REGISTRY_HOLD_FLAG')) {
+    flags.push({
+      id: 'CROSS_REGISTRY_HOLD_FLAG',
+      label: '⚠️ CROSS-REGISTRY HOLD',
+      description: 'Statutory hold flagged in internal AICTE ERP (e.g. pending litigation or unpaid faculty salaries).',
+    });
+  }
+
+  return flags;
+};
+
 export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
   const [selectedVaultFdr, setSelectedVaultFdr] = useState<FDRInstrument | null>(null);
+  const [filterFlaggedOnly, setFilterFlaggedOnly] = useState<boolean>(false);
 
   const formatCurrency = (amount?: number | null) => {
     if (amount === undefined || amount === null) return '—';
@@ -84,6 +166,27 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
     }
   };
 
+  // Compute flagged count and sorted/filtered records
+  const { processedFdrs, flaggedCount } = useMemo(() => {
+    let count = 0;
+    const itemsWithFlags = fdrs.map(f => {
+      const flags = getDeterministicFlags(f);
+      if (flags.length > 0) count++;
+      return { fdr: f, flags };
+    });
+
+    let displayList = itemsWithFlags;
+
+    if (filterFlaggedOnly) {
+      displayList = itemsWithFlags.filter(item => item.flags.length > 0);
+    } else {
+      // Sort flagged items to the top by default so scrutiny officers immediately see violations
+      displayList = [...itemsWithFlags].sort((a, b) => b.flags.length - a.flags.length);
+    }
+
+    return { processedFdrs: displayList, flaggedCount: count };
+  }, [fdrs, filterFlaggedOnly]);
+
   return (
     <div id="centralized-fdr-repository" className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] shadow-sm p-6">
       
@@ -108,11 +211,43 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs text-slate-600 shrink-0">
-          <span className="font-medium">Total Seeded Instruments:</span>
-          <span className="font-mono font-bold text-[#1E3A8A] bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
-            {fdrs.length} Active Records
-          </span>
+        {/* Quick-Filter & Metric Counters */}
+        <div className="flex flex-wrap items-center gap-2.5 text-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setFilterFlaggedOnly(!filterFlaggedOnly)}
+            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md font-bold text-xs border transition shadow-2xs cursor-pointer ${
+              filterFlaggedOnly
+                ? 'bg-red-600 text-white border-red-700 ring-2 ring-red-400 ring-offset-1'
+                : 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-inherit" />
+            <span>Requires Scrutiny (Flagged)</span>
+            <span className={`ml-1 text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
+              filterFlaggedOnly ? 'bg-white text-red-700' : 'bg-red-600 text-white'
+            }`}>
+              {flaggedCount}
+            </span>
+          </button>
+
+          {filterFlaggedOnly && (
+            <button
+              type="button"
+              onClick={() => setFilterFlaggedOnly(false)}
+              className="inline-flex items-center space-x-1 text-slate-600 hover:text-slate-900 px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer font-medium text-xs"
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>Show All ({fdrs.length})</span>
+            </button>
+          )}
+
+          <div className="flex items-center space-x-1 text-slate-600 pl-2 border-l border-slate-300">
+            <span className="font-medium">Total:</span>
+            <span className="font-mono font-bold text-[#1E3A8A] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              {fdrs.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -121,7 +256,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
         <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
           <thead className="text-[11px] font-bold uppercase tracking-wider">
             <tr>
-              <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700">FDR UID / Lineage</th>
+              <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700">FDR UID / Lineage &amp; Flags</th>
               <th className="py-3 px-3.5 border-b border-slate-200 bg-slate-50 text-slate-700">Institution</th>
               
               {/* Direct Dual-Truth Comparison Headers */}
@@ -153,16 +288,22 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white">
-            {fdrs.map((fdr) => {
-              const hasDiscrepancy = fdr.bank_verified_status === 'MISMATCH_FLAGGED' || fdr.bank_lien_status === 'LOAN_TAKEN_ENCUMBERED' || (fdr.bank_confirmed_principal != null && fdr.bank_confirmed_principal !== fdr.inst_principal_amount);
+            {processedFdrs.map(({ fdr, flags }) => {
+              const hasFlags = flags.length > 0;
               const hasLineageParent = !!fdr.parent_fdr_id;
 
               return (
-                <tr key={fdr.id} className={`hover:bg-slate-50/80 transition-colors ${hasDiscrepancy ? 'bg-red-50/40' : ''}`}>
+                <tr 
+                  key={fdr.id} 
+                  className={`hover:bg-slate-50/80 transition-colors ${
+                    hasFlags ? 'bg-red-50/30 border-l-4 border-l-red-500' : ''
+                  }`}
+                >
                   
-                  {/* UID & Lineage */}
-                  <td className="py-3.5 px-3.5 whitespace-nowrap">
+                  {/* UID & Lineage & Deterministic Flags */}
+                  <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
                     <div className="font-mono font-bold text-[#1E3A8A] text-sm">{fdr.fdr_uid}</div>
+                    
                     <div className="flex items-center space-x-1.5 mt-1">
                       {hasLineageParent ? (
                         <span className="inline-flex items-center space-x-1 text-[10px] text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 font-semibold">
@@ -175,10 +316,26 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                         </span>
                       )}
                     </div>
+
+                    {/* Distinct Red Badges for Flagged Violations */}
+                    {hasFlags && (
+                      <div className="flex flex-col gap-1 mt-2">
+                        {flags.map((flag) => (
+                          <span
+                            key={flag.id}
+                            title={flag.description}
+                            className="inline-flex items-center space-x-1 bg-red-100 text-red-800 border border-red-300 text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs whitespace-nowrap max-w-fit"
+                          >
+                            <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />
+                            <span>{flag.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
 
                   {/* Institution */}
-                  <td className="py-3.5 px-3.5 whitespace-nowrap">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap align-top">
                     <div className="font-semibold text-slate-900">
                       {fdr.institution?.name || `Institution #${fdr.institution_id}`}
                     </div>
@@ -188,7 +345,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                   </td>
 
                   {/* Column Set A: College Claim */}
-                  <td className="py-3.5 px-3.5 whitespace-nowrap bg-slate-50/50 border-l border-slate-200">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap bg-slate-50/50 border-l border-slate-200 align-top">
                     <div className="font-bold text-slate-900 text-sm">
                       {formatCurrency(fdr.inst_principal_amount)}
                     </div>
@@ -199,11 +356,18 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                       Matures: {fdr.inst_maturity_date || '—'}
                     </div>
+                    {fdr.tenure_months ? (
+                      <div className={`text-[10px] font-mono mt-0.5 ${
+                        fdr.tenure_months < 120 ? 'text-red-700 font-bold' : 'text-slate-500'
+                      }`}>
+                        Tenure: {fdr.tenure_months} mos {fdr.tenure_months < 120 ? '(Violates 120 mo)' : '✓'}
+                      </div>
+                    ) : null}
                   </td>
 
                   {/* Column Set C: Bank Truth */}
-                  <td className={`py-3.5 px-3.5 whitespace-nowrap border-l ${
-                    fdr.bank_verified_status === 'MISMATCH_FLAGGED' || fdr.bank_lien_status === 'LOAN_TAKEN_ENCUMBERED'
+                  <td className={`py-3.5 px-3.5 whitespace-nowrap border-l align-top ${
+                    fdr.bank_verified_status === 'MISMATCH_FLAGGED' || fdr.bank_lien_status === 'LOAN_TAKEN_ENCUMBERED' || (fdr.bank_confirmed_principal != null && fdr.bank_confirmed_principal !== fdr.inst_principal_amount)
                       ? 'bg-red-50/50 border-red-200'
                       : 'bg-emerald-50/30 border-emerald-100'
                   }`}>
@@ -237,7 +401,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                   </td>
 
                   {/* AICTE Requirement 2: Digital Vault Retrieval */}
-                  <td className="py-3.5 px-3 whitespace-nowrap border-l border-slate-200 text-center">
+                  <td className="py-3.5 px-3 whitespace-nowrap border-l border-slate-200 text-center align-top">
                     <button
                       type="button"
                       onClick={() => setSelectedVaultFdr(fdr)}
@@ -255,7 +419,7 @@ export const FDRRegistryTable: React.FC<FDRRegistryTableProps> = ({ fdrs }) => {
                   </td>
 
                   {/* Lifecycle Status */}
-                  <td className="py-3.5 px-3.5 whitespace-nowrap border-l border-slate-200">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap border-l border-slate-200 align-top">
                     {getStatusBadge(fdr.lifecycle_status)}
                   </td>
 

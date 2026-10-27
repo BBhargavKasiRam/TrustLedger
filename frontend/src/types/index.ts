@@ -147,6 +147,16 @@ export interface FDRInstrument {
   bank_verified_at?: string | null;
   magic_link_token?: string | null;
 
+  // AICTE Requirement 3: Deterministic Discrepancy Flags
+  fileHash?: string | null;
+  file_hash?: string | null;
+  flags?: string[];
+  tenure_violation_flag?: boolean;
+  data_mismatch_flag?: boolean;
+  lien_encumbrance_flag?: boolean;
+  cross_registry_hold_flag?: boolean;
+  tenure_months?: number | null;
+
   // Lifecycle & Supporting Document
   lifecycle_status: string;
   document_path?: string | null;
@@ -436,6 +446,8 @@ export interface LineageGraphNode {
   documentUrl?: string | null;
   document_url?: string | null;
   digitalVault?: DigitalVaultItem[];
+  fileHash?: string | null;
+  flags?: string[];
   audit_hash: string;
 }
 

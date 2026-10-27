@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 import datetime
+import hashlib
 from typing import List, Optional, Dict, Any, Union
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -638,8 +639,21 @@ async def submit_fdr_multipart(
     inst = doc_to_institution(inst_doc)
 
     document_url = None
+    file_bytes = b""
+    file_hash = None
+    flags = []
+    duplicate_flag = False
+
     if file and file.filename:
         file_bytes = await file.read()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+
+        # Check if hash already exists in MongoDB
+        existing_with_hash = db.fdr_instruments.find_one({"fileHash": file_hash})
+        if existing_with_hash:
+            flags.append("DUPLICATE_FILE_FRAUD")
+            duplicate_flag = True
+
         # Save local copy for offline resilience
         uploads_dir = os.path.join(STATIC_DIR, "uploads")
         os.makedirs(uploads_dir, exist_ok=True)
@@ -654,6 +668,23 @@ async def submit_fdr_multipart(
         document_url = cloudinary_url or local_url
     else:
         document_url = "/static/sample_fdrs/sample_1_genuine_sbi.jpg"
+        file_hash = hashlib.sha256(document_url.encode("utf-8")).hexdigest()
+
+    # AICTE Requirement 3: Date-Math Tenure Validation (10 years = 120 months)
+    tenure_months = 0
+    tenure_violation_flag = False
+    try:
+        issue_d = datetime.datetime.strptime(inst_issue_date[:10], "%Y-%m-%d").date()
+        mat_d = datetime.datetime.strptime(inst_maturity_date[:10], "%Y-%m-%d").date()
+        months = (mat_d.year - issue_d.year) * 12 + (mat_d.month - issue_d.month)
+        if mat_d.day < issue_d.day:
+            months -= 1
+        tenure_months = max(0, months)
+        if tenure_months < 120:
+            flags.append("TENURE_VIOLATION_FLAG")
+            tenure_violation_flag = True
+    except Exception as e:
+        print(f"[TENURE MATH NOTICE] {e}")
 
     total_count = db.fdr_instruments.count_documents({})
     next_id = total_count + 1
@@ -683,6 +714,14 @@ async def submit_fdr_multipart(
         document_url=document_url,
         document_path=document_url,
 
+        # AICTE Requirement 3: File Hash & Deterministic Flags
+        fileHash=file_hash,
+        file_hash=file_hash,
+        flags=flags,
+        duplicate_flag=duplicate_flag,
+        tenure_violation_flag=tenure_violation_flag,
+        tenure_months=tenure_months,
+
         # AICTE Requirement 2: Multi-file Digital Vault
         digitalVault=[
             DigitalVaultItem(
@@ -695,7 +734,7 @@ async def submit_fdr_multipart(
 
         # Column Set C - bank_confirmed initial state
         bank_verified_status="PENDING",
-        lifecycle_status="UNDER_SCRUTINY"
+        lifecycle_status="DISCREPANCY_FLAGGED" if flags else "UNDER_SCRUTINY"
     )
 
     db.fdr_instruments.insert_one(new_fdr.to_mongo_dict())
@@ -718,6 +757,12 @@ async def submit_fdr_multipart(
     fdr_clean["institution"] = clean_mongo_doc(inst_doc)
     fdr_clean["documentUrl"] = document_url
     fdr_clean["document_url"] = document_url
+    fdr_clean["fileHash"] = file_hash
+    fdr_clean["file_hash"] = file_hash
+    fdr_clean["flags"] = flags
+    fdr_clean["duplicate_flag"] = duplicate_flag
+    fdr_clean["tenure_violation_flag"] = tenure_violation_flag
+    fdr_clean["tenure_months"] = tenure_months
 
     return {
         "message": f"FDR {new_fdr.fdr_uid} submitted successfully with supporting document.",
@@ -899,6 +944,58 @@ def get_bank_fdr_session(fdr_uid: str, db: Any = Depends(get_db)):
         "document_path": fdr.document_path,
         "magic_link_token": fdr.magic_link_token or f"ml_{uuid.uuid4().hex[:12]}",
         "bank_manager_email": fdr.bank_manager_email or f"bm.{fdr.inst_ifsc[:4].lower()}@bank.gov.in"
+    }
+
+# AICTE Requirement 3 & 4: Mock Internal AICTE ERP Check API
+@app.get("/api/erp-check/{pid}")
+def erp_check_endpoint(
+    pid: str,
+    mockHold: Optional[bool] = False,
+    courtCase: Optional[bool] = False,
+    unpaidSalary: Optional[bool] = False,
+    db: Any = Depends(get_db)
+):
+    """
+    Mock internal AICTE ERP compliance check endpoint (AICTE Requirement 3 & 4).
+    Deterministically/randomly returns mock compliance holds for institutions.
+    """
+    inst_doc = db.institutions.find_one({"pid": pid})
+    if not inst_doc and (pid.isdigit() or (pid.startswith("1-") and pid[2:].isdigit())):
+        inst_doc = db.institutions.find_one({"$or": [{"id": pid}, {"id": int(pid) if pid.isdigit() else -1}]})
+
+    has_court_case = False
+    has_unpaid_salary = False
+    has_pgrc_penalty = False
+    pgrc_amount = 0.0
+
+    is_flagged_college = pid in ["1-2002", "1-4004"] or mockHold
+    if inst_doc:
+        has_court_case = bool(inst_doc.get("pending_court_cases") or inst_doc.get("legal_stay_active") or courtCase)
+        has_unpaid_salary = bool(inst_doc.get("unpaid_salary_complaints") or inst_doc.get("unpaid_salary_cases", 0) > 0 or unpaidSalary)
+        has_pgrc_penalty = bool(inst_doc.get("pending_pgrc_penalties", 0) > 0 or inst_doc.get("pgrc_penalty_amount", 0) > 0)
+        pgrc_amount = float(inst_doc.get("pgrc_penalty_amount", 0.0))
+    elif is_flagged_college:
+        has_court_case = True
+        has_unpaid_salary = True
+        has_pgrc_penalty = True
+        pgrc_amount = 45000.0
+
+    has_holds = has_court_case or has_unpaid_salary or has_pgrc_penalty
+
+    return {
+        "pid": pid,
+        "compliant": not has_holds,
+        "holds": {
+            "court_case_pending": has_court_case,
+            "unpaid_faculty_salary": has_unpaid_salary,
+            "pgrc_penalties_pending": has_pgrc_penalty,
+            "pgrc_penalty_amount": pgrc_amount
+        },
+        "message": (
+            "AICTE Central ERP Compliance Hold: Unresolved statutory hold(s) active on institution."
+            if has_holds else
+            "AICTE Central ERP Clearance Confirmed. Zero pending institutional holds."
+        )
     }
 
 # ==============================================================================

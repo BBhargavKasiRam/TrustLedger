@@ -28,6 +28,9 @@ app.post('/api/fdrs/:fdr_uid/vault', uploadFdrDocument, fdrController.appendVaul
 app.post('/api/bank/tier2-submit-attestation-multipart', uploadFdrDocument, fdrController.submitBankAttestation);
 app.post('/api/bank/tier2-submit-attestation', uploadFdrDocument, fdrController.submitBankAttestation);
 
+// AICTE Requirement 3 & 4: Mock Internal AICTE ERP Check API
+app.get('/api/erp-check/:pid', fdrController.checkERPHolds);
+
 const PORT = process.env.NODE_PORT || 5000;
 if (process.env.START_NODE_SERVER === 'true') {
   app.listen(PORT, () => {

@@ -34,6 +34,16 @@ const fdrInstrumentSchema = new mongoose.Schema({
   // AICTE Requirement 2: Multi-file Digital Vault array
   digitalVault: { type: [vaultDocumentSchema], default: [] },
 
+  // AICTE Requirement 3: Cryptographic Hash & Deterministic Discrepancy Flags
+  fileHash: { type: String, default: null },
+  flags: { type: [String], default: [] }, // e.g. ["DUPLICATE_FILE_FRAUD", "TENURE_VIOLATION_FLAG", "DATA_MISMATCH_FLAG", "LIEN_ENCUMBRANCE_FLAG", "CROSS_REGISTRY_HOLD_FLAG"]
+  duplicate_flag: { type: Boolean, default: false },
+  tenure_violation_flag: { type: Boolean, default: false },
+  data_mismatch_flag: { type: Boolean, default: false },
+  lien_encumbrance_flag: { type: Boolean, default: false },
+  cross_registry_hold_flag: { type: Boolean, default: false },
+  tenure_months: { type: Number, default: null },
+
   // Supporting Document URL (Cloudinary Secure URL - maintained for backward compatibility)
   documentUrl: { type: String, default: null },
   document_path: { type: String, default: null },

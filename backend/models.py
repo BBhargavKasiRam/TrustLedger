@@ -148,6 +148,17 @@ class FDRInstrument(MongoBaseModel):
     document_url: Optional[str] = None
     # AICTE Requirement 2: Digital Vault
     digitalVault: List[DigitalVaultItem] = Field(default_factory=list)
+
+    # AICTE Requirement 3: Cryptographic Hash & Deterministic Discrepancy Flags
+    fileHash: Optional[str] = None
+    file_hash: Optional[str] = None
+    flags: List[str] = Field(default_factory=list)
+    tenure_violation_flag: bool = False
+    data_mismatch_flag: bool = False
+    lien_encumbrance_flag: bool = False
+    cross_registry_hold_flag: bool = False
+    tenure_months: Optional[int] = None
+
     created_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
     updated_at: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.utcnow)
 
@@ -390,6 +401,24 @@ def doc_to_fdr(doc: Optional[Dict[str, Any]]) -> Optional[FDRInstrument]:
     if not d.get("documentUrl") and parsed_vault:
         d["documentUrl"] = parsed_vault[0].fileUrl
         d["document_url"] = parsed_vault[0].fileUrl
+
+    file_hash = d.get("fileHash") or d.get("file_hash")
+    if file_hash:
+        d["fileHash"] = file_hash
+        d["file_hash"] = file_hash
+
+    flags = d.get("flags") or []
+    d["flags"] = list(flags)
+    if "DUPLICATE_FILE_FRAUD" in flags:
+        d["duplicate_flag"] = True
+    if "TENURE_VIOLATION_FLAG" in flags:
+        d["tenure_violation_flag"] = True
+    if "DATA_MISMATCH_FLAG" in flags:
+        d["data_mismatch_flag"] = True
+    if "LIEN_ENCUMBRANCE_FLAG" in flags:
+        d["lien_encumbrance_flag"] = True
+    if "CROSS_REGISTRY_HOLD_FLAG" in flags:
+        d["cross_registry_hold_flag"] = True
 
     fdr = FDRInstrument(**d)
     fdr.sync_dual_truth()

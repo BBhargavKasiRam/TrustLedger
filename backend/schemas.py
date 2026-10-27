@@ -85,6 +85,16 @@ class FDRInstrumentResponse(BaseModel):
     bank_verified_at: Optional[datetime] = None
     magic_link_token: Optional[str] = None
 
+    # AICTE Requirement 3: Deterministic Verification & Discrepancy Flags
+    fileHash: Optional[str] = None
+    file_hash: Optional[str] = None
+    flags: List[str] = []
+    tenure_violation_flag: bool = False
+    data_mismatch_flag: bool = False
+    lien_encumbrance_flag: bool = False
+    cross_registry_hold_flag: bool = False
+    tenure_months: Optional[int] = None
+
     # Lifecycle & Workflow State
     lifecycle_status: str
     document_path: Optional[str] = None

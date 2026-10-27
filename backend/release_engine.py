@@ -227,6 +227,15 @@ def initiate_release_evaluation(
     req.gate1_tenure_passed = gate1["passed"]
     req.gate2_erp_compliance_passed = gate2["passed"]
 
+    current_flags = set(fdr.flags or [])
+    if not gate2["passed"]:
+        current_flags.add("CROSS_REGISTRY_HOLD_FLAG")
+        fdr.cross_registry_hold_flag = True
+    else:
+        current_flags.discard("CROSS_REGISTRY_HOLD_FLAG")
+        fdr.cross_registry_hold_flag = False
+    fdr.flags = list(current_flags)
+
     if gate1["passed"] and gate2["passed"]:
         if not req.gate3_scrutiny_officer_approved:
             req.status = "PENDING_SCRUTINY"
@@ -242,7 +251,14 @@ def initiate_release_evaluation(
     )
     fdr_col.update_one(
         {"fdr_uid": fdr.fdr_uid},
-        {"$set": {"lifecycle_status": fdr.lifecycle_status, "updated_at": datetime.datetime.utcnow()}}
+        {
+            "$set": {
+                "lifecycle_status": fdr.lifecycle_status,
+                "flags": fdr.flags,
+                "cross_registry_hold_flag": fdr.cross_registry_hold_flag,
+                "updated_at": datetime.datetime.utcnow()
+            }
+        }
     )
 
     # Log to SHA-256 Audit Ledger
@@ -351,6 +367,19 @@ def approve_gate4_authority(
 
     req = get_or_create_release_request(db, fdr)
     now = datetime.datetime.utcnow()
+
+    # AICTE Requirement 4: Cross-Registry ERP Check for NOC Release
+    gate2 = evaluate_gate2_compliance(db, inst)
+    if not gate2["passed"]:
+        current_flags = set(fdr.flags or [])
+        current_flags.add("CROSS_REGISTRY_HOLD_FLAG")
+        fdr.cross_registry_hold_flag = True
+        fdr.flags = list(current_flags)
+        fdr_col.update_one(
+            {"fdr_uid": fdr.fdr_uid},
+            {"$set": {"cross_registry_hold_flag": True, "flags": fdr.flags}}
+        )
+        raise ValueError("Gate 2 Cross-Bureau Clearance Failed: Statutory hold(s) active on institution. Discharge NOC release blocked.")
 
     # Generate authoritative cryptographic SHA-256 NOC hash
     inst_pid = inst.pid if inst else "1-000000000"

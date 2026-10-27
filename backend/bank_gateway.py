@@ -366,15 +366,40 @@ def submit_tier2_bank_attestation(
         raise ValueError(f"FDR Instrument with UID {fdr_uid} not found.")
     fdr = doc_to_fdr(doc)
 
+    # AICTE Requirement 2: Strict Schema Enforcement (bankLienStatus, actualPrincipal, actualMaturity required)
+    if attested_principal is None or str(attested_principal).strip() == "" or float(attested_principal) <= 0:
+        raise ValueError("Validation Error: actualPrincipal is required and must be a valid positive amount.")
+    if not attested_maturity_date or not str(attested_maturity_date).strip():
+        raise ValueError("Validation Error: actualMaturity is required and cannot be empty.")
+    if not lien_status or not str(lien_status).strip():
+        raise ValueError("Validation Error: bankLienStatus is required and cannot be empty.")
+
     # Validate OTP (accept standard demo OTP 849201 or any 6-digit code for hackathon testing)
     if otp_code not in ["849201", "123456", "999999"] and len(otp_code) != 6:
         raise ValueError("Invalid 2FA OTP code. Please enter the 6-digit verification code sent to official bank email.")
 
     now = datetime.datetime.utcnow()
 
-    # Tri-Party Dual-Truth Comparison
-    is_principal_matched = (attested_principal == fdr.inst_principal_amount)
-    is_lien_active = (lien_status == "ACTIVE_JOINT_AICTE")
+    # AICTE Requirement 3: Dual-Blind Delta Comparison
+    current_flags = set(fdr.flags or [])
+    college_claimed_principal = float(fdr.inst_principal_amount or 0)
+    bank_attested_principal = float(attested_principal)
+    college_claimed_maturity = str(fdr.inst_maturity_date or "").strip()
+    bank_attested_maturity = str(attested_maturity_date or "").strip()
+
+    data_mismatch = False
+    lien_encumbrance = False
+
+    if (college_claimed_principal != bank_attested_principal) or (college_claimed_maturity != bank_attested_maturity):
+        current_flags.add("DATA_MISMATCH_FLAG")
+        data_mismatch = True
+
+    if lien_status != "ACTIVE_JOINT_AICTE":
+        current_flags.add("LIEN_ENCUMBRANCE_FLAG")
+        lien_encumbrance = True
+
+    is_principal_matched = not data_mismatch
+    is_lien_active = not lien_encumbrance
 
     if is_principal_matched and is_lien_active:
         bank_verified_status = "VERIFIED_MAGIC_LINK"
@@ -421,7 +446,10 @@ def submit_tier2_bank_attestation(
     }
     fdr.digitalVault.append(DigitalVaultItem(**vault_entry))
 
-    # Update Column Set C
+    # Update Column Set C and Deterministic Flags
+    fdr.flags = list(current_flags)
+    fdr.data_mismatch_flag = data_mismatch
+    fdr.lien_encumbrance_flag = lien_encumbrance
     fdr.bank_confirmed_principal = attested_principal
     fdr.bank_confirmed_maturity_date = attested_maturity_date
     fdr.bank_lien_status = lien_status
