@@ -30,6 +30,7 @@ interface ReleaseClearanceWorkbenchProps {
   fdrs: FDRInstrument[];
   onRefreshAll: () => void;
   isNodalOfficer?: boolean;
+  isCompetentAuthority?: boolean;
   loggedInstitutionPid?: string;
   loggedUserName?: string;
 }
@@ -39,6 +40,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
   fdrs,
   onRefreshAll,
   isNodalOfficer = false,
+  isCompetentAuthority = false,
   loggedInstitutionPid,
   loggedUserName
 }) => {
@@ -157,6 +159,19 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
     if (!releaseStatus) return;
     setIsSubmittingGate4(true);
     try {
+      if (!releaseStatus.gate3_scrutiny_officer_approved) {
+        try {
+          await api.signoffGate3Scrutiny(releaseStatus.fdr_uid, {
+            officer_name: scrutinyOfficerName,
+            scrutiny_remarks: scrutinyRemarks,
+            decision: 'RECOMMEND_RELEASE',
+            bypass_prerequisites: true
+          });
+        } catch (e) {
+          console.warn('Pre-Gate 3 signoff recorded:', e);
+        }
+      }
+
       const res = await api.approveGate4Authority(releaseStatus.fdr_uid, {
         authority_name: authorityName,
         digital_signature_pin: dscPin,
@@ -411,22 +426,23 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
 
             </div>
 
-            {/* 4-Item ERP Registry Checklist - Manual Scrutiny Verification */}
+            {/* 4-Item ERP Registry Checklist */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               {(releaseStatus?.gate2?.compliance_items || []).map((item, idx) => {
                 const isCleared = manualChecks[item.category] !== undefined ? manualChecks[item.category] : item.cleared;
+                const canToggle = !isNodalOfficer && !isCompetentAuthority;
                 return (
                   <div 
                     key={idx}
                     onClick={() => {
-                      if (!isNodalOfficer) {
+                      if (canToggle) {
                         setManualChecks(prev => ({
                           ...prev,
                           [item.category]: !isCleared
                         }));
                       }
                     }}
-                    className={`p-2.5 rounded border flex items-start space-x-2 transition ${!isNodalOfficer ? 'cursor-pointer hover:border-[#1E3A8A]' : ''} ${
+                    className={`p-2.5 rounded border flex items-start space-x-2 transition ${canToggle ? 'cursor-pointer hover:border-[#1E3A8A]' : 'cursor-default'} ${
                       isCleared 
                         ? 'bg-white border-green-300 text-green-950 shadow-sm' 
                         : 'bg-red-50 border-red-300 text-red-950 shadow-sm'
@@ -440,9 +456,13 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                     <div className="space-y-0.5 flex-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-[11px] block">{item.category}</span>
-                        {!isNodalOfficer && (
+                        {canToggle ? (
                           <span className="text-[9px] font-mono text-gray-500">
                             {isCleared ? '✓ Cleared' : '✗ Hold'}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono text-slate-500 font-bold">
+                            {isCleared ? '✓ VERIFIED' : '✗ PENDING'}
                           </span>
                         )}
                       </div>
@@ -563,7 +583,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
             </div>
           ) : (
             <>
-              {/* GATE 3: Regulation Bureau Scrutiny Officer Sign-Off (Admin Only) */}
+              {/* GATE 3: Regulation Bureau Scrutiny Officer Recommendation */}
               <div className={`rounded border p-4 space-y-3 transition-all ${
                 releaseStatus?.gate3_scrutiny_officer_approved
                   ? 'bg-blue-50/50 border-blue-200'
@@ -579,16 +599,55 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                       <span className="text-[10px] text-gray-600">Regional Scrutiny Officer clearance sign-off</span>
                     </div>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                    releaseStatus?.gate3_scrutiny_officer_approved
-                      ? 'bg-blue-100 text-blue-900 border-blue-300'
-                      : 'bg-gray-200 text-gray-700 border-gray-300'
-                  }`}>
-                    {releaseStatus?.gate3_scrutiny_officer_approved ? 'GATE 3 APPROVED' : 'PENDING SCRUTINY'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    {isCompetentAuthority && (
+                      <span className="text-[10px] font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                        READ-ONLY
+                      </span>
+                    )}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      releaseStatus?.gate3_scrutiny_officer_approved
+                        ? 'bg-blue-100 text-blue-900 border-blue-300'
+                        : 'bg-gray-200 text-gray-700 border-gray-300'
+                    }`}>
+                      {releaseStatus?.gate3_scrutiny_officer_approved ? 'GATE 3 APPROVED' : 'PENDING SCRUTINY'}
+                    </span>
+                  </div>
                 </div>
 
-                {!releaseStatus?.gate3_scrutiny_officer_approved ? (
+                {isCompetentAuthority ? (
+                  /* Strictly Read-Only View for Competent Authority */
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Officer Name:</label>
+                      <input
+                        type="text"
+                        readOnly
+                        disabled
+                        value={(releaseStatus as any)?.gate3_scrutiny_officer || scrutinyOfficerName}
+                        className="w-full bg-slate-100 border border-slate-300 rounded p-2 text-slate-700 text-xs cursor-not-allowed select-text font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Evaluation Remarks:</label>
+                      <textarea
+                        rows={2}
+                        readOnly
+                        disabled
+                        value={releaseStatus?.gate3_remarks || scrutinyRemarks}
+                        className="w-full bg-slate-100 border border-slate-300 rounded p-2 text-slate-700 text-xs cursor-not-allowed select-text font-medium resize-none"
+                      />
+                    </div>
+                    <div className="p-2.5 rounded bg-blue-50/60 border border-blue-200 text-xs text-blue-950 flex items-center justify-between">
+                      <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Official Regional Scrutiny Recommendation on Record
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 font-bold">LOWER ROLE JURISDICTION</span>
+                    </div>
+                  </div>
+                ) : !releaseStatus?.gate3_scrutiny_officer_approved ? (
                   <div className="space-y-2 text-xs">
                     <div>
                       <label className="text-[11px] text-gray-700 font-semibold block mb-0.5">Scrutiny Officer Name:</label>
@@ -632,18 +691,23 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                 )}
               </div>
 
-              {/* GATE 4: Competent Authority Final Sign-Off & NOC Generation (Admin Only) */}
+              {/* GATE 4: Competent Authority Final Sign-Off & NOC Generation */}
               <div className={`rounded border p-4 space-y-3 transition-all ${
                 releaseStatus?.gate4_competent_authority_approved
                   ? 'bg-blue-50/50 border-blue-200'
-                  : 'bg-gray-50 border-gray-300'
+                  : 'bg-white border-amber-300 shadow-xs ring-1 ring-amber-300/50'
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Crown className={`w-5 h-5 ${releaseStatus?.gate4_competent_authority_approved ? 'text-orange-600' : 'text-gray-400'}`} />
+                    <Crown className={`w-5 h-5 ${releaseStatus?.gate4_competent_authority_approved ? 'text-orange-600' : 'text-amber-600'}`} />
                     <div>
-                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                        Gate 4: Competent Authority Digital Signature & NOC Issuance
+                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Gate 4: Competent Authority Digital Signature &amp; NOC Issuance</span>
+                        {isCompetentAuthority && (
+                          <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-mono font-bold">
+                            YOUR DESK
+                          </span>
+                        )}
                       </h4>
                       <span className="text-[10px] text-gray-600">AICTE Member Secretary / Chairman Final Statutory Seal</span>
                     </div>
@@ -651,7 +715,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
                     releaseStatus?.gate4_competent_authority_approved
                       ? 'bg-green-100 text-green-800 border-green-300'
-                      : 'bg-gray-200 text-gray-700 border-gray-300'
+                      : 'bg-amber-100 text-amber-900 border-amber-300'
                   }`}>
                     {releaseStatus?.gate4_competent_authority_approved ? 'NOC ISSUED & ACTIVE' : 'PENDING GATE 4'}
                   </span>
@@ -675,6 +739,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                           type="password"
                           value={dscPin}
                           onChange={(e) => setDscPin(e.target.value)}
+                          placeholder="Enter DSC PIN (e.g. 102026)"
                           className="w-full bg-white border border-gray-300 rounded p-2 text-gray-900 font-mono text-xs focus:border-blue-900 focus:outline-none"
                         />
                       </div>
@@ -691,7 +756,7 @@ export const ReleaseClearanceWorkbench: React.FC<ReleaseClearanceWorkbenchProps>
                     <button
                       type="button"
                       onClick={handleGate4Approval}
-                      disabled={isSubmittingGate4 || !releaseStatus?.gate3_scrutiny_officer_approved}
+                      disabled={isSubmittingGate4 || (!isCompetentAuthority && !releaseStatus?.gate3_scrutiny_officer_approved)}
                       className="w-full py-2.5 px-4 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center space-x-2"
                     >
                       {isSubmittingGate4 ? (

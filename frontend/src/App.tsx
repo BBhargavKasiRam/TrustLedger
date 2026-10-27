@@ -925,6 +925,8 @@ export const App: React.FC = () => {
                                 institutions={institutions}
                                 fdrs={fdrs}
                                 onRefreshAll={loadData}
+                                isCompetentAuthority={true}
+                                loggedUserName={currentSession.userName}
                               />
                             </div>
                           </ErrorBoundary>
@@ -936,6 +938,8 @@ export const App: React.FC = () => {
                               institutions={institutions}
                               fdrs={fdrs}
                               onRefreshAll={loadData}
+                              isCompetentAuthority={true}
+                              loggedUserName={currentSession.userName}
                             />
                           </ErrorBoundary>
                         )}
