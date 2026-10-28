@@ -471,7 +471,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     onClick={handleTestApexNoc}
                     className="text-[#1E3A8A] hover:text-amber-600 font-bold underline cursor-pointer text-[11px] flex items-center space-x-1"
                   >
-                    <span>[Demo: Test-Verify Apex Released NOC]</span>
+                    <span>[Sample Released NOC Certificate Hash]</span>
                   </button>
                 </div>
               </div>

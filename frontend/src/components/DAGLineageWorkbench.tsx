@@ -8,7 +8,6 @@ import {
   Building2, 
   Landmark, 
   CheckCircle2, 
-  ArrowRight, 
   Lock, 
   Hash, 
   FileText, 
@@ -112,46 +111,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
     loadCountdown();
   }, [selectedInstitutionId]);
 
-  // Preset 1: Auto-Fill Canara Renewal 2026->2031
-  const handleAutoFillRenewal = () => {
-    const parent = selectedNode || (graphData?.nodes && graphData.nodes[graphData.nodes.length - 1]);
-    const parentUid = parent?.fdr_uid || 'FDR-2020-205';
-    const parentBank = parent?.bank_name || 'Canara Bank';
-    const parentIfsc = parent?.ifsc || 'CNRB0001234';
-    const parentAmt = parent?.principal_amount || 3500000;
-    const parentMat = parent?.maturity_date || '2026-10-24';
-    const matYear = parseInt(parentMat.slice(0, 4), 10) || 2026;
-    const nextMat = `${matYear + 5}${parentMat.slice(4)}`;
 
-    setParentFdrUid(parentUid);
-    setRelationType('MATURITY_RENEWAL');
-    setNewFdrNumber(`FDR-${matYear}-RNW`);
-    setNewBankName(parentBank);
-    setNewIfsc(parentIfsc);
-    setNewPrincipal(parentAmt);
-    setNewRate(7.40);
-    setNewIssueDate(parentMat);
-    setNewMaturityDate(nextMat);
-    setRenewalReason('Statutory 5-year lock-in renewal under AICTE Approval Process Handbook (APH 2026-31).');
-  };
-
-  // Preset 2: Auto-Fill Bank Merger Migration
-  const handleAutoFillMerger = () => {
-    const rootNode = graphData?.nodes?.find(n => n.depth === 0 || n.is_root) || graphData?.nodes?.[0];
-    const parentUid = rootNode?.fdr_uid || 'FDR-2016-101';
-    const parentAmt = rootNode?.principal_amount || 3500000;
-
-    setParentFdrUid(parentUid);
-    setRelationType('BANK_MERGER_REPLACEMENT');
-    setNewFdrNumber('FDR-2020-205');
-    setNewBankName('Canara Bank');
-    setNewIfsc('CNRB0001234');
-    setNewPrincipal(parentAmt);
-    setNewRate(7.20);
-    setNewIssueDate('2020-04-15');
-    setNewMaturityDate('2026-04-14');
-    setRenewalReason('Bank amalgamation transition: Syndicate Bank merged into Canara Bank per Govt of India Gazette.');
-  };
 
   // Submit Child Link to DAG
   const handleCommitRenewal = async (e: React.FormEvent) => {
@@ -939,47 +899,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             return null;
           })()}
 
-          {/* Live 1-Click Auto-Fill Demo Presets - Hidden for Nodal Officer */}
-          {!isNodalOfficer && (
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
-                1-Click Demo Evaluation Presets:
-              </span>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  type="button"
-                  onClick={handleAutoFillRenewal}
-                  className="w-full text-left p-2.5 rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
-                >
-                  <div>
-                    <div className="font-bold text-orange-900">
-                      ⚡ Auto-Fill 2026→2031 Canara Bank Renewal (FDR-2026-710)
-                    </div>
-                    <div className="text-[10px] text-gray-600">
-                      Supersedes expiring FDR-2020-205, extends lock-in by 5 years @ 7.40%
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-orange-600 group-hover:translate-x-1 transition-transform" />
-                </button>
 
-                <button
-                  type="button"
-                  onClick={handleAutoFillMerger}
-                  className="w-full text-left p-2 rounded bg-gray-50 hover:bg-gray-100 border border-gray-300 text-xs transition cursor-pointer flex items-center justify-between group shadow-sm"
-                >
-                  <div>
-                    <div className="font-semibold text-gray-800">
-                      ⚡ Auto-Fill Bank Merger Migration (Syndicate → Canara)
-                    </div>
-                    <div className="text-[10px] text-gray-600">
-                      Links FDR-2016-101 (Syndicate) to FDR-2020-205 (Canara)
-                    </div>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-gray-500 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Form */}
           {(() => {
@@ -1084,8 +1004,8 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                   </div>
                 </div>
 
-                {/* Interest Rate & New Maturity Date */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Interest Rate & Lock-In Dates */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-gray-700 block mb-1 font-medium">Interest Rate (%):</label>
                     <input
@@ -1094,6 +1014,16 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                       disabled={isNodalOfficer && !isRenewalUnlocked}
                       value={newRate}
                       onChange={(e) => setNewRate(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-700 block mb-1 font-medium">Issue Date:</label>
+                    <input
+                      type="date"
+                      disabled={isNodalOfficer && !isRenewalUnlocked}
+                      value={newIssueDate}
+                      onChange={(e) => setNewIssueDate(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                     />
                   </div>

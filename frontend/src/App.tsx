@@ -13,11 +13,11 @@ import { NodalStatusPipelineView } from './components/NodalStatusPipelineView';
 import { NodalFDRSubmissionDesk } from './components/NodalFDRSubmissionDesk';
 import { CircularsAndManuals } from './components/CircularsAndManuals';
 import { PublicLandingPage } from './components/PublicLandingPage';
-import { PresenterDemoBar, DEMO_PRESETS } from './components/PresenterDemoBar';
+import { DEMO_PRESETS } from './components/PresenterDemoBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { BackendConnectionAlert } from './components/BackendConnectionAlert';
 import { GovFooter } from './components/GovFooter';
-import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession, UserPreset, EvaluationScenario, SystemState } from './types';
+import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession, UserPreset, SystemState } from './types';
 import { api, getApiBase, getResolvedBackendUrl } from './services/api';
 import { 
   FileSpreadsheet, 
@@ -67,10 +67,8 @@ export const App: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [userPresets, setUserPresets] = useState<UserPreset[]>([]);
-  const [evaluationScenarios, setEvaluationScenarios] = useState<EvaluationScenario[]>([]);
   const [_systemState, setSystemState] = useState<SystemState | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isResetting, setIsResetting] = useState<boolean>(false);
   const [targetBankFdrUid, setTargetBankFdrUid] = useState<string>('FDR-2026-309');
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
@@ -79,13 +77,12 @@ export const App: React.FC = () => {
     setIsRetrying(true);
     try {
       setError(null);
-      const [sumRes, instRes, fdrRes, auditRes, usersRes, scenariosRes, stateRes] = await Promise.all([
+      const [sumRes, instRes, fdrRes, auditRes, usersRes, stateRes] = await Promise.all([
         api.getSummary(),
         api.getInstitutions(),
         api.getFdrs(),
         api.getAuditLogs(),
         api.getUsers().catch(() => []),
-        api.getEvaluationScenarios().catch(() => []),
         api.getSystemState().catch(() => null),
       ]);
 
@@ -94,7 +91,6 @@ export const App: React.FC = () => {
       setFdrs(fdrRes);
       setLogs(auditRes);
       if (usersRes && usersRes.length > 0) setUserPresets(usersRes);
-      if (scenariosRes && scenariosRes.length > 0) setEvaluationScenarios(scenariosRes);
       if (stateRes) setSystemState(stateRes);
 
       if (instRes.length > 0 && selectedInstitutionId === null) {
@@ -139,110 +135,6 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     setCurrentSession(null);
     setViewingCirculars(false);
-  };
-
-  const handleResetSeed = async () => {
-    setIsResetting(true);
-    try {
-      await api.resetSeedDatabase();
-      await loadData();
-    } catch (err) {
-      console.error('Failed to reset seed', err);
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
-  // Quick navigation handler for SIH26265 Evaluation Scenarios Check
-  const handleNavigateToScenario = (scenarioId: number) => {
-    // 1. Close circulars repository overlay if open
-    setViewingCirculars(false);
-
-    // 2. Ensure user is authenticated into an administrative session
-    if (!currentSession || currentSession.role !== 'AICTE_SCRUTINY_OFFICER') {
-      const dbOfficer = userPresets.find(p => p.role === 'AICTE_SCRUTINY_OFFICER');
-      if (dbOfficer) {
-        setCurrentSession({
-          role: dbOfficer.role,
-          userId: dbOfficer.user_id,
-          userName: dbOfficer.user_name,
-          designation: dbOfficer.designation,
-          department: dbOfficer.department,
-          institutionId: dbOfficer.institution_id,
-          institutionPid: dbOfficer.institution_pid,
-          institutionName: dbOfficer.institution_name,
-          bankName: dbOfficer.bank_name,
-          branchName: dbOfficer.branch_name,
-        });
-      } else {
-        const officerPreset = DEMO_PRESETS.find(p => p.session.role === 'AICTE_SCRUTINY_OFFICER');
-        if (officerPreset) {
-          setCurrentSession(officerPreset.session);
-        }
-      }
-    }
-
-    // Helper for robust scrolling across async React render cycles
-    const scrollToTarget = (elementId: string) => {
-      let attempts = 0;
-      const maxAttempts = 30; // 30 * 60ms = 1800ms max polling
-      const interval = setInterval(() => {
-        attempts++;
-        const el = document.getElementById(elementId);
-        if (el) {
-          clearInterval(interval);
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Highlight visual cue for evaluators
-          el.classList.add('ring-4', 'ring-[#1E3A8A]', 'ring-offset-4', 'transition-all', 'duration-500');
-          setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-[#1E3A8A]', 'ring-offset-4', 'transition-all', 'duration-500');
-          }, 2500);
-        } else if (attempts >= maxAttempts) {
-          clearInterval(interval);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 60);
-    };
-
-    // 3. Dispatch to the exact workflow required by the scenario
-    switch (scenarioId) {
-      case 1: // New FDR Submission: Links to Document Upload & Verification
-        setScrutinySubMenu('FORENSICS');
-        scrollToTarget('document-verification-desk');
-        break;
-
-      case 2: // Validity Tracking: Links to Centralized Repository / Bank Gateway
-        setScrutinySubMenu('SCRUTINY_INBOX');
-        scrollToTarget('centralized-fdr-repository');
-        break;
-
-      case 3: // Approaching Maturity: Watchdog Surveillance Matrix & Alert Feed
-        setScrutinySubMenu('RELEASE_WATCHLIST');
-        scrollToTarget('countdown-matrix-section');
-        break;
-
-      case 4: // Renewal & Replacement: Links to Deposit History DAG Graph
-        setScrutinySubMenu('RELEASE_WATCHLIST');
-        scrollToTarget('dag-lineage-workbench');
-        break;
-
-      case 5: // Discrepancy Identification: Links to AI Forensics & Bank Mismatch View
-        setScrutinySubMenu('BANK_GATEWAY');
-        const discFdr = fdrs.find(f => f.fdr_uid === 'FDR-2026-309' || f.math_tamper_flag || f.bank_verified_status === 'MISMATCH_FLAGGED');
-        setTargetBankFdrUid(discFdr?.fdr_uid || 'FDR-2026-309');
-        scrollToTarget('bank-verification-gateway');
-        break;
-
-      case 6: // Authorized Release Processing: Links to 4-Gate Refund Workflow
-        setScrutinySubMenu('RELEASE_WATCHLIST');
-        scrollToTarget('release-clearance-workbench');
-        break;
-
-      default:
-        setScrutinySubMenu('SCRUTINY_INBOX');
-        scrollToTarget('centralized-fdr-repository');
-        break;
-    }
   };
 
   // Active institution details (Strictly isolate for Nodal Officer matching their PID)
@@ -355,18 +247,6 @@ export const App: React.FC = () => {
             onLoginSuccess={handleLoginSuccess}
             onOpenCircularsModal={() => setViewingCirculars(true)}
             presets={userPresets}
-          />
-
-          {/* Public Landing Demo Controls */}
-          <PresenterDemoBar
-            currentSession={null}
-            onLoginAs={handleLoginSuccess}
-            onLogout={handleLogout}
-            onResetSeed={handleResetSeed}
-            isResetting={isResetting}
-            onNavigateToScenario={handleNavigateToScenario}
-            presets={userPresets}
-            scenarios={evaluationScenarios}
           />
 
           {/* Full Screen Circulars Viewer Overlay if opened from Landing Page */}
@@ -1215,19 +1095,7 @@ export const App: React.FC = () => {
           {/* Official Government of India UX4G & GIGW 3.0 Footer */}
           <GovFooter />
 
-          {/* Logged-in Presenter Demo Controls (Hidden for Institution Nodal Officer) */}
-          {currentSession?.role !== 'INSTITUTION_NODAL_OFFICER' && (
-            <PresenterDemoBar
-              currentSession={currentSession}
-              onLoginAs={handleLoginSuccess}
-              onLogout={handleLogout}
-              onResetSeed={handleResetSeed}
-              isResetting={isResetting}
-              onNavigateToScenario={handleNavigateToScenario}
-              presets={userPresets}
-              scenarios={evaluationScenarios}
-            />
-          )}
+
         </>
       )}
 

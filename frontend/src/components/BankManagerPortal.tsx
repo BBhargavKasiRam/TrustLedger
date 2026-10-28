@@ -262,13 +262,13 @@ export const BankManagerPortal: React.FC<BankManagerPortalProps> = ({
                       setOtpCode(val);
                       if (otpError) setOtpError(null);
                     }}
-                    placeholder="849201"
+                    placeholder="••••••"
                     autoFocus
                     className="w-56 text-center text-2xl font-mono font-bold tracking-[0.3em] bg-gray-50 border-2 border-gray-300 focus:border-blue-900 focus:bg-white rounded-lg py-3 px-4 shadow-inner text-gray-900 focus:outline-none transition-all"
                   />
                 </div>
                 <p className="text-[11px] text-gray-500 text-center mt-2">
-                  Authorization Code sent to registered branch email • Demo OTP: <strong className="font-mono text-gray-800">849201</strong>
+                  Authorization Code sent to registered branch email
                 </p>
                 {otpError && (
                   <p className="text-xs text-red-600 font-bold text-center mt-2 flex items-center justify-center gap-1">
