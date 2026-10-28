@@ -666,6 +666,95 @@ exports.getLineageDAG = async (req, res) => {
 };
 
 /**
+ * 8b. Institution Lineage DAG Retrieval
+ */
+exports.getInstitutionLineage = async (req, res) => {
+  try {
+    const { institution_id } = req.params;
+    const instIdNum = Number(institution_id) || 1;
+    const pidStr = req.params.institution_id;
+
+    const fdrs = await FDRInstrument.find({
+      $or: [
+        { institution_id: instIdNum },
+        { pid: pidStr },
+        { pid: `1-${instIdNum}` }
+      ]
+    }).sort({ created_at: 1 });
+
+    const nodes = fdrs.map((f, index) => {
+      const isRoot = !f.parentFdrId && !f.parent_fdr_id;
+      const status = f.lifecycleState || f.lifecycle_status || 'ACTIVE_VERIFIED';
+      const relType = f.renewalType || f.relation_type || (isRoot ? 'INITIAL_DEPOSIT' : 'MATURITY_RENEWAL');
+
+      return {
+        id: String(f._id || f.fdr_uid),
+        fdr_uid: f.fdr_uid,
+        fdr_number: f.inst_fdr_number || f.fdr_uid,
+        bank_name: f.inst_bank_name || 'State Bank of India',
+        ifsc: f.inst_ifsc || 'SBIN0000125',
+        principal_amount: f.inst_principal_amount || 3500000,
+        interest_rate: f.inst_interest_rate || 7.25,
+        maturity_amount: f.inst_maturity_amount || 6198842,
+        issue_date: f.inst_issue_date || '',
+        maturity_date: f.bankAttestedMaturityDate || f.inst_maturity_date || '',
+        lifecycle_status: status,
+        relation_type: relType,
+        parent_fdr_id: f.parent_fdr_id,
+        parent_fdr_uid: f.parentFdrId,
+        is_root: isRoot,
+        is_active: status !== 'SUPERSEDED_BY_RENEWAL' && status !== 'RENEWED_SUPERSEDED',
+        level: index,
+        documentUrl: f.documentUrl || f.document_path || (f.digitalVault?.[0]?.fileUrl),
+        audit_hash: f.fileHash || 'sha256:00000000',
+        data: {
+          fdr_uid: f.fdr_uid,
+          fdr_number: f.inst_fdr_number || f.fdr_uid,
+          bank_name: f.inst_bank_name,
+          ifsc: f.inst_ifsc,
+          principal: f.inst_principal_amount,
+          principal_amount: f.inst_principal_amount,
+          interest_rate: f.inst_interest_rate,
+          issue_date: f.inst_issue_date,
+          maturity_date: f.bankAttestedMaturityDate || f.inst_maturity_date,
+          lifecycle_status: status,
+          relation_type: relType,
+          is_root: isRoot,
+          is_active: status !== 'SUPERSEDED_BY_RENEWAL' && status !== 'RENEWED_SUPERSEDED',
+          level: index,
+          documentUrl: f.documentUrl || f.document_path || (f.digitalVault?.[0]?.fileUrl)
+        }
+      };
+    });
+
+    const edges = [];
+    fdrs.forEach((f) => {
+      if (f.childFdrId) {
+        edges.push({
+          id: `e-${f.fdr_uid}-${f.childFdrId}`,
+          source: f.fdr_uid,
+          target: f.childFdrId,
+          label: f.renewalType === 'BANK_MERGER_REPLACEMENT' ? 'Re-issued (Bank Merger)' : 'Renewed (Maturity)',
+          animated: true
+        });
+      }
+    });
+
+    return res.status(200).json({
+      nodes,
+      edges,
+      root_fdr_uid: nodes[0]?.fdr_uid || '',
+      institution_id: instIdNum,
+      institution_name: fdrs[0]?.institution_name || 'Technical Institution',
+      total_generations: nodes.length
+    });
+  } catch (err) {
+    console.error('Error in getInstitutionLineage:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
  * 9. ERP Compliance Check
  */
 exports.checkERPHolds = async (req, res) => {

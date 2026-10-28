@@ -78,6 +78,7 @@ app.get('/api/erp-check/:pid', fdrController.checkERPHolds);
 app.post('/api/fdrs/submit-renewal', uploadFdrDocument, fdrController.submitRenewal);
 app.get('/api/fdr/:id/lineage', fdrController.getLineageDAG);
 app.get('/api/fdrs/:id/lineage', fdrController.getLineageDAG);
+app.get('/api/fdrs/lineage-by-institution/:institution_id', fdrController.getInstitutionLineage);
 
 // AICTE Requirement 6: 4-Gate Trackable Release & Refund Workflow
 app.post('/api/fdr/:id/request-release', authenticateJWT, fdrController.requestRelease);

@@ -429,29 +429,30 @@ export interface TemporalTimeTravelResponse {
 export interface LineageGraphNode {
   id: string;
   fdr_uid: string;
-  db_id: number;
-  label: string;
-  institution_name: string;
-  bank_name: string;
-  ifsc: string;
-  principal_amount: number;
-  interest_rate: number;
-  maturity_amount: number;
-  issue_date: string;
-  maturity_date: string;
-  lifecycle_status: string;
-  relation_type: string;
-  parent_fdr_id: number | null;
-  parent_fdr_uid: string | null;
-  depth: number;
-  is_root: boolean;
+  db_id?: number;
+  label?: string;
+  institution_name?: string;
+  bank_name?: string;
+  ifsc?: string;
+  principal_amount?: number;
+  interest_rate?: number;
+  maturity_amount?: number;
+  issue_date?: string;
+  maturity_date?: string;
+  lifecycle_status?: string;
+  relation_type?: string;
+  parent_fdr_id?: number | null;
+  parent_fdr_uid?: string | null;
+  depth?: number;
+  is_root?: boolean;
   document_path?: string | null;
   documentUrl?: string | null;
   document_url?: string | null;
   digitalVault?: DigitalVaultItem[];
   fileHash?: string | null;
   flags?: string[];
-  audit_hash: string;
+  audit_hash?: string;
+  data?: any;
 }
 
 export interface LineageGraphEdge {

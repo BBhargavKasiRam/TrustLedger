@@ -253,23 +253,31 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
 
   // Compute personalized maturity banner data for the logged-in institution
   const getPersonalizedBannerData = () => {
-    const currentInst = institutions.find(i => i.id === selectedInstitutionId) || institutions[0];
+    const currentInst = (institutions && institutions.length > 0)
+      ? (institutions.find(i => i.id === selectedInstitutionId) || institutions[0])
+      : null;
     const instNodes = graphData?.nodes || [];
     
     // Find active/current deposit (not superseded, or the leaf node)
-    const activeDeposit = instNodes.find(n => n.lifecycle_status !== 'RENEWED_SUPERSEDED') || instNodes[instNodes.length - 1];
+    const activeDeposit = instNodes.find((n: any) => {
+      const st = n.lifecycle_status || n.data?.lifecycle_status;
+      return st !== 'RENEWED_SUPERSEDED' && st !== 'SUPERSEDED_BY_RENEWAL';
+    }) || instNodes[instNodes.length - 1];
     
+    const activeUid = activeDeposit?.fdr_uid || (activeDeposit as any)?.data?.fdr_uid;
+    const instPrefix = currentInst?.name ? currentInst.name.toLowerCase().split(',')[0].trim() : '';
+
     // Check countdownList matching this institution or active deposit UID
-    const matchingCountdown = countdownList.find(c => 
-      (activeDeposit && c.fdr_uid === activeDeposit.fdr_uid) ||
-      (currentInst && c.institution_name?.toLowerCase().includes(currentInst.name?.toLowerCase().split(',')[0]))
+    const matchingCountdown = (countdownList || []).find(c => 
+      (activeUid && c.fdr_uid === activeUid) ||
+      Boolean(instPrefix && c.institution_name && c.institution_name.toLowerCase().includes(instPrefix))
     );
 
     let daysRemaining = 999;
-    let fdrUid = activeDeposit?.fdr_uid || 'FDR-DEPOSIT';
-    let matDate = activeDeposit?.maturity_date || '';
-    let bankName = activeDeposit?.bank_name || 'Scheduled Bank';
-    let status = activeDeposit?.lifecycle_status || 'ACTIVE_VERIFIED';
+    let fdrUid = activeUid || 'FDR-DEPOSIT';
+    let matDate = activeDeposit?.maturity_date || (activeDeposit as any)?.data?.maturity_date || '';
+    let bankName = activeDeposit?.bank_name || (activeDeposit as any)?.data?.bank_name || 'Scheduled Bank';
+    let status = activeDeposit?.lifecycle_status || (activeDeposit as any)?.data?.lifecycle_status || 'ACTIVE_VERIFIED';
 
     if (matchingCountdown) {
       daysRemaining = matchingCountdown.days_remaining;
@@ -277,10 +285,10 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
       matDate = matchingCountdown.maturity_date || matDate;
       bankName = matchingCountdown.bank_name || bankName;
       status = matchingCountdown.status || status;
-    } else if (activeDeposit?.maturity_date) {
+    } else if (matDate) {
       const now = new Date();
       const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-      const parts = activeDeposit.maturity_date.split('T')[0].split('-');
+      const parts = String(matDate).split('T')[0].split('-');
       if (parts.length >= 3) {
         const matUtc = Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         daysRemaining = Math.ceil((matUtc - todayUtc) / (1000 * 60 * 60 * 24));
@@ -413,7 +421,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
             <span className="text-xs text-gray-600 font-medium">Institution Record:</span>
             {isNodalOfficer ? (
               <span className="text-xs text-blue-950 font-bold px-2 py-0.5 bg-blue-50 border border-blue-200 rounded font-mono">
-                {(institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.pid} — {(institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.name?.split(',')[0]}
+                {(institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.pid || '1-2001'} — {((institutions.find(i => i.id === selectedInstitutionId) || institutions[0])?.name || 'Institution').split(',')[0]}
               </span>
             ) : (
               <select
@@ -493,21 +501,39 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
-                      {graphData.nodes.map((node, index) => {
-                        const isSelected = selectedNode?.id === node.id;
+                      {graphData.nodes.map((node: any, index) => {
+                        const fdrUid = node.fdr_uid || node.data?.fdr_uid || node.id || `FDR-${index + 1}`;
+                        const bankName = node.bank_name || node.data?.bank_name || 'Scheduled Bank';
+                        const ifsc = node.ifsc || node.data?.ifsc || '—';
+                        const principalAmount = node.principal_amount ?? node.data?.principal ?? node.data?.principal_amount ?? 3500000;
+                        const issueDate = node.issue_date || node.data?.issue_date || '—';
+                        const maturityDate = node.maturity_date || node.data?.maturity_date || '—';
+                        const lifecycleStatus = String(node.lifecycle_status || node.data?.lifecycle_status || 'ACTIVE_VERIFIED');
+                        const relationType = String(node.relation_type || node.data?.relation_type || (index === 0 ? 'INITIAL_DEPOSIT' : 'RENEWAL'));
+                        const isRoot = Boolean(node.is_root ?? node.data?.is_root ?? (index === 0));
+                        const isSelected = selectedNode?.id === node.id || (selectedNode?.fdr_uid && selectedNode.fdr_uid === fdrUid);
                         const isLatest = index === graphData.nodes.length - 1;
-                        const isSuperseded = node.lifecycle_status === 'RENEWED_SUPERSEDED';
-                        const docUrl = node.documentUrl || (node as any).document_url;
+                        const isSuperseded = lifecycleStatus === 'RENEWED_SUPERSEDED' || lifecycleStatus === 'SUPERSEDED_BY_RENEWAL';
+                        const docUrl = node.documentUrl || node.document_url || node.data?.documentUrl || node.data?.document_url;
 
                         return (
                           <tr
-                            key={node.id}
+                            key={node.id || fdrUid}
                             onClick={() => {
-                              setSelectedNode(node);
-                              setParentFdrUid(node.fdr_uid);
-                              setNewBankName(node.bank_name || 'Canara Bank');
-                              setNewIfsc(node.ifsc || 'CNRB0001234');
-                              setNewPrincipal(node.principal_amount || 3500000);
+                              setSelectedNode({
+                                ...node,
+                                fdr_uid: fdrUid,
+                                bank_name: bankName,
+                                ifsc: ifsc,
+                                principal_amount: principalAmount,
+                                lifecycle_status: lifecycleStatus,
+                                relation_type: relationType,
+                                is_root: isRoot
+                              });
+                              setParentFdrUid(fdrUid);
+                              setNewBankName(bankName);
+                              setNewIfsc(ifsc);
+                              setNewPrincipal(principalAmount);
                             }}
                             className={`transition-colors cursor-pointer ${
                               isSelected
@@ -523,26 +549,26 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                                   {index + 1}
                                 </span>
                                 <span className="font-mono text-xs font-bold text-blue-950">
-                                  {node.fdr_uid}
+                                  {fdrUid}
                                 </span>
                               </div>
                             </td>
 
                             <td className="py-2.5 px-3 whitespace-nowrap">
-                              <div className="font-bold text-gray-900">{node.bank_name}</div>
-                              <div className="text-[10px] text-gray-500 font-mono">{node.ifsc || '—'}</div>
+                              <div className="font-bold text-gray-900">{bankName}</div>
+                              <div className="text-[10px] text-gray-500 font-mono">{ifsc}</div>
                             </td>
 
                             <td className="py-2.5 px-3 whitespace-nowrap text-right font-mono font-bold text-gray-900">
-                              ₹{(node.principal_amount || 0).toLocaleString('en-IN')}
+                              ₹{Number(principalAmount).toLocaleString('en-IN')}
                             </td>
 
                             <td className="py-2.5 px-3 whitespace-nowrap">
                               <span className="font-mono text-[11px] text-gray-800">
-                                {node.issue_date} → {node.maturity_date}
+                                {issueDate} → {maturityDate}
                               </span>
                               <span className="text-[10px] text-gray-500 block">
-                                {node.is_root ? 'Genesis Deposit' : node.relation_type.replace(/_/g, ' ')}
+                                {isRoot ? 'Genesis Deposit' : relationType.replace(/_/g, ' ')}
                               </span>
                             </td>
 
@@ -550,13 +576,13 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
                                 isSuperseded
                                   ? 'bg-gray-100 text-gray-700 border-gray-300'
-                                  : node.lifecycle_status === 'MATURED_ACTION_PENDING'
+                                  : lifecycleStatus.includes('MATURED')
                                   ? 'bg-red-100 text-red-800 border-red-300'
-                                  : node.lifecycle_status.includes('APPROACHING')
+                                  : lifecycleStatus.includes('APPROACHING')
                                   ? 'bg-orange-100 text-orange-800 border-orange-300'
                                   : 'bg-green-100 text-green-800 border-green-300'
                               }`}>
-                                {isSuperseded ? 'Renewed & Superseded' : node.lifecycle_status.replace(/_/g, ' ')}
+                                {isSuperseded ? 'Renewed & Superseded' : lifecycleStatus.replace(/_/g, ' ')}
                               </span>
                             </td>
 
@@ -568,9 +594,10 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                                   e.stopPropagation();
                                   setSelectedVaultFdr({
                                     ...node,
+                                    fdr_uid: fdrUid,
                                     documentUrl: docUrl,
-                                    inst_principal_amount: node.principal_amount,
-                                    inst_bank_name: node.bank_name
+                                    inst_principal_amount: principalAmount,
+                                    inst_bank_name: bankName
                                   });
                                 }}
                                 className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
@@ -640,19 +667,41 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                 
                 {/* Horizontal Chronological Git Flow */}
                 <div className="flex items-center space-x-4 min-w-max py-4">
-                  {graphData.nodes.map((node, index) => {
-                    const colors = getNodeColor(node.lifecycle_status);
-                    const isSelected = selectedNode?.id === node.id;
-                    const edgeToNext = graphData.edges.find(e => e.source === node.fdr_uid);
+                  {graphData.nodes.map((node: any, index) => {
+                    const fdrUid = node.fdr_uid || node.data?.fdr_uid || node.id || `FDR-${index + 1}`;
+                    const bankName = node.bank_name || node.data?.bank_name || 'Scheduled Bank';
+                    const ifsc = node.ifsc || node.data?.ifsc || '—';
+                    const principalAmount = node.principal_amount ?? node.data?.principal ?? node.data?.principal_amount ?? 3500000;
+                    const interestRate = node.interest_rate ?? node.data?.interest_rate ?? 7.25;
+                    const issueDate = node.issue_date || node.data?.issue_date || '—';
+                    const maturityDate = node.maturity_date || node.data?.maturity_date || '—';
+                    const lifecycleStatus = String(node.lifecycle_status || node.data?.lifecycle_status || 'ACTIVE_VERIFIED');
+                    const isRoot = Boolean(node.is_root ?? node.data?.is_root ?? (index === 0));
+                    const isSuperseded = lifecycleStatus === 'RENEWED_SUPERSEDED' || lifecycleStatus === 'SUPERSEDED_BY_RENEWAL';
+                    const colors = getNodeColor(lifecycleStatus);
+                    const isSelected = selectedNode?.id === node.id || (selectedNode?.fdr_uid && selectedNode.fdr_uid === fdrUid);
+                    const edgeToNext = graphData.edges?.find(e => e.source === fdrUid || e.source === node.id);
 
                     return (
-                      <React.Fragment key={node.id}>
+                      <React.Fragment key={node.id || fdrUid}>
                         
                         {/* Node Card: Clean, White Official Government Document Card */}
                         <div
                           onClick={() => {
-                            setSelectedNode(node);
-                            setParentFdrUid(node.fdr_uid);
+                            const norm = {
+                              ...node,
+                              fdr_uid: fdrUid,
+                              bank_name: bankName,
+                              ifsc: ifsc,
+                              principal_amount: principalAmount,
+                              interest_rate: interestRate,
+                              issue_date: issueDate,
+                              maturity_date: maturityDate,
+                              lifecycle_status: lifecycleStatus,
+                              is_root: isRoot
+                            };
+                            setSelectedNode(norm);
+                            setParentFdrUid(fdrUid);
                           }}
                           className={`cursor-pointer w-72 rounded bg-white border-2 transition-all duration-200 relative group shadow-sm overflow-hidden ${
                             isSelected 
@@ -662,20 +711,20 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                         >
                           {/* Official Top Tricolor/Header Strip */}
                           <div className={`px-3 py-1.5 flex items-center justify-between text-[10px] font-bold border-b ${
-                            node.is_root
+                            isRoot
                               ? 'bg-[#1a365d] text-white border-blue-950'
-                              : node.lifecycle_status === 'RENEWED_SUPERSEDED'
+                              : isSuperseded
                               ? 'bg-gray-100 text-gray-700 border-gray-300'
                               : 'bg-blue-50 text-blue-950 border-blue-200'
                           }`}>
                             <div className="flex items-center space-x-1.5">
-                              <ShieldCheck className={`w-3.5 h-3.5 ${node.is_root ? 'text-orange-400' : 'text-blue-900'}`} />
+                              <ShieldCheck className={`w-3.5 h-3.5 ${isRoot ? 'text-orange-400' : 'text-blue-900'}`} />
                               <span className="uppercase tracking-wider font-mono">
-                                Node #{index + 1} {node.is_root ? '• GENESIS ROOT' : '• RENEWAL CHILD'}
+                                Node #{index + 1} {isRoot ? '• GENESIS ROOT' : '• RENEWAL CHILD'}
                               </span>
                             </div>
                             <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${colors.tag}`}>
-                              {node.lifecycle_status === 'RENEWED_SUPERSEDED' ? 'SUPERSEDED' : node.lifecycle_status}
+                              {isSuperseded ? 'SUPERSEDED' : lifecycleStatus}
                             </span>
                           </div>
 
@@ -684,14 +733,14 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                             <div className="border-b border-gray-100 pb-2">
                               <div className="flex items-center space-x-1.5 font-bold text-gray-900 text-sm">
                                 <Landmark className="w-4 h-4 text-blue-900 shrink-0" />
-                                <span className="truncate">{node.bank_name}</span>
+                                <span className="truncate">{bankName}</span>
                               </div>
                               <div className="flex items-center justify-between mt-1">
                                 <span className="text-xs font-mono font-extrabold text-[#1a365d] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                                  {node.fdr_uid}
+                                  {fdrUid}
                                 </span>
                                 <span className="text-[10px] text-gray-500 font-mono">
-                                  IFSC: {node.ifsc || '—'}
+                                  IFSC: {ifsc || '—'}
                                 </span>
                               </div>
                             </div>
@@ -701,17 +750,17 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                               <div>
                                 <span className="text-gray-500 block text-[9px] uppercase font-bold">Principal Deposit</span>
                                 <span className="font-bold text-gray-900 text-xs">
-                                  ₹{(node.principal_amount || 0).toLocaleString('en-IN')}
+                                  ₹{Number(principalAmount || 0).toLocaleString('en-IN')}
                                 </span>
                               </div>
                               <div>
                                 <span className="text-gray-500 block text-[9px] uppercase font-bold">Annual Rate</span>
-                                <span className="font-bold text-gray-900 text-xs">{node.interest_rate}% p.a.</span>
+                                <span className="font-bold text-gray-900 text-xs">{interestRate}% p.a.</span>
                               </div>
                               <div className="col-span-2 pt-1 border-t border-gray-200">
                                 <span className="text-gray-500 block text-[9px] uppercase font-bold">Lock-In Window</span>
                                 <span className="font-mono text-[10px] text-gray-700 font-semibold">
-                                  {node.issue_date} → {node.maturity_date}
+                                  {issueDate} → {maturityDate}
                                 </span>
                               </div>
                             </div>
@@ -719,7 +768,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                             {/* Provenance Record Indicator */}
                             <div className="pt-1 flex items-center justify-between text-[10px]">
                               <span className="text-gray-600 font-medium">
-                                {node.parent_fdr_uid ? `Status: Re-issued (Bank Merger)` : 'Initial Deposit (Genesis Root)'}
+                                {node.parent_fdr_uid || node.data?.parent_fdr_uid ? `Status: Re-issued (Bank Merger)` : 'Initial Deposit (Genesis Root)'}
                               </span>
                               <span className="text-blue-900 font-semibold group-hover:underline flex items-center">
                                 {isSelected ? '● Inspected' : 'Inspect Details'}
@@ -780,7 +829,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                 <div className="flex items-center space-x-2">
                   <FileText className="w-4 h-4 text-blue-900" />
                   <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Node Provenance Certificate: {selectedNode.fdr_uid}
+                    Node Provenance Certificate: {selectedNode.fdr_uid || selectedNode.data?.fdr_uid || selectedNode.id}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-green-800 bg-green-50 px-2 py-0.5 rounded border border-green-300 flex items-center gap-1 font-semibold">
@@ -791,25 +840,25 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div>
                   <span className="text-[10px] text-gray-500 block">Bank & Branch IFSC</span>
-                  <span className="font-semibold text-gray-800">{selectedNode.bank_name}</span>
-                  <span className="font-mono text-[11px] text-[#1a365d] block font-bold">{selectedNode.ifsc}</span>
+                  <span className="font-semibold text-gray-800">{selectedNode.bank_name || selectedNode.data?.bank_name || 'Scheduled Bank'}</span>
+                  <span className="font-mono text-[11px] text-[#1a365d] block font-bold">{selectedNode.ifsc || selectedNode.data?.ifsc || '—'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 block">Locked Deposit</span>
                   <span className="font-bold text-gray-900 text-sm">
-                    ₹{(selectedNode.principal_amount || 0).toLocaleString('en-IN')}
+                    ₹{Number(selectedNode.principal_amount ?? selectedNode.data?.principal ?? selectedNode.data?.principal_amount ?? 0).toLocaleString('en-IN')}
                   </span>
-                  <span className="text-[11px] text-gray-600 block">Maturity: ₹{(selectedNode.maturity_amount || 0).toLocaleString('en-IN')}</span>
+                  <span className="text-[11px] text-gray-600 block">Maturity: ₹{Number(selectedNode.maturity_amount ?? selectedNode.data?.maturity_amount ?? 0).toLocaleString('en-IN')}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 block">Lifecycle State</span>
-                  <span className="font-bold text-orange-700">{selectedNode.lifecycle_status}</span>
-                  <span className="text-[11px] text-gray-600 block">Relation: {selectedNode.relation_type}</span>
+                  <span className="font-bold text-orange-700">{selectedNode.lifecycle_status || selectedNode.data?.lifecycle_status || 'ACTIVE_VERIFIED'}</span>
+                  <span className="text-[11px] text-gray-600 block">Relation: {selectedNode.relation_type || selectedNode.data?.relation_type || 'INITIAL_DEPOSIT'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 block">Parent Instrument</span>
                   <span className="font-mono text-gray-800 font-semibold">
-                    {selectedNode.parent_fdr_uid || 'None (Genesis Root)'}
+                    {selectedNode.parent_fdr_uid || selectedNode.data?.parent_fdr_uid || 'None (Genesis Root)'}
                   </span>
                 </div>
               </div>
@@ -819,7 +868,7 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                   <Hash className="w-3.5 h-3.5 text-gray-400" />
                   <span className="text-gray-600">Cryptographic Block Hash:</span>
                   <span className="font-mono text-[10px] text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-300 font-medium">
-                    {selectedNode.audit_hash}
+                    {selectedNode.audit_hash || selectedNode.data?.audit_hash || 'SHA256-GENESIS'}
                   </span>
                 </div>
                 <span className="text-gray-500 text-[10px]">
@@ -952,11 +1001,17 @@ export const DAGLineageWorkbench: React.FC<DAGLineageWorkbenchProps> = ({
                     onChange={(e) => setParentFdrUid(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-gray-900 font-mono focus:border-blue-900 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   >
-                    {graphData?.nodes.map((n) => (
-                      <option key={n.id} value={n.fdr_uid}>
-                        {n.fdr_uid} — {n.bank_name} (₹{(n.principal_amount || 0).toLocaleString('en-IN')}) [{n.lifecycle_status.replace(/_/g, ' ')}]
-                      </option>
-                    ))}
+                    {graphData?.nodes?.map((n: any) => {
+                      const nUid = n.fdr_uid || n.data?.fdr_uid || n.id;
+                      const nBank = n.bank_name || n.data?.bank_name || 'Bank';
+                      const nPrincipal = n.principal_amount ?? n.data?.principal ?? n.data?.principal_amount ?? 0;
+                      const nStatus = String(n.lifecycle_status || n.data?.lifecycle_status || 'ACTIVE_VERIFIED');
+                      return (
+                        <option key={n.id || nUid} value={nUid}>
+                          {nUid} — {nBank} (₹{Number(nPrincipal).toLocaleString('en-IN')}) [{nStatus.replace(/_/g, ' ')}]
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
