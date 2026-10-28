@@ -116,7 +116,7 @@ app.all('/api/cron/check-maturities', async (req, res) => {
 });
 
 const PORT = process.env.NODE_PORT || 5000;
-if (process.env.START_NODE_SERVER === 'true') {
+if (require.main === module || process.env.START_NODE_SERVER === 'true') {
   app.listen(PORT, () => {
     console.log(`[VidyaKosh Node/Express] Server running on port ${PORT}`);
   });
