@@ -289,35 +289,57 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 Streamline of Security Deposit / Fixed Deposit Receipt (FDR) operations across all technical institutions approved under Chapter IV of the Approval Process Handbook (APH 2026-31). Replaces decade-long manual verification failures with cryptographic and AI-assisted governance.
               </p>
 
-              {/* National Governance & Compliance Metrics */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="bg-blue-50/60 border border-blue-200 p-3.5 rounded-lg text-center">
-                  <span className="text-xs text-blue-900 font-bold uppercase tracking-wider block">
-                    Deposit Governance
-                  </span>
-                  <span className="text-xl sm:text-2xl font-black text-[#1E3A8A] font-mono">
+              {/* National Governance & Compliance Metrics: Normalized & Balanced */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 items-stretch">
+                
+                {/* Metric 1: Deposit Security */}
+                <div className="bg-blue-50/70 border border-blue-200 p-4 rounded-lg flex flex-col items-center justify-between text-center transition hover:bg-blue-50">
+                  <div className="flex items-center space-x-1.5 mb-1 text-blue-900">
+                    <Building2 className="w-4 h-4 text-blue-700 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Deposit Security
+                    </span>
+                  </div>
+                  <span className="text-base sm:text-lg font-extrabold text-[#1E3A8A] tracking-tight my-1">
                     Joint Lien Secured
                   </span>
-                  <span className="text-xs text-slate-500 block mt-0.5">Direct CBS Depository</span>
+                  <span className="text-xs text-slate-500 font-medium mt-1">
+                    Direct CBS Depository
+                  </span>
                 </div>
-                <div className="bg-emerald-50/60 border border-emerald-200 p-3.5 rounded-lg text-center">
-                  <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider block">
-                    Audit Ledger
+
+                {/* Metric 2: Audit Integrity */}
+                <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-lg flex flex-col items-center justify-between text-center transition hover:bg-emerald-50">
+                  <div className="flex items-center space-x-1.5 mb-1 text-emerald-900">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Audit Integrity
+                    </span>
+                  </div>
+                  <span className="text-base sm:text-lg font-extrabold text-emerald-800 tracking-tight my-1">
+                    SHA-256 Verified
                   </span>
-                  <span className="text-xl sm:text-2xl font-black text-emerald-800 font-mono">
-                    System Verified
+                  <span className="text-xs text-slate-500 font-medium mt-1">
+                    Cryptographic Ledger
                   </span>
-                  <span className="text-xs text-slate-500 block mt-0.5">SHA-256 Chained Blocks</span>
                 </div>
-                <div className="bg-amber-50/60 border border-amber-200 p-3.5 rounded-lg text-center">
-                  <span className="text-xs text-amber-900 font-bold uppercase tracking-wider block">
-                    Release Gateway
+
+                {/* Metric 3: Release Gateway */}
+                <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-lg flex flex-col items-center justify-between text-center transition hover:bg-amber-50">
+                  <div className="flex items-center space-x-1.5 mb-1 text-amber-900">
+                    <FileCheck2 className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Release Gateway
+                    </span>
+                  </div>
+                  <span className="text-base sm:text-lg font-extrabold text-amber-800 tracking-tight my-1">
+                    4-Gate Authorized
                   </span>
-                  <span className="text-xl sm:text-2xl font-black text-amber-800 font-mono">
-                    4-Gate Verified
+                  <span className="text-xs text-slate-500 font-medium mt-1">
+                    Digital QR Discharge NOC
                   </span>
-                  <span className="text-xs text-slate-500 block mt-0.5">QR-Signed Discharge NOC</span>
                 </div>
+
               </div>
             </div>
 
