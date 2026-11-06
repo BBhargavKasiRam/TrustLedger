@@ -271,6 +271,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <EmblemOfIndia size={42} color="#1E3A8A" />
             </div>
 
+            <img 
+              src="/vidyakosh-logo.png" 
+              alt="VidyaKosh Logo" 
+              className="h-11 w-11 object-contain shrink-0 hidden sm:block rounded shadow-xs" 
+            />
+
             <div className="h-10 w-px bg-slate-300 hidden sm:block" />
 
             <div>
