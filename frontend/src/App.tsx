@@ -4,10 +4,12 @@ import { Navbar } from './components/Navbar';
 import { PublicLandingPage } from './components/PublicLandingPage';
 import { AphDepositNormsPage } from './components/AphDepositNormsPage';
 import { CircularsPage } from './components/CircularsPage';
+import { PortalDirectoryPage } from './components/PortalDirectoryPage';
 import { AuthenticatedDashboard } from './components/AuthenticatedDashboard';
 import { BackendConnectionAlert } from './components/BackendConnectionAlert';
 import { GovFooter } from './components/GovFooter';
 import { DEMO_PRESETS } from './components/PresenterDemoBar';
+import { PORTAL_SECTIONS_DATA } from './data/portalPagesData';
 import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession, UserPreset, SystemState } from './types';
 import { api, getApiBase, getResolvedBackendUrl } from './services/api';
 import { Lock, ArrowLeft } from 'lucide-react';
@@ -310,6 +312,35 @@ export const App: React.FC = () => {
             }
           />
           <Route path="/portal" element={<Navigate to="/dashboard" replace />} />
+
+          {/* 5. Dynamically Generated Dedicated Pages for every Navbar Section & Sub-Page */}
+          {PORTAL_SECTIONS_DATA.map((section) => (
+            <React.Fragment key={section.id}>
+              {/* Section Hub Route (e.g. /about-us, /newsroom, /bureaus, etc.) */}
+              <Route
+                path={section.path}
+                element={<PortalDirectoryPage section={section} />}
+              />
+              
+              {/* Sub-Page Routes (e.g. /about-us/overview, /bureaus/regulation, etc.) */}
+              {section.subPages.map((subPage) => (
+                <Route
+                  key={subPage.path}
+                  path={subPage.path}
+                  element={<PortalDirectoryPage page={subPage} section={section} />}
+                />
+              ))}
+            </React.Fragment>
+          ))}
+
+          {/* Route Aliases & Redirects */}
+          <Route path="/about" element={<Navigate to="/about-us" replace />} />
+          <Route path="/about/overview" element={<Navigate to="/about-us/overview" replace />} />
+          <Route path="/about-us/deposit-norms" element={<Navigate to="/deposit-norms" replace />} />
+          <Route path="/bureaus/deposit-norms" element={<Navigate to="/deposit-norms" replace />} />
+          <Route path="/bulletins/deposit-norms" element={<Navigate to="/deposit-norms" replace />} />
+          <Route path="/bulletins/circulars" element={<Navigate to="/circulars" replace />} />
+          <Route path="/search" element={<Navigate to="/statistics/dashboard" replace />} />
 
           {/* Catch-all Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

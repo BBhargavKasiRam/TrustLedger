@@ -236,14 +236,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 interface NavChild {
   id: string;
   label: string;
+  path: string;
   badge?: string;
-  action?: 'NORMS' | 'CIRCULARS' | 'MODAL';
-  modalTarget?: string;
+  action?: 'NORMS' | 'CIRCULARS';
 }
 
 interface NavItem {
   id: string;
   label: string;
+  path: string;
   icon?: any;
   badge?: string;
   children?: NavChild[];
@@ -251,102 +252,111 @@ interface NavItem {
 
   // Nav Links matching official AICTE navigation with sub-item dropdowns
   const navLinks: NavItem[] = [
-    { id: 'home', label: 'Home', icon: null },
+    { id: 'home', label: 'Home', path: '/', icon: null },
     { 
       id: 'about', 
       label: 'About Us', 
+      path: '/about-us',
       icon: Info,
       children: [
-        { id: 'about-overview', label: 'Overview & Council Mandate', modalTarget: 'about' },
-        { id: 'about-norms', label: 'APH Chapter IV Deposit Norms', badge: 'STATUTORY', action: 'NORMS' },
-        { id: 'about-leadership', label: 'Organization & Leadership', modalTarget: 'about' },
-        { id: 'about-acts', label: 'Act, Statutes & Regulations', modalTarget: 'about' }
+        { id: 'about-overview', label: 'Overview & Council Mandate', path: '/about-us/overview' },
+        { id: 'about-norms', label: 'APH Chapter IV Deposit Norms', path: '/deposit-norms', badge: 'STATUTORY', action: 'NORMS' },
+        { id: 'about-leadership', label: 'Organization & Leadership', path: '/about-us/leadership' },
+        { id: 'about-acts', label: 'Act, Statutes & Regulations', path: '/about-us/acts-regulations' }
       ]
     },
     { 
       id: 'news', 
       label: 'NewsRoom', 
+      path: '/newsroom',
       icon: Newspaper,
       children: [
-        { id: 'news-announcements', label: 'Official Announcements', modalTarget: 'news' },
-        { id: 'news-circulars', label: 'Regulatory Notices & Press Releases', modalTarget: 'news' },
-        { id: 'news-media', label: 'Media Gallery & Audio-Visuals', modalTarget: 'news' }
+        { id: 'news-announcements', label: 'Official Announcements', path: '/newsroom/announcements' },
+        { id: 'news-circulars', label: 'Regulatory Notices & Press Releases', path: '/newsroom/notices' },
+        { id: 'news-media', label: 'Media Gallery & Audio-Visuals', path: '/newsroom/media' }
       ]
     },
     { 
       id: 'bureaus', 
       label: 'Bureaus/Cell', 
+      path: '/bureaus',
       icon: Layers, 
       badge: 'REGULATION',
       children: [
-        { id: 'bureau-reg', label: 'Regulation & Approval Bureau (Active)', badge: 'CORE', modalTarget: 'bureaus' },
-        { id: 'bureau-norms', label: 'APH Chapter IV Deposit Norms', badge: 'CHAPTER IV', action: 'NORMS' },
-        { id: 'bureau-policy', label: 'Policy & Academic Planning Bureau', modalTarget: 'bureaus' },
-        { id: 'bureau-finance', label: 'Finance & Accounts Bureau', modalTarget: 'bureaus' },
-        { id: 'bureau-inst', label: 'Institutional Development Bureau', modalTarget: 'bureaus' }
+        { id: 'bureau-reg', label: 'Regulation & Approval Bureau (Active)', path: '/bureaus/regulation', badge: 'CORE' },
+        { id: 'bureau-norms', label: 'APH Chapter IV Deposit Norms', path: '/deposit-norms', badge: 'CHAPTER IV', action: 'NORMS' },
+        { id: 'bureau-policy', label: 'Policy & Academic Planning Bureau', path: '/bureaus/policy-planning' },
+        { id: 'bureau-finance', label: 'Finance & Accounts Bureau', path: '/bureaus/finance' },
+        { id: 'bureau-inst', label: 'Institutional Development Bureau', path: '/bureaus/institutional-dev' }
       ]
     },
     { 
       id: 'initiatives', 
       label: 'Initiatives', 
+      path: '/initiatives',
       icon: Sparkles,
       children: [
-        { id: 'init-vidyakosh', label: 'VidyaKosh Centralized e-FDR Depository', badge: 'ACTIVE', modalTarget: 'initiatives' },
-        { id: 'init-cbs', label: 'Core Banking (CBS) Attestation Engine', modalTarget: 'initiatives' },
-        { id: 'init-sso', label: 'Jan Parichay Unified SSO Gateway', modalTarget: 'initiatives' }
+        { id: 'init-vidyakosh', label: 'VidyaKosh Centralized e-FDR Depository', path: '/initiatives/vidyakosh', badge: 'ACTIVE' },
+        { id: 'init-cbs', label: 'Core Banking (CBS) Attestation Engine', path: '/initiatives/cbs-attestation' },
+        { id: 'init-sso', label: 'Jan Parichay Unified SSO Gateway', path: '/initiatives/jan-parichay' }
       ]
     },
     { 
       id: 'schemes', 
       label: 'Schemes', 
+      path: '/schemes',
       icon: BookOpen,
       children: [
-        { id: 'scheme-fdr', label: 'Statutory Institutional Deposits (e-FDR)', badge: 'APH 2026-31', action: 'NORMS' },
-        { id: 'scheme-approval', label: 'Extension of Approval (EoA) Scheme', modalTarget: 'schemes' },
-        { id: 'scheme-modern', label: 'Modernization & Lab R&D Grants', modalTarget: 'schemes' }
+        { id: 'scheme-fdr', label: 'Statutory Institutional Deposits (e-FDR)', path: '/schemes/institutional-deposits', badge: 'APH 2026-31' },
+        { id: 'scheme-approval', label: 'Extension of Approval (EoA) Scheme', path: '/schemes/extension-of-approval' },
+        { id: 'scheme-modern', label: 'Modernization & Lab R&D Grants', path: '/schemes/modernization-grants' }
       ]
     },
     { 
       id: 'education', 
       label: 'Education', 
+      path: '/education',
       icon: GraduationCap,
       children: [
-        { id: 'edu-programmes', label: 'Approved Programmes & Degree Tiers', modalTarget: 'education' },
-        { id: 'edu-curriculum', label: 'Model Curriculum & Credit Framework', modalTarget: 'education' },
-        { id: 'edu-vocational', label: 'Vocational & Polytechnic Skill Education', modalTarget: 'education' }
+        { id: 'edu-programmes', label: 'Approved Programmes & Degree Tiers', path: '/education/programmes' },
+        { id: 'edu-curriculum', label: 'Model Curriculum & Credit Framework', path: '/education/curriculum' },
+        { id: 'edu-vocational', label: 'Vocational & Polytechnic Skill Education', path: '/education/vocational' }
       ]
     },
     { 
       id: 'statistics', 
       label: 'Statistics', 
+      path: '/statistics',
       icon: BarChart3,
       children: [
-        { id: 'stat-dashboard', label: 'National Regulatory Dashboard', modalTarget: 'statistics' },
-        { id: 'stat-intake', label: 'Sanctioned Technical Intake Analytics', modalTarget: 'statistics' },
-        { id: 'stat-fdr', label: 'Total Security Deposits Monitored', modalTarget: 'statistics' }
+        { id: 'stat-dashboard', label: 'National Regulatory Dashboard', path: '/statistics/dashboard' },
+        { id: 'stat-intake', label: 'Sanctioned Technical Intake Analytics', path: '/statistics/intake' },
+        { id: 'stat-fdr', label: 'Total Security Deposits Monitored', path: '/statistics/deposits' }
       ]
     },
     { 
       id: 'opportunities', 
       label: 'Opportunities', 
+      path: '/opportunities',
       icon: Briefcase,
       children: [
-        { id: 'opp-faculty', label: 'Faculty Development Schemes', modalTarget: 'opportunities' },
-        { id: 'opp-grants', label: 'Institutional Infrastructure Grants', modalTarget: 'opportunities' },
-        { id: 'opp-tenders', label: 'Tenders & Public Notices', modalTarget: 'opportunities' }
+        { id: 'opp-faculty', label: 'Faculty Development Schemes', path: '/opportunities/faculty' },
+        { id: 'opp-grants', label: 'Institutional Infrastructure Grants', path: '/opportunities/grants' },
+        { id: 'opp-tenders', label: 'Tenders & Public Notices', path: '/opportunities/tenders' }
       ]
     },
     { 
       id: 'bulletins', 
       label: 'Bulletins', 
+      path: '/bulletins',
       icon: FileText,
       children: [
-        { id: 'bull-circulars', label: 'Official Circulars & User Manuals', badge: 'SOP', action: 'CIRCULARS' },
-        { id: 'bull-gazette', label: 'Gazette Notifications', modalTarget: 'bulletins' },
-        { id: 'bull-norms', label: 'Chapter IV Deposit Norms Reference', action: 'NORMS' }
+        { id: 'bull-circulars', label: 'Official Circulars & User Manuals', path: '/circulars', badge: 'SOP', action: 'CIRCULARS' },
+        { id: 'bull-gazette', label: 'Gazette Notifications', path: '/bulletins/gazette' },
+        { id: 'bull-norms', label: 'Chapter IV Deposit Norms Reference', path: '/bulletins/deposit-norms' }
       ]
     },
-    { id: 'search', label: 'Search', icon: Search }
+    { id: 'search', label: 'Search', path: '/search', icon: Search }
   ];
 
   return (
@@ -649,18 +659,18 @@ interface NavItem {
                       } else {
                         handleSkipToContent();
                       }
-                    } else if (item.children) {
-                      setActiveDropdown(activeDropdown === item.id ? null : item.id);
+                    } else if (item.id === 'search') {
+                      setActiveModal('search');
                     } else {
-                      setActiveModal(item.id);
+                      navigate(item.path);
+                      setActiveDropdown(activeDropdown === item.id ? null : item.id);
                     }
                   }}
                   className={`w-full h-full px-2 py-3 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1 text-center whitespace-nowrap group ${
                     idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
                   } ${
                     (item.id === 'home' && location.pathname === '/') ||
-                    (item.id === 'bureaus' && location.pathname === '/deposit-norms') ||
-                    (item.id === 'bulletins' && location.pathname === '/circulars')
+                    (item.path !== '/' && (location.pathname === item.path || location.pathname.startsWith(item.path + '/')))
                       ? 'bg-[#003870] font-bold text-amber-300' 
                       : ''
                   }`}
@@ -696,17 +706,11 @@ interface NavItem {
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveDropdown(null);
-                          if (child.action === 'NORMS') {
-                            navigate('/deposit-norms');
-                          } else if (child.action === 'CIRCULARS') {
-                            navigate('/circulars');
-                          } else if (child.modalTarget) {
-                            setActiveModal(child.modalTarget);
-                          } else {
-                            setActiveModal(item.id);
-                          }
+                          navigate(child.path);
                         }}
-                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 text-xs font-semibold text-slate-800 hover:text-[#002147] flex items-center justify-between border-b border-slate-100 last:border-b-0 transition-colors group/sub cursor-pointer"
+                        className={`w-full text-left px-3.5 py-2.5 hover:bg-slate-100 text-xs font-semibold flex items-center justify-between border-b border-slate-100 last:border-b-0 transition-colors group/sub cursor-pointer ${
+                          location.pathname === child.path ? 'bg-blue-50 text-[#002147] font-bold' : 'text-slate-800 hover:text-[#002147]'
+                        }`}
                       >
                         <span className="truncate group-hover/sub:translate-x-0.5 transition-transform">{child.label}</span>
                         {child.badge && (
@@ -736,11 +740,14 @@ interface NavItem {
                         } else {
                           handleSkipToContent();
                         }
+                      } else if (item.id === 'search') {
+                        setMobileMenuOpen(false);
+                        setActiveModal('search');
                       } else if (item.children) {
                         setActiveDropdown(activeDropdown === item.id ? null : item.id);
                       } else {
                         setMobileMenuOpen(false);
-                        setActiveModal(item.id);
+                        navigate(item.path);
                       }
                     }}
                     className="w-full p-2.5 text-left hover:bg-[#003870] rounded text-slate-100 font-bold text-xs flex items-center justify-between"
@@ -754,23 +761,30 @@ interface NavItem {
                   {/* Mobile Dropdown Sub-links */}
                   {item.children && activeDropdown === item.id && (
                     <div className="pl-3 pr-1 py-1 space-y-1 bg-black/20 rounded">
+                      {/* Section Hub Link */}
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setActiveDropdown(null);
+                          navigate(item.path);
+                        }}
+                        className="w-full text-left p-2 hover:bg-[#003870] rounded text-amber-300 font-bold text-[11px] flex items-center justify-between"
+                      >
+                        <span>📂 View Entire {item.label} Hub</span>
+                        <span className="text-[9px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.2 rounded">OVERVIEW</span>
+                      </button>
+
                       {item.children.map(child => (
                         <button
                           key={child.id}
                           onClick={() => {
                             setMobileMenuOpen(false);
                             setActiveDropdown(null);
-                            if (child.action === 'NORMS') {
-                              navigate('/deposit-norms');
-                            } else if (child.action === 'CIRCULARS') {
-                              navigate('/circulars');
-                            } else if (child.modalTarget) {
-                              setActiveModal(child.modalTarget);
-                            } else {
-                              setActiveModal(item.id);
-                            }
+                            navigate(child.path);
                           }}
-                          className="w-full text-left p-2 hover:bg-[#003870] rounded text-slate-300 hover:text-white text-[11px] font-medium flex items-center justify-between"
+                          className={`w-full text-left p-2 hover:bg-[#003870] rounded text-[11px] font-medium flex items-center justify-between ${
+                            location.pathname === child.path ? 'bg-[#003870] text-amber-300 font-bold' : 'text-slate-300 hover:text-white'
+                          }`}
                         >
                           <span>• {child.label}</span>
                           {child.badge && (
