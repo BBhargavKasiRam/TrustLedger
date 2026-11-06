@@ -26,7 +26,6 @@ import {
   FileText
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
-import { EmblemOfIndia } from './EmblemOfIndia';
 
 interface NavbarProps {
   currentSession: UserSession | null;
@@ -335,106 +334,35 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Social Media Icons (Facebook, X, Android) matching image1.png */}
-            <div className="hidden md:flex items-center space-x-2.5 text-slate-300 pl-1 border-l border-slate-700">
-              {/* Facebook */}
-              <a 
-                href="https://www.facebook.com/AICTEOfficial/" 
-                target="_blank" 
-                rel="noreferrer"
-                title="AICTE Facebook Official"
-                className="hover:text-white transition-colors"
-              >
-                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/>
-                </svg>
-              </a>
-
-              {/* X / Twitter */}
-              <a 
-                href="https://twitter.com/AICTE_INDIA" 
-                target="_blank" 
-                rel="noreferrer"
-                title="AICTE Twitter / X Official"
-                className="hover:text-white transition-colors"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </a>
-
-              {/* Android Robot */}
-              <a 
-                href="https://play.google.com/store/apps/developer?id=AICTE" 
-                target="_blank" 
-                rel="noreferrer"
-                title="AICTE Mobile Android Apps"
-                className="hover:text-white transition-colors"
-              >
-                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.0805 12 8.0805c-1.8534 0-3.5903.3306-5.1367.8692L4.841 5.4467a.4161.4161 0 0 0-.5677-.1521.4157.4157 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3433-4.1021-2.689-7.5743-6.1185-9.4396"/>
-                </svg>
-              </a>
-            </div>
-
           </div>
 
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* TIER 2: OFFICIAL AICTE & VIDYAKOSH BRANDING BANNER (image1.png middle)    */}
+      {/* TIER 2: BRANDING BANNER WITH APPLICATION FAVICON AT FAR LEFT             */}
       {/* ========================================================================= */}
       <div className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          {/* Left: AICTE Official Brand from image1.png + National Emblem + VidyaKosh */}
-          <div className="flex items-center space-x-3 sm:space-x-5">
-            
-            {/* Official AICTE Brand (Cogwheel Emblem + Hindi + English Title) */}
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/aicte-logo.png" 
-                alt="AICTE Emblem" 
-                className="h-14 sm:h-16 w-auto object-contain shrink-0" 
-              />
-              <div className="flex flex-col text-left">
-                <span className="font-bold text-slate-900 text-sm sm:text-base leading-tight tracking-tight">
-                  अखिल भारतीय तकनीकी शिक्षा परिषद्
-                </span>
-                <span className="font-semibold text-slate-800 text-xs sm:text-sm tracking-tight leading-tight">
-                  All India Council for Technical Education
-                </span>
-                <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">
-                  Regulation &amp; Approval Bureau • Ministry of Education, Govt. of India
-                </span>
-              </div>
+          {/* Left: Application Favicon at far left + Institutional Portal Title */}
+          <div className="flex items-center space-x-3.5 sm:space-x-4">
+            <img 
+              src="/favicon.png" 
+              alt="Application Favicon" 
+              className="h-12 sm:h-14 w-auto object-contain shrink-0" 
+            />
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-slate-900 text-sm sm:text-base leading-tight tracking-tight">
+                अखिल भारतीय तकनीकी शिक्षा परिषद्
+              </span>
+              <span className="font-semibold text-slate-800 text-xs sm:text-sm tracking-tight leading-tight">
+                All India Council for Technical Education
+              </span>
+              <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">
+                Regulation &amp; Approval Bureau • विद्याकोष (VidyaKosh e-FDR Portal)
+              </span>
             </div>
-
-            <div className="h-12 w-px bg-slate-300 hidden md:block" />
-
-            {/* National State Emblem of India */}
-            <div className="hidden lg:flex items-center space-x-2 shrink-0 p-1 bg-slate-50 border border-slate-200 rounded">
-              <EmblemOfIndia size={42} color="#1E3A8A" />
-            </div>
-
-            {/* VidyaKosh Digital Vault Logo & Identity */}
-            <div className="hidden xl:flex items-center space-x-2.5 shrink-0 pl-2 border-l border-slate-200">
-              <img 
-                src="/vidyakosh-logo.png" 
-                alt="VidyaKosh Logo" 
-                className="h-10 w-10 object-contain rounded shadow-xs" 
-              />
-              <div className="flex flex-col text-left">
-                <span className="font-extrabold text-[#1E3A8A] text-xs tracking-tight">
-                  विद्याकोष (VidyaKosh)
-                </span>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  Centralized e-FDR Corpus (APH 2026-31)
-                </span>
-              </div>
-            </div>
-
           </div>
 
           {/* Right: Circulars, Notification Center, User Session Info */}
