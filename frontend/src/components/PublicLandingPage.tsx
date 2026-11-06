@@ -289,22 +289,22 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 Streamline of Security Deposit / Fixed Deposit Receipt (FDR) operations across all technical institutions approved under Chapter IV of the Approval Process Handbook (APH 2026-31). Replaces decade-long manual verification failures with cryptographic and AI-assisted governance.
               </p>
 
-              {/* National Corpus Stats */}
+              {/* National Governance & Compliance Metrics */}
               <div className="grid grid-cols-3 gap-3 pt-2">
                 <div className="bg-blue-50/60 border border-blue-200 p-3.5 rounded-lg text-center">
                   <span className="text-xs text-blue-900 font-bold uppercase tracking-wider block">
-                    Security Deposits
+                    Deposit Governance
                   </span>
-                  <span className="text-2xl font-black text-[#1E3A8A] font-mono">
-                    ₹1.35 Cr
+                  <span className="text-xl sm:text-2xl font-black text-[#1E3A8A] font-mono">
+                    Joint Lien Secured
                   </span>
-                  <span className="text-xs text-slate-500 block mt-0.5">Seeded Under Oversight</span>
+                  <span className="text-xs text-slate-500 block mt-0.5">Direct CBS Depository</span>
                 </div>
                 <div className="bg-emerald-50/60 border border-emerald-200 p-3.5 rounded-lg text-center">
                   <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider block">
                     Audit Ledger
                   </span>
-                  <span className="text-2xl font-black text-emerald-800 font-mono">
+                  <span className="text-xl sm:text-2xl font-black text-emerald-800 font-mono">
                     System Verified
                   </span>
                   <span className="text-xs text-slate-500 block mt-0.5">SHA-256 Chained Blocks</span>
@@ -313,7 +313,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   <span className="text-xs text-amber-900 font-bold uppercase tracking-wider block">
                     Release Gateway
                   </span>
-                  <span className="text-2xl font-black text-amber-800 font-mono">
+                  <span className="text-xl sm:text-2xl font-black text-amber-800 font-mono">
                     4-Gate Verified
                   </span>
                   <span className="text-xs text-slate-500 block mt-0.5">QR-Signed Discharge NOC</span>
