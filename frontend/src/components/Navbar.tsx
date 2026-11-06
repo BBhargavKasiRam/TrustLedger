@@ -495,41 +495,35 @@ export const Navbar: React.FC<NavbarProps> = ({
       <nav className="bg-[#002147] text-white text-xs sm:text-[13px] font-medium border-t border-[#001733] shadow-inner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Desktop Navigation Row */}
-          <div className="hidden lg:flex items-center justify-between">
-            <div className="flex items-center overflow-x-auto no-scrollbar">
-              {navLinks.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (item.id === 'home') {
-                      handleSkipToContent();
-                    } else {
-                      setActiveModal(item.id);
-                    }
-                  }}
-                  className={`px-3.5 py-2.5 hover:bg-[#003870] transition-colors cursor-pointer flex items-center space-x-1 border-r border-[#001833]/60 whitespace-nowrap group ${
-                    item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
-                  }`}
-                >
-                  {item.icon && item.id === 'search' && (
-                    <Search className="w-3.5 h-3.5 mr-1 text-amber-400 group-hover:scale-110 transition-transform" />
-                  )}
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.2 rounded ml-1 tracking-tighter">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Right side NSWS Single Window Link */}
-            <div className="hidden xl:flex items-center text-[11px] text-amber-300 font-semibold space-x-1.5 px-3 py-2 bg-[#001a38] rounded-xs border-l border-[#001833]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>National Single Window System (NSWS) Integrated</span>
-            </div>
+          {/* Desktop Navigation Row: Spaced equally across the navbar */}
+          <div className="hidden lg:flex items-stretch w-full border-x border-[#001833]/70">
+            {navLinks.map((item, idx) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === 'home') {
+                    handleSkipToContent();
+                  } else {
+                    setActiveModal(item.id);
+                  }
+                }}
+                className={`flex-1 min-w-0 px-2 py-2.5 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1 text-center whitespace-nowrap group ${
+                  idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
+                } ${
+                  item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
+                }`}
+              >
+                {item.icon && item.id === 'search' && (
+                  <Search className="w-3.5 h-3.5 mr-1 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
+                )}
+                <span className="truncate">{item.label}</span>
+                {item.badge && (
+                  <span className="hidden xl:inline-block bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.2 rounded ml-1 tracking-tighter shrink-0">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* Mobile Navigation Drawer */}
