@@ -1,6 +1,6 @@
 # VidyaKosh — Frontend Client (GIGW 3.0)
 
-Frontend administrative user interface for **VidyaKosh (SIH26265)**, designed in strict adherence with the **Guidelines for Indian Government Websites (GIGW 3.0)** light theme and AICTE corporate identity standards.
+Frontend administrative user interface for **VidyaKosh**, designed in strict adherence with the **Guidelines for Indian Government Websites (GIGW 3.0)** light theme and AICTE corporate identity standards.
 
 ---
 
@@ -24,7 +24,6 @@ Frontend administrative user interface for **VidyaKosh (SIH26265)**, designed in
 | `DAGLineageViewer.tsx` | Deposit History DAG Lineage Graph tracking renewals and bank merger instrument replacements. |
 | `TemporalSLAWatchdog.tsx` | Temporal SLA Watchdog & Time-Travel Simulator testing T-90, T-60, T-30 notifications and overdue compliance soft-holds. |
 | `FourGateReleaseDesk.tsx` | 4-Gate Release, Discharge, or Refund Workflow issuing QR-verifiable Discharge NOC and printable Scrutiny Case Summary (e-Note). |
-| `DemoControlsDrawer.tsx` | SIH26265 Evaluation Scenarios Check matrix and demo navigation shortcuts for hackathon jury evaluation. |
 
 ---
 

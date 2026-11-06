@@ -273,7 +273,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* ========================================================================= */}
-          {/* LEFT COLUMN: AICTE REGULATION BUREAU MANDATE (SIH26265) & TOOLS (7 Cols)  */}
+          {/* LEFT COLUMN: REGULATION BUREAU MANDATE & COMPLIANCE TOOLS (7 Cols)        */}
           {/* ========================================================================= */}
           <div className="lg:col-span-7 space-y-6">
             
@@ -282,7 +282,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               <div className="flex items-center space-x-2.5">
                 <span className="h-4 w-1 bg-amber-500 rounded-full" />
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                  VidyaKosh Portal • AICTE Regulation Bureau Mandate (SIH26265)
+                  VidyaKosh Portal • Regulation Bureau Mandate
                 </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -327,7 +327,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 <div className="flex items-center space-x-2">
                   <Shield className="w-5 h-5 text-[#1E3A8A]" />
                   <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                    Key Regulatory Pillars &amp; Safeguards (SIH26265)
+                    Key Regulatory Pillars &amp; Safeguards
                   </h3>
                 </div>
                 <span className="text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200 px-2 py-0.5 rounded-full font-mono">

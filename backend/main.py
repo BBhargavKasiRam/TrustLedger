@@ -150,7 +150,7 @@ except ImportError:
 
 app = FastAPI(
     title="AICTE FDR & Security Deposit Regulatory Portal",
-    description="Backend API for Problem Statement SIH26265: Streamline of Security Deposit / FDR Portal for AICTE Regulation Bureau (MongoDB NoSQL Cloud)",
+    description="Backend API: Streamline of Security Deposit / FDR Portal for Institutional Regulation & Compliance (MongoDB NoSQL Cloud)",
     version="2.0.0"
 )
 
@@ -326,7 +326,7 @@ def get_users(db: Any = Depends(get_db)):
 
 @app.get("/api/evaluation/scenarios", response_model=List[EvaluationScenarioResponse])
 def get_evaluation_scenarios(db: Any = Depends(get_db)):
-    """Fetches official SIH26265 Evaluation Scenarios Check Matrix directly from MongoDB."""
+    """Fetches official Regulatory Evaluation Scenarios Check Matrix directly from MongoDB."""
     scenarios = list(db.evaluation_scenarios.find({}).sort("id", 1))
     return clean_mongo_docs(scenarios)
 

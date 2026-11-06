@@ -1,29 +1,29 @@
-# VidyaKosh — AICTE Centralized Security Deposit / FDR Management Portal
+# VidyaKosh — Centralized Security Deposit & e-FDR Management Portal
 
-**Smart India Hackathon Prototype | Problem Statement ID: SIH26265**  
-*Organization: All India Council for Technical Education (AICTE), Ministry of Education, Government of India*
+**Enterprise Regulatory Infrastructure | TrustLedger Platform**  
+*Organization: Regulation & Approval Bureau, Ministry of Education, Government of India*
 
 ---
 
 | Regulatory Category | Details |
 | :--- | :--- |
-| **Problem Statement ID** | **SIH26265** |
-| **Organization** | All India Council for Technical Education (AICTE) — Regulation & Approval Bureau |
-| **Mandate** | AICTE Approval Process Handbook (APH), Clause 2.14 & Chapter IV Norms |
+| **System Identity** | **VidyaKosh / TrustLedger** |
+| **Organization** | Regulation & Approval Bureau |
+| **Mandate** | Approval Process Handbook (APH), Clause 2.14 & Chapter IV Norms |
 | **Design Standard** | Guidelines for Indian Government Websites (GIGW 3.0) — Official light theme |
 | **Architecture** | FastAPI + React 19 TypeScript + Cloud MongoDB NoSQL + OpenCV Pixel Forensics |
 
 ---
 
-## 🏛️ Problem Statement Context & Regulatory Challenge
+## 🏛️ Regulatory Context & Operational Challenge
 
-Under Chapter IV of the **AICTE Approval Process Handbook (APH)**, technical and higher education institutions in India are statutorily required to establish a mandatory Fixed Deposit Receipt (FDR) held **jointly with the Regional Officer / Member Secretary, AICTE** for a continuous lock-in duration of **8 to 10 years** as financial surety.
+Under Chapter IV of the **Approval Process Handbook (APH)**, technical and higher education institutions in India are statutorily required to establish a mandatory Fixed Deposit Receipt (FDR) held **jointly with the Regional Officer / Member Secretary** for a continuous lock-in duration of **8 to 10 years** as financial surety.
 
 Historically, the manual processing of thousands of physical and scanned FDR certificates has exposed the regulatory council to significant operational vulnerabilities:
 
 1. **Digital Document Forgery**: Institutions submitting scanned certificates where deposit figures have been altered using image editing tools (e.g., modifying ₹15 Lakhs to ₹35 Lakhs).
-2. **Missing Joint Lien Mandates**: Certificates created in the sole name of the institution's trust without legal joint hypothecation in favor of AICTE.
-3. **Unauthorized Third-Party Encumbrance**: Collusive loans or overdraft credit lines sanctioned against statutory deposits without AICTE clearance.
+2. **Missing Joint Lien Mandates**: Certificates created in the sole name of the institution's trust without legal joint hypothecation in favor of the regulatory body.
+3. **Unauthorized Third-Party Encumbrance**: Collusive loans or overdraft credit lines sanctioned against statutory deposits without clearance.
 4. **Lineage Disruption Across Bank Mergers**: Over 10-year lock-in terms, public sector banks merge (e.g., Syndicate Bank amalgamating into Canara Bank), breaking manual paper trails.
 5. **Silent Expiry & Compliance Risk**: Deposits maturing without automated alerts, leaving institutional Extension of Approval (EoA) in regulatory jeopardy.
 
@@ -31,7 +31,7 @@ Historically, the manual processing of thousands of physical and scanned FDR cer
 
 ## ⚡ Core Technical Architecture & Features
 
-VidyaKosh addresses the mandate of SIH26265 through six integrated subsystems:
+VidyaKosh addresses the regulatory mandate through six integrated subsystems:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -161,9 +161,9 @@ Open `http://127.0.0.1:5173` in your browser.
 
 ---
 
-## 📋 SIH26265 Evaluation Scenarios Check
+## 📋 Regulatory Evaluation Scenarios Check
 
-The prototype includes built-in scenarios directly aligned with the Smart India Hackathon problem statement mandate:
+The platform includes built-in scenarios directly aligned with statutory compliance requirements:
 
 1. **New FDR Submission**: Open *Document Upload & Verification*, upload or pick a preset receipt, execute automated OCR extraction, verify compound interest math, and submit to the central repository.
 2. **Validity & Tri-Party Tracking**: Inspect the *Centralized Security Deposit/FDR Repository*. Clear column headers isolate institution-submitted information, machine forensics, and bank-confirmed data.
@@ -211,4 +211,4 @@ VidyaKosh/
 
 ---
 
-*This application was built as a solution prototype for Smart India Hackathon (SIH26265) to modernize the All India Council for Technical Education (AICTE) Fixed Deposit Receipt and Security Deposit regulatory infrastructure.*
+*VidyaKosh provides enterprise-grade, cryptographically verifiable governance for statutory security deposit receipts, joint liens, and end-of-term discharge workflows.*

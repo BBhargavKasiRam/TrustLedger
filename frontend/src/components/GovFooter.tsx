@@ -297,8 +297,6 @@ export const GovFooter: React.FC = () => {
               </span>
               <span>•</span>
               <span className="font-mono text-slate-300">SHA-256 Merkle Ledger</span>
-              <span>•</span>
-              <span className="font-mono text-amber-400 font-bold">SIH26265</span>
             </div>
           </div>
         </div>

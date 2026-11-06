@@ -154,7 +154,7 @@ def seed_database(force: bool = False, custom_db = None):
     ]
     target_db.rbi_ifsc_directory.insert_many([r.to_mongo_dict() for r in rbi_records])
 
-    print("[SEED] Seeding SIH26265 Evaluation Scenarios Check Matrix into MongoDB...")
+    print("[SEED] Seeding Regulatory Evaluation Scenarios Check Matrix into MongoDB...")
     scenarios_data = [
         EvaluationScenarioRecord(
             id=1,
