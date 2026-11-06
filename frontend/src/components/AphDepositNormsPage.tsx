@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Scale, 
   ArrowLeft, 
@@ -15,12 +16,21 @@ import {
 } from 'lucide-react';
 
 interface AphDepositNormsPageProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export const AphDepositNormsPage: React.FC<AphDepositNormsPageProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('engineering');
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/');
+    }
+  };
 
   const programmeNorms = [
     {
@@ -214,7 +224,7 @@ export const AphDepositNormsPage: React.FC<AphDepositNormsPageProps> = ({ onBack
           </div>
 
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="self-start md:self-center flex items-center space-x-2 bg-[#002147] hover:bg-[#003870] text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all cursor-pointer whitespace-nowrap hover:scale-105 active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />

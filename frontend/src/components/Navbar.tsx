@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   UserCircle2, 
   Building2, 
@@ -23,7 +24,8 @@ import {
   BarChart3,
   Briefcase,
   FileText,
-  ChevronDown
+  ChevronDown,
+  LayoutDashboard
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
 
@@ -40,6 +42,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCirculars,
   onOpenDepositNorms
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI'>('EN');
   const [showNotificationMenu, setShowNotificationMenu] = useState<boolean>(false);
@@ -450,14 +454,18 @@ interface NavItem {
         <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto flex items-center justify-between gap-4">
           
           {/* Left: Application Favicon at far left + Institutional Portal Title */}
-          <div className="flex items-center space-x-3.5 sm:space-x-4">
+          <div 
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-3.5 sm:space-x-4 cursor-pointer group"
+            title="Return to National Portal Home"
+          >
             <img 
               src="/favicon.png" 
               alt="Application Favicon" 
-              className="h-14 sm:h-16 w-auto object-contain shrink-0" 
+              className="h-14 sm:h-16 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform" 
             />
             <div className="flex flex-col text-left">
-              <span className="font-extrabold text-slate-900 text-sm sm:text-base lg:text-lg leading-tight tracking-tight">
+              <span className="font-extrabold text-slate-900 text-sm sm:text-base lg:text-lg leading-tight tracking-tight group-hover:text-[#002147] transition-colors">
                 अखिल भारतीय तकनीकी शिक्षा परिषद्
               </span>
               <span className="font-bold text-slate-800 text-xs sm:text-sm lg:text-base tracking-tight leading-tight">
@@ -472,18 +480,42 @@ interface NavItem {
           {/* Right: Circulars, Notification Center, User Session Info */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
             
-            {/* Circulars & SOPs Modal Opener */}
-            {onOpenCirculars && (
+            {/* Circulars & SOPs Route Opener */}
+            <button
+              onClick={() => navigate('/circulars')}
+              title="Official Government Circulars, Guidelines & User Manuals"
+              className="hidden sm:inline-flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-white px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">Circulars &amp; SOPs</span>
+              <span className="bg-amber-400 text-slate-950 text-[9px] px-1 py-0.2 rounded font-mono font-bold">
+                APH
+              </span>
+            </button>
+
+            {/* Direct Dashboard or SSO Login Button */}
+            {currentSession ? (
               <button
-                onClick={onOpenCirculars}
-                title="Official Government Circulars, Guidelines & User Manuals"
-                className="hidden sm:inline-flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-white px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                onClick={() => navigate('/dashboard')}
+                title="Open Role-Based Workbench Dashboard"
+                className="hidden md:inline-flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer"
               >
-                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden md:inline">Circulars &amp; SOPs</span>
-                <span className="bg-amber-400 text-slate-950 text-[9px] px-1 py-0.2 rounded font-mono font-bold">
-                  APH
-                </span>
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Dashboard Desk</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (location.pathname !== '/') {
+                    navigate('/#login');
+                  }
+                  scrollToLogin();
+                }}
+                title="Sign in with Jan Parichay National Single Sign-On"
+                className="hidden md:inline-flex items-center space-x-1.5 bg-blue-900 hover:bg-blue-800 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <UserCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Jan Parichay SSO</span>
               </button>
             )}
 
@@ -612,7 +644,11 @@ interface NavItem {
                 <button
                   onClick={() => {
                     if (item.id === 'home') {
-                      handleSkipToContent();
+                      if (location.pathname !== '/') {
+                        navigate('/');
+                      } else {
+                        handleSkipToContent();
+                      }
                     } else if (item.children) {
                       setActiveDropdown(activeDropdown === item.id ? null : item.id);
                     } else {
@@ -622,7 +658,11 @@ interface NavItem {
                   className={`w-full h-full px-2 py-3 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1 text-center whitespace-nowrap group ${
                     idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
                   } ${
-                    item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
+                    (item.id === 'home' && location.pathname === '/') ||
+                    (item.id === 'bureaus' && location.pathname === '/deposit-norms') ||
+                    (item.id === 'bulletins' && location.pathname === '/circulars')
+                      ? 'bg-[#003870] font-bold text-amber-300' 
+                      : ''
                   }`}
                 >
                   {item.icon && item.id === 'search' && (
@@ -657,17 +697,9 @@ interface NavItem {
                           e.stopPropagation();
                           setActiveDropdown(null);
                           if (child.action === 'NORMS') {
-                            if (onOpenDepositNorms) {
-                              onOpenDepositNorms();
-                            } else {
-                              setActiveModal('norms');
-                            }
+                            navigate('/deposit-norms');
                           } else if (child.action === 'CIRCULARS') {
-                            if (onOpenCirculars) {
-                              onOpenCirculars();
-                            } else {
-                              setActiveModal('bulletins');
-                            }
+                            navigate('/circulars');
                           } else if (child.modalTarget) {
                             setActiveModal(child.modalTarget);
                           } else {
@@ -699,7 +731,11 @@ interface NavItem {
                     onClick={() => {
                       if (item.id === 'home') {
                         setMobileMenuOpen(false);
-                        handleSkipToContent();
+                        if (location.pathname !== '/') {
+                          navigate('/');
+                        } else {
+                          handleSkipToContent();
+                        }
                       } else if (item.children) {
                         setActiveDropdown(activeDropdown === item.id ? null : item.id);
                       } else {
@@ -725,17 +761,9 @@ interface NavItem {
                             setMobileMenuOpen(false);
                             setActiveDropdown(null);
                             if (child.action === 'NORMS') {
-                              if (onOpenDepositNorms) {
-                                onOpenDepositNorms();
-                              } else {
-                                setActiveModal('norms');
-                              }
+                              navigate('/deposit-norms');
                             } else if (child.action === 'CIRCULARS') {
-                              if (onOpenCirculars) {
-                                onOpenCirculars();
-                              } else {
-                                setActiveModal('bulletins');
-                              }
+                              navigate('/circulars');
                             } else if (child.modalTarget) {
                               setActiveModal(child.modalTarget);
                             } else {

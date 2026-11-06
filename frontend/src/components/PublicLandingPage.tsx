@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   Lock, 
@@ -16,27 +17,26 @@ import {
   Shield, 
   Fingerprint, 
   GitBranch, 
-  Scale
+  Scale,
+  ArrowRight
 } from 'lucide-react';
 import type { UserRole, UserSession, NOCVerificationResponse, UserPreset } from '../types';
 import { api } from '../services/api';
 import { DEMO_PRESETS } from './PresenterDemoBar';
-import { Navbar } from './Navbar';
-import { GovFooter } from './GovFooter';
-import { AphDepositNormsPage } from './AphDepositNormsPage';
 
 interface PublicLandingPageProps {
   onLoginSuccess: (session: UserSession) => void;
-  onOpenCircularsModal: () => void;
+  onOpenCircularsModal?: () => void;
   presets?: UserPreset[];
+  currentSession?: UserSession | null;
 }
 
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onLoginSuccess,
-  onOpenCircularsModal,
-  presets
+  presets,
+  currentSession
 }) => {
-  const [viewingDepositNorms, setViewingDepositNorms] = useState<boolean>(false);
+  const navigate = useNavigate();
   // Dynamically map presets from backend DB if provided
   const activePresets = (presets && presets.length > 0)
     ? presets.map(p => ({
@@ -126,6 +126,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
 
     if (matchedPreset) {
       onLoginSuccess(matchedPreset.session);
+      navigate('/dashboard');
     } else {
       // Fallback session for evaluation convenience
       const fallbackSession: UserSession = {
@@ -139,6 +140,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         institutionPid: activeTab === 'INSTITUTION_NODAL_OFFICER' ? userId.trim() : undefined
       };
       onLoginSuccess(fallbackSession);
+      navigate('/dashboard');
     }
   };
 
@@ -236,24 +238,40 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex flex-col selection:bg-amber-500 selection:text-white">
+    <div className="w-full flex-1 flex flex-col font-sans selection:bg-amber-500 selection:text-white">
       
-      {/* Official Government Top Header (Two-Tier UX4G / GIGW 3.0 Strip) */}
-      <Navbar
-        currentSession={null}
-        onLogout={() => {}}
-        onOpenCirculars={onOpenCircularsModal}
-        onOpenDepositNorms={() => setViewingDepositNorms(true)}
-      />
-
-      {/* Conditional View: Dedicated APH Chapter IV Deposit Norms Page vs Main Landing */}
-      {viewingDepositNorms ? (
-        <AphDepositNormsPage onBack={() => setViewingDepositNorms(false)} />
-      ) : (
-
-      /* Main NSWS / Jan Parichay Split-Screen Viewport: Expanded full width */
+      {/* Main NSWS / Jan Parichay Viewport: Expanded full width */}
       <main id="main-content" className="flex-1 w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* Active Session Continuity Banner */}
+        {currentSession && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-[#002147] to-[#003870] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md border-l-4 border-amber-400 animate-in fade-in duration-150">
+            <div className="flex items-center space-x-3.5">
+              <div className="p-2.5 bg-amber-400 text-slate-950 rounded-lg">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 font-mono">
+                  ACTIVE AUTHENTICATED SESSION DETECTED
+                </span>
+                <h4 className="font-bold text-sm sm:text-base text-white">
+                  Welcome back, {currentSession.userName} ({currentSession.designation})
+                </h4>
+                <p className="text-xs text-blue-200">
+                  Role: <span className="font-semibold text-white">{currentSession.role}</span> {currentSession.institutionPid ? `• PID: ${currentSession.institutionPid}` : ''}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center space-x-2 bg-amber-400 hover:bg-amber-500 text-slate-950 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap self-stretch sm:self-auto justify-center"
+            >
+              <span>Go to Your Workbench Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Statutory Advisory Strip */}
         <div className="bg-amber-50 border-l-4 border-amber-600 border border-amber-200 p-4 rounded-lg mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm shadow-xs">
           <div className="flex items-center space-x-3">
@@ -271,14 +289,14 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           </div>
           <div className="flex items-center space-x-3 self-end sm:self-center shrink-0">
             <button
-              onClick={() => setViewingDepositNorms(true)}
+              onClick={() => navigate('/deposit-norms')}
               className="flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-amber-300 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs cursor-pointer transition"
             >
               <Scale className="w-3.5 h-3.5" />
               <span>Chapter IV Deposit Norms Guide →</span>
             </button>
             <button
-              onClick={onOpenCircularsModal}
+              onClick={() => navigate('/circulars')}
               className="flex items-center space-x-1 text-[#1E3A8A] hover:text-[#172554] font-bold text-xs sm:text-sm underline cursor-pointer whitespace-nowrap"
             >
               <span>Gazette SOP</span>
@@ -575,7 +593,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           {/* ========================================================================= */}
           {/* RIGHT COLUMN: JAN PARICHAY / NSWS SINGLE SIGN-ON CARD (5 Cols)             */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-5">
+          <div id="login-form-section" className="lg:col-span-5 scroll-mt-24">
             <div className="bg-white rounded-lg border-2 border-[#1E3A8A] shadow-lg overflow-hidden">
               
               {/* Card Header (Jan Parichay / NSWS Theme) */}
@@ -760,7 +778,10 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => onLoginSuccess(preset.session)}
+                        onClick={() => {
+                          onLoginSuccess(preset.session);
+                          navigate('/dashboard');
+                        }}
                         className="p-2.5 text-left bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 rounded-md transition-colors cursor-pointer"
                       >
                         <span className="font-bold text-xs text-blue-900 block truncate">{idx + 1}. {preset.label.split('(')[0].trim()}</span>
@@ -778,10 +799,6 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         </div>
 
       </main>
-      )}
-
-      {/* Official Government Footer (Requirement #5) */}
-      <GovFooter />
 
     </div>
   );

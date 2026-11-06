@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   Mail, 
@@ -8,10 +9,12 @@ import {
   X,
   ExternalLink,
   Code2,
-  Lock
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 
 export const GovFooter: React.FC = () => {
+  const navigate = useNavigate();
   const [activeInfoModal, setActiveInfoModal] = useState<string | null>(null);
   const [formattedDate, setFormattedDate] = useState<string>('');
 
@@ -171,10 +174,18 @@ export const GovFooter: React.FC = () => {
               <ul className="space-y-2 text-slate-200">
                 <li>
                   <button 
-                    onClick={() => setActiveInfoModal('sop')}
+                    onClick={() => navigate('/circulars')}
                     className="hover:text-amber-300 hover:underline transition-colors text-left cursor-pointer"
                   >
                     APH 2026-31 User Manual &amp; SOP
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/deposit-norms')}
+                    className="hover:text-amber-300 hover:underline transition-colors text-left cursor-pointer"
+                  >
+                    Chapter IV Deposit Norms Guide
                   </button>
                 </li>
                 <li>
@@ -454,14 +465,53 @@ export const GovFooter: React.FC = () => {
             )}
 
             {activeInfoModal === 'sitemap' && (
-              <div className="space-y-2 leading-relaxed">
-                <p className="font-semibold">Portal Navigation Structure:</p>
-                <ul className="list-disc pl-5 space-y-1 text-slate-700">
-                  <li><strong>Public Landing:</strong> Overview, Statistics, Quick Search, Regulatory Circulars.</li>
-                  <li><strong>Institution Portal:</strong> e-FDR Registration, Document Upload, Renewal Tracking.</li>
-                  <li><strong>Bank Attestation Gateway:</strong> One-Click CBS Verification, Joint Lien Confirmation.</li>
-                  <li><strong>Regulatory Council:</strong> Scrutiny Dashboard, SLA Escalations, DSC Release NOC.</li>
-                </ul>
+              <div className="space-y-3 leading-relaxed">
+                <p className="font-semibold text-slate-900">Official Portal Routes &amp; Structure:</p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => { setActiveInfoModal(null); navigate('/'); }}
+                    className="w-full text-left p-2.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <strong className="text-[#002147] block text-xs">/ (Home)</strong>
+                      <span className="text-[11px] text-slate-600">National Portal Landing, Overview, Jan Parichay SSO, NOC Verification</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#002147] group-hover:translate-x-1 transition-all" />
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveInfoModal(null); navigate('/deposit-norms'); }}
+                    className="w-full text-left p-2.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <strong className="text-[#002147] block text-xs">/deposit-norms</strong>
+                      <span className="text-[11px] text-slate-600">Approval Process Handbook (APH 2026-31) Chapter IV Deposit Norms Guide</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#002147] group-hover:translate-x-1 transition-all" />
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveInfoModal(null); navigate('/circulars'); }}
+                    className="w-full text-left p-2.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <strong className="text-[#002147] block text-xs">/circulars</strong>
+                      <span className="text-[11px] text-slate-600">Official Ministry &amp; AICTE Circulars, Gazette SOPs &amp; User Manuals</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#002147] group-hover:translate-x-1 transition-all" />
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveInfoModal(null); navigate('/dashboard'); }}
+                    className="w-full text-left p-2.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <strong className="text-[#002147] block text-xs">/dashboard</strong>
+                      <span className="text-[11px] text-slate-600">Authenticated Regulatory Workbench (Nodal Desk, Scrutiny, Authority, Bank Gateway)</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#002147] group-hover:translate-x-1 transition-all" />
+                  </button>
+                </div>
               </div>
             )}
 
