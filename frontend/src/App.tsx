@@ -17,6 +17,7 @@ import { DEMO_PRESETS } from './components/PresenterDemoBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { BackendConnectionAlert } from './components/BackendConnectionAlert';
 import { GovFooter } from './components/GovFooter';
+import { AphDepositNormsPage } from './components/AphDepositNormsPage';
 import type { UserRole, Institution, FDRInstrument, AuditLog, DashboardSummary, UserSession, UserPreset, SystemState } from './types';
 import { api, getApiBase, getResolvedBackendUrl } from './services/api';
 import { 
@@ -59,6 +60,7 @@ export const App: React.FC = () => {
   const [bankSubMenu, setBankSubMenu] = useState<'CBS_ATTESTATION'>('CBS_ATTESTATION');
 
   const [viewingCirculars, setViewingCirculars] = useState<boolean>(false);
+  const [viewingDepositNorms, setViewingDepositNorms] = useState<boolean>(false);
 
   // Data & Global state
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -283,13 +285,16 @@ export const App: React.FC = () => {
             currentSession={currentSession}
             onLogout={handleLogout}
             onOpenCirculars={() => setViewingCirculars(prev => !prev)}
+            onOpenDepositNorms={() => setViewingDepositNorms(true)}
           />
 
           {/* Main Viewport: Expanded full width */}
           <main className="flex-1 w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
 
-            {/* If viewing circulars in logged-in view */}
-            {viewingCirculars ? (
+            {/* If viewing deposit norms in logged-in view */}
+            {viewingDepositNorms ? (
+              <AphDepositNormsPage onBack={() => setViewingDepositNorms(false)} />
+            ) : viewingCirculars ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between bg-white p-3 rounded border border-gray-300 shadow-sm">
                   <div className="flex items-center space-x-2">

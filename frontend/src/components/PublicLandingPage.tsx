@@ -23,6 +23,7 @@ import { api } from '../services/api';
 import { DEMO_PRESETS } from './PresenterDemoBar';
 import { Navbar } from './Navbar';
 import { GovFooter } from './GovFooter';
+import { AphDepositNormsPage } from './AphDepositNormsPage';
 
 interface PublicLandingPageProps {
   onLoginSuccess: (session: UserSession) => void;
@@ -35,6 +36,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onOpenCircularsModal,
   presets
 }) => {
+  const [viewingDepositNorms, setViewingDepositNorms] = useState<boolean>(false);
   // Dynamically map presets from backend DB if provided
   const activePresets = (presets && presets.length > 0)
     ? presets.map(p => ({
@@ -241,9 +243,15 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         currentSession={null}
         onLogout={() => {}}
         onOpenCirculars={onOpenCircularsModal}
+        onOpenDepositNorms={() => setViewingDepositNorms(true)}
       />
 
-      {/* Main NSWS / Jan Parichay Split-Screen Viewport: Expanded full width */}
+      {/* Conditional View: Dedicated APH Chapter IV Deposit Norms Page vs Main Landing */}
+      {viewingDepositNorms ? (
+        <AphDepositNormsPage onBack={() => setViewingDepositNorms(false)} />
+      ) : (
+
+      /* Main NSWS / Jan Parichay Split-Screen Viewport: Expanded full width */
       <main id="main-content" className="flex-1 w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Statutory Advisory Strip */}
@@ -261,13 +269,22 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onOpenCircularsModal}
-            className="flex items-center space-x-1 text-[#1E3A8A] hover:text-[#172554] font-bold text-xs sm:text-sm underline cursor-pointer whitespace-nowrap self-end sm:self-center"
-          >
-            <span>Read Gazette SOP</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center space-x-3 self-end sm:self-center shrink-0">
+            <button
+              onClick={() => setViewingDepositNorms(true)}
+              className="flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-amber-300 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs cursor-pointer transition"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>Chapter IV Deposit Norms Guide →</span>
+            </button>
+            <button
+              onClick={onOpenCircularsModal}
+              className="flex items-center space-x-1 text-[#1E3A8A] hover:text-[#172554] font-bold text-xs sm:text-sm underline cursor-pointer whitespace-nowrap"
+            >
+              <span>Gazette SOP</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -553,60 +570,6 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               )}
             </div>
 
-            {/* APH Norms Quick Reference Table */}
-            <div className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] p-5 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <div className="flex items-center space-x-2">
-                  <Scale className="w-4 h-4 text-[#1E3A8A]" />
-                  <h3 className="text-sm font-bold text-slate-900">
-                    Approval Process Handbook (APH 2026-31) Mandatory Deposit Norms
-                  </h3>
-                </div>
-                <span className="text-[10px] font-mono text-slate-500 font-bold">
-                  CHAPTER IV NORMS
-                </span>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-md">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3 px-3.5 border-b border-slate-200">Programme / Category</th>
-                      <th className="py-3 px-3.5 border-b border-slate-200">Statutory Norm</th>
-                      <th className="py-3 px-3.5 border-b border-slate-200">Statutory Lock-In</th>
-                      <th className="py-3 px-3.5 border-b border-slate-200">Lien Mandate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Engineering &amp; Technology (Degree)</td>
-                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹35.0 Lakhs</td>
-                      <td className="py-2.5 px-3.5 text-slate-700">10 Years Continuous</td>
-                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Management (MBA / PGDM)</td>
-                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Pharmacy (B.Pharm / M.Pharm)</td>
-                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Architecture &amp; Town Planning</td>
-                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
 
           {/* ========================================================================= */}
@@ -815,6 +778,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         </div>
 
       </main>
+      )}
 
       {/* Official Government Footer (Requirement #5) */}
       <GovFooter />

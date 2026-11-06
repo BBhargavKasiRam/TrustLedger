@@ -22,7 +22,8 @@ import {
   GraduationCap,
   BarChart3,
   Briefcase,
-  FileText
+  FileText,
+  Scale
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
 
@@ -30,12 +31,14 @@ interface NavbarProps {
   currentSession: UserSession | null;
   onLogout: () => void;
   onOpenCirculars?: () => void;
+  onOpenDepositNorms?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentSession,
   onLogout,
-  onOpenCirculars
+  onOpenCirculars,
+  onOpenDepositNorms
 }) => {
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI'>('EN');
@@ -225,12 +228,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  // Nav Links matching image.png exactly
+  // Nav Links matching image.png + APH Chapter IV Deposit Norms
   const navLinks = [
     { id: 'home', label: 'Home', icon: null },
+    { id: 'norms', label: 'APH Deposit Norms', icon: Scale, badge: 'CHAPTER IV' },
     { id: 'about', label: 'About Us', icon: Info },
     { id: 'news', label: 'NewsRoom', icon: Newspaper },
-    { id: 'bureaus', label: 'Bureaus/Cell', icon: Layers, badge: 'REGULATION' },
+    { id: 'bureaus', label: 'Bureaus/Cell', icon: Layers },
     { id: 'initiatives', label: 'Initiatives', icon: Sparkles },
     { id: 'schemes', label: 'Schemes', icon: BookOpen },
     { id: 'education', label: 'Education', icon: GraduationCap },
@@ -503,6 +507,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => {
                   if (item.id === 'home') {
                     handleSkipToContent();
+                  } else if (item.id === 'norms') {
+                    if (onOpenDepositNorms) {
+                      onOpenDepositNorms();
+                    } else {
+                      setActiveModal('norms');
+                    }
                   } else {
                     setActiveModal(item.id);
                   }
@@ -537,6 +547,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       setMobileMenuOpen(false);
                       if (item.id === 'home') {
                         handleSkipToContent();
+                      } else if (item.id === 'norms') {
+                        if (onOpenDepositNorms) {
+                          onOpenDepositNorms();
+                        } else {
+                          setActiveModal('norms');
+                        }
                       } else {
                         setActiveModal(item.id);
                       }
@@ -588,6 +604,33 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Modal Body Content depending on clicked link */}
+            {activeModal === 'norms' && (
+              <div className="space-y-4">
+                <p>
+                  <strong>Approval Process Handbook (APH 2026-31) — Chapter IV</strong> mandates statutory Security Deposits / Fixed Deposit Receipts (e-FDR) for all approved technical institutions in India.
+                </p>
+                <div className="bg-slate-50 p-3.5 rounded border border-slate-200 space-y-1.5 font-mono text-xs text-slate-800">
+                  <p>• Technical Degree: ₹35.0 Lakhs (10 Years Continuous Lock-in)</p>
+                  <p>• Management (MBA/PGDM): ₹15.0 Lakhs (8 Years Continuous Lock-in)</p>
+                  <p>• Pharmacy / Architecture / HMCT: ₹15.0 Lakhs (8 Years Lock-in)</p>
+                  <p>• Polytechnic / Diploma: ₹15.0 Lakhs (10 Years Lock-in)</p>
+                </div>
+                {onOpenDepositNorms && (
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={() => {
+                        setActiveModal(null);
+                        onOpenDepositNorms();
+                      }}
+                      className="bg-[#002147] hover:bg-[#003870] text-white px-4 py-2 rounded text-xs font-bold cursor-pointer"
+                    >
+                      Open Full Comprehensive Breakdown Page →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeModal === 'about' && (
               <div className="space-y-3 leading-relaxed">
                 <p>
