@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   UserCircle2, 
   Building2, 
@@ -14,7 +14,16 @@ import {
   AlertTriangle,
   Clock,
   ShieldAlert,
-  X
+  X,
+  Search,
+  Menu,
+  Info,
+  Newspaper,
+  Layers,
+  GraduationCap,
+  BarChart3,
+  Briefcase,
+  FileText
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
 import { EmblemOfIndia } from './EmblemOfIndia';
@@ -33,6 +42,32 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI'>('EN');
   const [showNotificationMenu, setShowNotificationMenu] = useState<boolean>(false);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  // Live Real-Time Clock matching image1.png format: "Saturday , 11-07-2026 ,01:11 AM"
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const day = days[now.getDay()];
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hh = String(hours).padStart(2, '0');
+      setCurrentTime(`${day} , ${dd}-${mm}-${yyyy} ,${hh}:${minutes} ${ampm}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // AICTE Requirement 7: Role-Specific Notification Alerts
   const getRoleNotifications = (role?: UserRole) => {
@@ -138,6 +173,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
+  const scrollToLogin = () => {
+    const loginEl = document.getElementById('login-form-section') || document.querySelector('form') || document.getElementById('main-content');
+    if (loginEl) {
+      loginEl.scrollIntoView({ behavior: 'smooth' });
+      loginEl.classList.add('ring-4', 'ring-amber-500', 'transition-all');
+      setTimeout(() => loginEl.classList.remove('ring-4', 'ring-amber-500'), 2000);
+    }
+  };
+
   const getRoleIcon = (role?: UserRole) => {
     switch (role) {
       case 'INSTITUTION_NODAL_OFFICER':
@@ -183,134 +227,233 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm font-sans print:hidden">
-      
-      {/* 1. Indian Tricolor 3px Accent Line */}
-      <div className="h-[3px] bg-gradient-to-r from-[#FF9933] via-white to-[#138808] w-full" />
+  // Nav Links matching image.png exactly
+  const navLinks = [
+    { id: 'home', label: 'Home', icon: null },
+    { id: 'about', label: 'About Us', icon: Info },
+    { id: 'news', label: 'NewsRoom', icon: Newspaper },
+    { id: 'bureaus', label: 'Bureaus/Cell', icon: Layers, badge: 'REGULATION' },
+    { id: 'initiatives', label: 'Initiatives', icon: Sparkles },
+    { id: 'schemes', label: 'Schemes', icon: BookOpen },
+    { id: 'education', label: 'Education', icon: GraduationCap },
+    { id: 'statistics', label: 'Statistics', icon: BarChart3 },
+    { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
+    { id: 'bulletins', label: 'Bulletins', icon: FileText },
+    { id: 'search', label: 'Search', icon: Search }
+  ];
 
-      {/* 2. Top GIGW 3.0 Utility Strip */}
-      <div className="bg-slate-900 text-slate-200 text-xs py-1.5 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+  return (
+    <header className="sticky top-0 z-40 bg-white shadow-md font-sans print:hidden select-none">
+      
+      {/* ========================================================================= */}
+      {/* TIER 1: TOP ACCESSIBILITY & SOCIAL UTILITY STRIP (image1.png)             */}
+      {/* ========================================================================= */}
+      <div className="bg-[#181818] text-white text-xs py-1.5 px-4 sm:px-6 lg:px-8 border-b border-black">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
           
-          {/* Left: Official Government of India Header */}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm">🇮🇳</span>
-            <span className="font-semibold tracking-wide text-slate-100">
-              {currentLang === 'HI' ? 'भारत सरकार | शिक्षा मंत्रालय' : 'भारत सरकार | Government of India — Ministry of Education'}
+          {/* Left: Dynamic Live Date-Time + Screen Reader Access */}
+          <div className="flex items-center space-x-3 sm:space-x-5 text-[11px] sm:text-xs">
+            <span className="font-mono text-slate-200 font-medium tracking-tight">
+              {currentTime || 'Saturday , 11-07-2026 ,01:11 AM'}
             </span>
+
+            <button 
+              onClick={() => {
+                const utterance = new SpeechSynthesisUtterance("Welcome to the AICTE VidyaKosh Centralized Security Deposit and Fixed Deposit Receipt Management Portal.");
+                window.speechSynthesis?.speak(utterance);
+              }}
+              className="flex items-center space-x-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer group"
+              title="Click to activate voice screen reader speech"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="font-medium text-[11px] sm:text-xs">Screen Reader Access</span>
+            </button>
           </div>
 
-          {/* Right: Accessibility & Internationalization Utility Links */}
-          <div className="hidden sm:flex items-center space-x-4 text-[11px] text-slate-300">
-            <button 
-              onClick={handleSkipToContent}
-              className="hover:text-white transition-colors cursor-pointer underline underline-offset-2"
-            >
-              Skip to Main Content
-            </button>
-            <span className="text-slate-600">|</span>
-            <span className="flex items-center space-x-1 cursor-default text-slate-400">
-              <Volume2 className="w-3 h-3 text-slate-400" />
-              <span>Screen Reader Access</span>
-            </span>
-            <span className="text-slate-600">|</span>
-            {/* Font Size Adjusters */}
-            <div className="inline-flex items-center space-x-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+          {/* Right: Text Size, Language Pill, Web Portal Login, Social Icons */}
+          <div className="flex items-center space-x-3 sm:space-x-4 text-[11px] sm:text-xs ml-auto">
+            
+            {/* Text Size (A- A A+) */}
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400 font-medium hidden sm:inline">Text Size</span>
               <button 
                 onClick={() => handleFontSize(-1)} 
                 title="Decrease font size"
-                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold"
+                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold text-xs"
               >
-                A-
+                A<sup className="text-[10px]">-</sup>
               </button>
               <button 
                 onClick={() => handleFontSize(0)} 
                 title="Reset font size"
-                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold"
+                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold text-xs"
               >
                 A
               </button>
               <button 
                 onClick={() => handleFontSize(1)} 
                 title="Increase font size"
-                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold"
+                className="px-1 text-slate-300 hover:text-white cursor-pointer font-bold text-xs"
               >
-                A+
+                A<sup className="text-[10px]">+</sup>
               </button>
             </div>
-            <span className="text-slate-600">|</span>
-            {/* Language Switch */}
-            <div className="inline-flex items-center space-x-1">
+
+            {/* Language Toggle Pill: [A/文 | हिन्दी] matching image1.png */}
+            <button
+              onClick={() => setCurrentLang(currentLang === 'EN' ? 'HI' : 'EN')}
+              className="flex items-center rounded-sm bg-[#FFA500] hover:bg-[#FF9100] text-black font-bold text-[11px] px-2 py-0.5 shadow-xs transition-colors cursor-pointer"
+              title="Toggle between English and Hindi"
+            >
+              <span className="border-r border-black/30 pr-1 mr-1">A/文</span>
+              <span>{currentLang === 'EN' ? 'हिन्दी' : 'English'}</span>
+            </button>
+
+            {/* Web Portal Login Button (matching yellow/orange pill in image1.png) */}
+            {!currentSession ? (
               <button
-                onClick={() => setCurrentLang('EN')}
-                className={`font-semibold cursor-pointer ${currentLang === 'EN' ? 'text-amber-400 underline font-bold' : 'hover:text-white'}`}
+                onClick={scrollToLogin}
+                className="flex items-center space-x-1.5 bg-[#FFA500] hover:bg-[#FF9100] text-black font-bold text-xs px-3 py-1 rounded-full shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
               >
-                English
+                <UserCircle2 className="w-3.5 h-3.5 text-black" />
+                <span className="tracking-tight">Web Portal Login</span>
               </button>
-              <span>/</span>
-              <button
-                onClick={() => setCurrentLang('HI')}
-                className={`font-semibold cursor-pointer ${currentLang === 'HI' ? 'text-amber-400 underline font-bold' : 'hover:text-white'}`}
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="bg-[#FFA500] text-black font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <UserCircle2 className="w-3 h-3 text-black" />
+                  <span className="max-w-[120px] truncate">{currentSession.userName.split(' ')[0]}</span>
+                </span>
+                <button
+                  onClick={onLogout}
+                  title="Sign Out of Portal"
+                  className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+
+            {/* Social Media Icons (Facebook, X, Android) matching image1.png */}
+            <div className="hidden md:flex items-center space-x-2.5 text-slate-300 pl-1 border-l border-slate-700">
+              {/* Facebook */}
+              <a 
+                href="https://www.facebook.com/AICTEOfficial/" 
+                target="_blank" 
+                rel="noreferrer"
+                title="AICTE Facebook Official"
+                className="hover:text-white transition-colors"
               >
-                हिन्दी
-              </button>
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/>
+                </svg>
+              </a>
+
+              {/* X / Twitter */}
+              <a 
+                href="https://twitter.com/AICTE_INDIA" 
+                target="_blank" 
+                rel="noreferrer"
+                title="AICTE Twitter / X Official"
+                className="hover:text-white transition-colors"
+              >
+                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+
+              {/* Android Robot */}
+              <a 
+                href="https://play.google.com/store/apps/developer?id=AICTE" 
+                target="_blank" 
+                rel="noreferrer"
+                title="AICTE Mobile Android Apps"
+                className="hover:text-white transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.0805 12 8.0805c-1.8534 0-3.5903.3306-5.1367.8692L4.841 5.4467a.4161.4161 0 0 0-.5677-.1521.4157.4157 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3433-4.1021-2.689-7.5743-6.1185-9.4396"/>
+                </svg>
+              </a>
             </div>
+
           </div>
 
         </div>
       </div>
 
-      {/* 3. Institutional Branding Bar */}
-      <div className="bg-white border-b border-slate-200 py-3 px-4 sm:px-6 lg:px-8">
+      {/* ========================================================================= */}
+      {/* TIER 2: OFFICIAL AICTE & VIDYAKOSH BRANDING BANNER (image1.png middle)    */}
+      {/* ========================================================================= */}
+      <div className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          {/* Left: State Emblem of India + Official AICTE VidyaKosh Identity */}
-          <div className="flex items-center space-x-3.5">
-            <div className="shrink-0 flex items-center justify-center p-0.5 bg-slate-50 border border-slate-200 rounded">
+          {/* Left: AICTE Official Brand from image1.png + National Emblem + VidyaKosh */}
+          <div className="flex items-center space-x-3 sm:space-x-5">
+            
+            {/* Official AICTE Brand (Cogwheel Emblem + Hindi + English Title) */}
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/aicte-logo.png" 
+                alt="AICTE Emblem" 
+                className="h-14 sm:h-16 w-auto object-contain shrink-0" 
+              />
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-slate-900 text-sm sm:text-base leading-tight tracking-tight">
+                  अखिल भारतीय तकनीकी शिक्षा परिषद्
+                </span>
+                <span className="font-semibold text-slate-800 text-xs sm:text-sm tracking-tight leading-tight">
+                  All India Council for Technical Education
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">
+                  Regulation &amp; Approval Bureau • Ministry of Education, Govt. of India
+                </span>
+              </div>
+            </div>
+
+            <div className="h-12 w-px bg-slate-300 hidden md:block" />
+
+            {/* National State Emblem of India */}
+            <div className="hidden lg:flex items-center space-x-2 shrink-0 p-1 bg-slate-50 border border-slate-200 rounded">
               <EmblemOfIndia size={42} color="#1E3A8A" />
             </div>
 
-            <img 
-              src="/vidyakosh-logo.png" 
-              alt="VidyaKosh Logo" 
-              className="h-11 w-11 object-contain shrink-0 hidden sm:block rounded shadow-xs" 
-            />
-
-            <div className="h-10 w-px bg-slate-300 hidden sm:block" />
-
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-[11px] font-semibold tracking-wider uppercase text-amber-700">
-                  All India Council for Technical Education (AICTE) • Regulation Bureau
+            {/* VidyaKosh Digital Vault Logo & Identity */}
+            <div className="hidden xl:flex items-center space-x-2.5 shrink-0 pl-2 border-l border-slate-200">
+              <img 
+                src="/vidyakosh-logo.png" 
+                alt="VidyaKosh Logo" 
+                className="h-10 w-10 object-contain rounded shadow-xs" 
+              />
+              <div className="flex flex-col text-left">
+                <span className="font-extrabold text-[#1E3A8A] text-xs tracking-tight">
+                  विद्याकोष (VidyaKosh)
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Centralized e-FDR Corpus (APH 2026-31)
                 </span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <span>VidyaKosh — Centralized e-FDR &amp; Security Deposit Portal</span>
-              </h1>
-              <p className="text-[11px] text-slate-500 font-sans hidden md:block">
-                Statutory Regulatory Corpus under Approval Process Handbook (APH 2026-31) • National Single Window System (NSWS)
-              </p>
             </div>
+
           </div>
 
-          {/* Right: Regulatory Badges, Profile & Action Controls */}
-          <div className="flex items-center space-x-3 shrink-0">
+          {/* Right: Circulars, Notification Center, User Session Info */}
+          <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
             
-            {/* UX4G & GIGW 3.0 Verified Badge */}
-            <div className="hidden lg:flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-xs font-semibold shadow-xs">
+            {/* UX4G / GIGW 3.0 Verified Badge */}
+            <div className="hidden 2xl:flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-xs font-semibold shadow-xs">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>UX4G / GIGW 3.0 Compliant</span>
+              <span>GIGW 3.0 / UX4G Compliant</span>
             </div>
 
-            {/* Circulars & Manuals Button */}
+            {/* Circulars & SOPs Modal Opener */}
             {onOpenCirculars && (
               <button
                 onClick={onOpenCirculars}
                 title="Official Government Circulars, Guidelines & User Manuals"
-                className="hidden sm:inline-flex items-center space-x-1.5 bg-[#1E3A8A] hover:bg-[#172554] text-white px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="hidden sm:inline-flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-white px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
-                <BookOpen className="w-3.5 h-3.5" />
+                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden md:inline">Circulars &amp; SOPs</span>
                 <span className="bg-amber-400 text-slate-950 text-[9px] px-1 py-0.2 rounded font-mono font-bold">
                   APH
@@ -318,7 +461,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* AICTE Requirement 7: In-App Notification Center Bell */}
+            {/* Notification Center Bell */}
             <div className="relative">
               <button
                 onClick={() => setShowNotificationMenu(!showNotificationMenu)}
@@ -333,10 +476,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </button>
 
-              {/* Notification Dropdown Drawer */}
+              {/* Notification Drawer Popover */}
               {showNotificationMenu && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg bg-white shadow-xl border border-slate-300 z-50 overflow-hidden text-xs">
-                  <div className="bg-[#1E3A8A] text-white px-3.5 py-2.5 flex items-center justify-between">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg bg-white shadow-2xl border border-slate-300 z-50 overflow-hidden text-xs animate-in fade-in duration-150">
+                  <div className="bg-[#002147] text-white px-3.5 py-2.5 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Bell className="w-4 h-4 text-amber-400" />
                       <span className="font-bold tracking-tight">AICTE Statutory Escalations &amp; Notices</span>
@@ -390,52 +533,268 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Authenticated User Session Profile Chip */}
-            {currentSession ? (
-              <div className="flex items-center space-x-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs text-xs">
+            {currentSession && (
+              <div className="hidden sm:flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs text-xs">
                 <div className="p-1 rounded bg-white border border-slate-200">
                   {getRoleIcon(currentSession.role)}
                 </div>
                 <div className="flex flex-col text-left">
                   <div className="flex items-center space-x-1.5">
-                    <span className="font-bold text-slate-900 text-xs max-w-[150px] truncate">
+                    <span className="font-bold text-slate-900 text-xs max-w-[130px] truncate">
                       {currentSession.userName}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadgeStyle(currentSession.role)}`}>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${getRoleBadgeStyle(currentSession.role)}`}>
                       {getRoleDisplayName(currentSession.role)}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 truncate max-w-[170px]">
+                  <span className="text-[10px] text-slate-500 truncate max-w-[160px]">
                     {currentSession.designation} {currentSession.institutionPid ? `• PID: ${currentSession.institutionPid}` : ''}
                   </span>
                 </div>
-
-                {/* Sign Out Button */}
-                <button
-                  onClick={onLogout}
-                  title="Sign Out of Portal"
-                  className="ml-2 flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-[11px] font-semibold cursor-pointer shadow-xs transition-colors"
-                >
-                  <LogOut className="w-3 h-3" />
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
-              </div>
-            ) : (
-              <div className="inline-flex items-center space-x-2">
-                <span className="text-xs text-slate-500 font-medium hidden sm:inline">
-                  Single Sign-On (SSO) Portal
-                </span>
-                <span className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full text-xs font-semibold">
-                  <Sparkles className="w-3 h-3 text-amber-600" />
-                  <span>Jan Parichay Ready</span>
-                </span>
               </div>
             )}
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-md bg-[#002147] text-white hover:bg-[#003870] cursor-pointer"
+              title="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
 
           </div>
 
         </div>
       </div>
 
+      {/* ========================================================================= */}
+      {/* TIER 3: DEEP NAVY BLUE OFFICIAL NAVIGATION BAR (image.png)                */}
+      {/* ========================================================================= */}
+      <nav className="bg-[#002147] text-white text-xs sm:text-[13px] font-medium border-t border-[#001733] shadow-inner">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Desktop Navigation Row */}
+          <div className="hidden lg:flex items-center justify-between">
+            <div className="flex items-center overflow-x-auto no-scrollbar">
+              {navLinks.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (item.id === 'home') {
+                      handleSkipToContent();
+                    } else {
+                      setActiveModal(item.id);
+                    }
+                  }}
+                  className={`px-3.5 py-2.5 hover:bg-[#003870] transition-colors cursor-pointer flex items-center space-x-1 border-r border-[#001833]/60 whitespace-nowrap group ${
+                    item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
+                  }`}
+                >
+                  {item.icon && item.id === 'search' && (
+                    <Search className="w-3.5 h-3.5 mr-1 text-amber-400 group-hover:scale-110 transition-transform" />
+                  )}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.2 rounded ml-1 tracking-tighter">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Right side NSWS Single Window Link */}
+            <div className="hidden xl:flex items-center text-[11px] text-amber-300 font-semibold space-x-1.5 px-3 py-2 bg-[#001a38] rounded-xs border-l border-[#001833]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>National Single Window System (NSWS) Integrated</span>
+            </div>
+          </div>
+
+          {/* Mobile Navigation Drawer */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden py-3 border-t border-slate-700 space-y-1 animate-in slide-in-from-top-2 duration-150">
+              <div className="grid grid-cols-2 gap-1 pb-2">
+                {navLinks.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (item.id === 'home') {
+                        handleSkipToContent();
+                      } else {
+                        setActiveModal(item.id);
+                      }
+                    }}
+                    className="p-2 text-left hover:bg-[#003870] rounded text-slate-100 font-medium text-xs flex items-center justify-between"
+                  >
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="bg-amber-500 text-black text-[8px] font-bold px-1 rounded">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </nav>
+
+      {/* ========================================================================= */}
+      {/* INTERACTIVE OFFICIAL AICTE INFORMATION MODALS (FOR MENU LINKS)            */}
+      {/* ========================================================================= */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl border-2 border-[#002147] max-w-2xl w-full p-6 relative max-h-[85vh] overflow-y-auto text-slate-900 text-xs">
+            
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-1.5 bg-[#002147] text-white rounded">
+                  <Info className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-[#002147] uppercase tracking-wider">
+                    AICTE Official Information: {navLinks.find(l => l.id === activeModal)?.label}
+                  </h3>
+                  <span className="text-[10px] text-slate-500">
+                    Statutory Bureau Reference • Ministry of Education, Govt. of India
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body Content depending on clicked link */}
+            {activeModal === 'about' && (
+              <div className="space-y-3 leading-relaxed">
+                <p>
+                  The <strong>All India Council for Technical Education (AICTE)</strong> is the statutory body and national-level council for technical education, under the Department of Higher Education, Ministry of Education, Government of India.
+                </p>
+                <p>
+                  Established in November 1945 first as an advisory body and later given statutory status by an Act of Parliament in 1987, AICTE is responsible for proper planning and coordinated development of the technical and management education system throughout India.
+                </p>
+                <div className="bg-blue-50 border-l-4 border-[#002147] p-3 rounded text-slate-800 font-medium">
+                  <strong>VidyaKosh Mandate:</strong> Regulation &amp; Approval Bureau monitors statutory security deposits and Fixed Deposit Receipts (FDRs) under Chapter IV of the Approval Process Handbook (APH 2026-31) to safeguard educational continuity.
+                </div>
+              </div>
+            )}
+
+            {activeModal === 'bureaus' && (
+              <div className="space-y-3">
+                <p>AICTE operates through specialized administrative and regulatory bureaus:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="p-2.5 rounded bg-amber-50 border border-amber-300">
+                    <span className="font-bold text-[#002147] block text-xs">⭐ Regulation &amp; Approval Bureau (Active)</span>
+                    <span className="text-[11px] text-slate-600">Oversees Extension of Approval (EoA), FDR Security Deposits, and VidyaKosh compliance.</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+                    <span className="font-bold text-slate-800 block text-xs">Policy &amp; Academic Planning Bureau</span>
+                    <span className="text-[11px] text-slate-600">Curriculum modernization, faculty development, and academic frameworks.</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+                    <span className="font-bold text-slate-800 block text-xs">Finance &amp; Accounts Bureau</span>
+                    <span className="text-[11px] text-slate-600">Statutory audits, grant disbursements, and financial governance.</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+                    <span className="font-bold text-slate-800 block text-xs">Institutional Development Bureau</span>
+                    <span className="text-[11px] text-slate-600">R&amp;D schemes, modern laboratory infrastructure grants, and PMSSS.</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeModal === 'statistics' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                    <span className="text-xl font-extrabold text-[#002147] block">10,480+</span>
+                    <span className="text-[10px] text-slate-600 uppercase font-semibold">Approved Institutes</span>
+                  </div>
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
+                    <span className="text-xl font-extrabold text-emerald-800 block">₹2,540 Cr</span>
+                    <span className="text-[10px] text-slate-600 uppercase font-semibold">Total Secured Corpus</span>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                    <span className="text-xl font-extrabold text-amber-800 block">99.8%</span>
+                    <span className="text-[10px] text-slate-600 uppercase font-semibold">Joint Lien Verified</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 text-center">
+                  Live statutory telemetry synced across RBI Scheduled Commercial Banks and Core Banking Systems (CBS).
+                </p>
+              </div>
+            )}
+
+            {activeModal === 'search' && (
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-800">
+                  Search AICTE Regulation Bureau Records, Circulars &amp; FDRs:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Enter Institution Name, AICTE PID (e.g. 1-2001), or FDR UID..."
+                    className="flex-1 border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#002147]"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => {
+                      setActiveModal(null);
+                      const table = document.getElementById('centralized-fdr-repository') || document.querySelector('input[type="text"]');
+                      if (table) table.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="bg-[#002147] hover:bg-[#003870] text-white font-bold px-4 py-2 rounded text-xs cursor-pointer"
+                  >
+                    Search
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Quick filters available for: Permanent Institute IDs (PID), State Bank of India, Canara Bank, and Expired FDRs.
+                </p>
+              </div>
+            )}
+
+            {(activeModal === 'news' || activeModal === 'initiatives' || activeModal === 'schemes' || activeModal === 'education' || activeModal === 'opportunities' || activeModal === 'bulletins') && (
+              <div className="space-y-3">
+                <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-2">
+                  <span className="font-bold text-[#002147] block text-xs">
+                    Latest Regulatory Circular (APH 2026-31 Gazette Release)
+                  </span>
+                  <p className="text-[11px] text-slate-600">
+                    Under AICTE Approval Process Handbook regulations, all institutional security deposits must maintain uninterrupted joint lien with AICTE Member Secretary. Renewals must be submitted within T-90 days of maturity.
+                  </p>
+                  <span className="text-[9px] font-mono text-slate-400 block">Published: Ministry of Education, Govt. of India</span>
+                </div>
+                {onOpenCirculars && (
+                  <button
+                    onClick={() => {
+                      setActiveModal(null);
+                      onOpenCirculars();
+                    }}
+                    className="w-full py-2 bg-[#002147] hover:bg-[#003870] text-white font-bold rounded text-xs cursor-pointer flex items-center justify-center space-x-2"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Open Full Circulars, SOPs &amp; User Manuals Repository</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </header>
   );
 };
+
