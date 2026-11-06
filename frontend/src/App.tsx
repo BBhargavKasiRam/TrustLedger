@@ -285,8 +285,8 @@ export const App: React.FC = () => {
             onOpenCirculars={() => setViewingCirculars(prev => !prev)}
           />
 
-          {/* Main Viewport */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          {/* Main Viewport: Expanded full width */}
+          <main className="flex-1 w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
 
             {/* If viewing circulars in logged-in view */}
             {viewingCirculars ? (

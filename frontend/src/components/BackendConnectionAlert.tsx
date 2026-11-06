@@ -57,7 +57,7 @@ export const BackendConnectionAlert: React.FC<BackendConnectionAlertProps> = ({
 
   return (
     <div className="bg-red-50 border-b-2 border-red-500 shadow-md text-red-900 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           
           {/* Main Error Message & Target Status */}

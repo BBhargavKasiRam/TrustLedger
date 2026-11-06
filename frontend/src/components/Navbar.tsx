@@ -158,9 +158,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     const newOffset = Math.max(-2, Math.min(2, fontSizeOffset + delta));
     setFontSizeOffset(newOffset);
     if (newOffset === 0) {
-      document.documentElement.style.fontSize = '';
+      document.documentElement.style.fontSize = '17px';
     } else {
-      document.documentElement.style.fontSize = `${16 + newOffset * 1.5}px`;
+      document.documentElement.style.fontSize = `${17 + newOffset * 1.5}px`;
     }
   };
 
@@ -246,11 +246,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       {/* TIER 1: TOP ACCESSIBILITY & SOCIAL UTILITY STRIP (image1.png)             */}
       {/* ========================================================================= */}
-      <div className="bg-[#181818] text-white text-xs py-1.5 px-4 sm:px-6 lg:px-8 border-b border-black">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
+      <div className="bg-[#181818] text-white text-xs sm:text-[13px] py-2 px-3 sm:px-6 lg:px-8 border-b border-black">
+        <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto flex items-center justify-between gap-2 flex-wrap">
           
           {/* Left: Dynamic Live Date-Time + Screen Reader Access */}
-          <div className="flex items-center space-x-3 sm:space-x-5 text-[11px] sm:text-xs">
+          <div className="flex items-center space-x-3 sm:space-x-5 text-xs sm:text-sm">
             <span className="font-mono text-slate-200 font-medium tracking-tight">
               {currentTime || 'Saturday , 11-07-2026 ,01:11 AM'}
             </span>
@@ -341,24 +341,24 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       {/* TIER 2: BRANDING BANNER WITH APPLICATION FAVICON AT FAR LEFT             */}
       {/* ========================================================================= */}
-      <div className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="bg-white border-b border-slate-200 py-4 px-3 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto flex items-center justify-between gap-4">
           
           {/* Left: Application Favicon at far left + Institutional Portal Title */}
           <div className="flex items-center space-x-3.5 sm:space-x-4">
             <img 
               src="/favicon.png" 
               alt="Application Favicon" 
-              className="h-12 sm:h-14 w-auto object-contain shrink-0" 
+              className="h-14 sm:h-16 w-auto object-contain shrink-0" 
             />
             <div className="flex flex-col text-left">
-              <span className="font-bold text-slate-900 text-sm sm:text-base leading-tight tracking-tight">
+              <span className="font-extrabold text-slate-900 text-sm sm:text-base lg:text-lg leading-tight tracking-tight">
                 अखिल भारतीय तकनीकी शिक्षा परिषद्
               </span>
-              <span className="font-semibold text-slate-800 text-xs sm:text-sm tracking-tight leading-tight">
+              <span className="font-bold text-slate-800 text-xs sm:text-sm lg:text-base tracking-tight leading-tight">
                 All India Council for Technical Education
               </span>
-              <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase tracking-wider mt-0.5">
+              <span className="text-[11px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider mt-0.5">
                 Regulation &amp; Approval Bureau • विद्याकोष (VidyaKosh e-FDR Portal)
               </span>
             </div>
@@ -492,8 +492,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       {/* TIER 3: DEEP NAVY BLUE OFFICIAL NAVIGATION BAR (image.png)                */}
       {/* ========================================================================= */}
-      <nav className="bg-[#002147] text-white text-xs sm:text-[13px] font-medium border-t border-[#001733] shadow-inner">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-[#002147] text-white text-xs sm:text-sm font-medium border-t border-[#001733] shadow-inner">
+        <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-2 sm:px-4 lg:px-6">
           
           {/* Desktop Navigation Row: Spaced equally across the navbar */}
           <div className="hidden lg:flex items-stretch w-full border-x border-[#001833]/70">
@@ -507,7 +507,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setActiveModal(item.id);
                   }
                 }}
-                className={`flex-1 min-w-0 px-2 py-2.5 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1 text-center whitespace-nowrap group ${
+                className={`flex-1 min-w-0 px-2 py-3 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1.5 text-center whitespace-nowrap group ${
                   idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
                 } ${
                   item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''

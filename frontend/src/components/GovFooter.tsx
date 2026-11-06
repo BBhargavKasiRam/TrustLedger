@@ -47,7 +47,7 @@ export const GovFooter: React.FC = () => {
           }}
         />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-12">
+        <div className="relative w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 items-start">
             
             {/* ================================================================= */}
@@ -282,8 +282,8 @@ export const GovFooter: React.FC = () => {
         {/* ================================================================= */}
         {/* SUB-FOOTER STRIP: APPLICATION BRAND & AUDIT COMPLIANCE            */}
         {/* ================================================================= */}
-        <div className="border-t border-[#001733] bg-[#001833] py-3.5 px-4 sm:px-6 lg:px-8 text-[11px] text-slate-400">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
+        <div className="border-t border-[#001733] bg-[#001833] py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
+          <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
             <div className="flex items-center space-x-2">
               <span className="font-semibold text-slate-300">
                 © 2026 VidyaKosh (TrustLedger). Centralized Institutional Security Deposit Management System.

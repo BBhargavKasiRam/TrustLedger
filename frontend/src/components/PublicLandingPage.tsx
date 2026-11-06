@@ -243,27 +243,27 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         onOpenCirculars={onOpenCircularsModal}
       />
 
-      {/* Main NSWS / Jan Parichay Split-Screen Viewport */}
-      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main NSWS / Jan Parichay Split-Screen Viewport: Expanded full width */}
+      <main id="main-content" className="flex-1 w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Statutory Advisory Strip */}
-        <div className="bg-amber-50 border-l-4 border-amber-600 border border-amber-200 p-3.5 rounded-lg mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+        <div className="bg-amber-50 border-l-4 border-amber-600 border border-amber-200 p-4 rounded-lg mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm shadow-xs">
           <div className="flex items-center space-x-3">
-            <span className="flex items-center justify-center p-1.5 rounded-full bg-amber-500 text-white font-bold">
-              <ShieldCheck className="w-4 h-4" />
+            <span className="flex items-center justify-center p-2 rounded-full bg-amber-500 text-white font-bold shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </span>
             <div>
-              <span className="font-bold text-amber-950 uppercase tracking-wide text-[11px] block">
+              <span className="font-bold text-amber-950 uppercase tracking-wide text-xs block">
                 Statutory Advisory: Circular No. AICTE/RB/FDR/2026/04 • Approval Process Handbook (APH)
               </span>
-              <p className="text-slate-700 font-medium mt-0.5">
+              <p className="text-slate-700 font-medium text-xs sm:text-sm mt-0.5">
                 Mandatory Core Banking (CBS) Lien Marking in Scheduled Commercial Banks and cryptographic digital attestation for institutional fixed deposit receipts.
               </p>
             </div>
           </div>
           <button
             onClick={onOpenCircularsModal}
-            className="flex items-center space-x-1 text-[#1E3A8A] hover:text-[#172554] font-bold text-xs underline cursor-pointer whitespace-nowrap self-end sm:self-center"
+            className="flex items-center space-x-1 text-[#1E3A8A] hover:text-[#172554] font-bold text-xs sm:text-sm underline cursor-pointer whitespace-nowrap self-end sm:self-center"
           >
             <span>Read Gazette SOP</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -278,78 +278,78 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           <div className="lg:col-span-7 space-y-6">
             
             {/* AICTE Bureau Mandate Hero Card */}
-            <div className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] p-5 shadow-sm space-y-4">
+            <div className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] p-6 shadow-sm space-y-4">
               <div className="flex items-center space-x-2.5">
-                <span className="h-4 w-1 bg-amber-500 rounded-full" />
-                <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                <span className="h-5 w-1.5 bg-amber-500 rounded-full" />
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
                   VidyaKosh Portal • Regulation Bureau Mandate
                 </h2>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Streamline of Security Deposit / Fixed Deposit Receipt (FDR) operations across all technical institutions approved under Chapter IV of the Approval Process Handbook (APH 2026-31). Replaces decade-long manual verification failures with cryptographic and AI-assisted governance.
               </p>
 
               {/* National Corpus Stats */}
               <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="bg-blue-50/60 border border-blue-200 p-3 rounded-lg text-center">
-                  <span className="text-[10px] text-blue-900 font-bold uppercase tracking-wider block">
+                <div className="bg-blue-50/60 border border-blue-200 p-3.5 rounded-lg text-center">
+                  <span className="text-xs text-blue-900 font-bold uppercase tracking-wider block">
                     Security Deposits
                   </span>
-                  <span className="text-lg font-black text-[#1E3A8A] font-mono">
+                  <span className="text-2xl font-black text-[#1E3A8A] font-mono">
                     ₹1.35 Cr
                   </span>
-                  <span className="text-[10px] text-slate-500 block">Seeded Under Oversight</span>
+                  <span className="text-xs text-slate-500 block mt-0.5">Seeded Under Oversight</span>
                 </div>
-                <div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-lg text-center">
-                  <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-wider block">
+                <div className="bg-emerald-50/60 border border-emerald-200 p-3.5 rounded-lg text-center">
+                  <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider block">
                     Audit Ledger
                   </span>
-                  <span className="text-lg font-black text-emerald-800 font-mono">
+                  <span className="text-2xl font-black text-emerald-800 font-mono">
                     System Verified
                   </span>
-                  <span className="text-[10px] text-slate-500 block">SHA-256 Chained Blocks</span>
+                  <span className="text-xs text-slate-500 block mt-0.5">SHA-256 Chained Blocks</span>
                 </div>
-                <div className="bg-amber-50/60 border border-amber-200 p-3 rounded-lg text-center">
-                  <span className="text-[10px] text-amber-900 font-bold uppercase tracking-wider block">
+                <div className="bg-amber-50/60 border border-amber-200 p-3.5 rounded-lg text-center">
+                  <span className="text-xs text-amber-900 font-bold uppercase tracking-wider block">
                     Release Gateway
                   </span>
-                  <span className="text-lg font-black text-amber-800 font-mono">
+                  <span className="text-2xl font-black text-amber-800 font-mono">
                     4-Gate Verified
                   </span>
-                  <span className="text-[10px] text-slate-500 block">QR-Signed Discharge NOC</span>
+                  <span className="text-xs text-slate-500 block mt-0.5">QR-Signed Discharge NOC</span>
                 </div>
               </div>
             </div>
 
             {/* 4 Pillars of Solution Architecture Grid */}
-            <div className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] p-5 shadow-sm space-y-4">
+            <div className="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#1E3A8A] p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <div className="flex items-center space-x-2">
                   <Shield className="w-5 h-5 text-[#1E3A8A]" />
-                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
                     Key Regulatory Pillars &amp; Safeguards
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200 px-2 py-0.5 rounded-full font-mono">
+                <span className="text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-0.5 rounded-full font-mono">
                   NSWS ALIGNED
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. Tri-Party Dual-Truth Isolation */}
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5 transition hover:bg-slate-100/70">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-1.5 transition hover:bg-slate-100/70">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="p-1.5 rounded bg-blue-50 text-[#1E3A8A] border border-blue-200">
                         <Eye className="w-4 h-4" />
                       </div>
-                      <span className="font-bold text-xs text-slate-900">1. Tri-Party Dual-Truth Registry</span>
+                      <span className="font-bold text-sm text-slate-900">1. Tri-Party Dual-Truth Registry</span>
                     </div>
-                    <span className="text-[9px] font-mono font-bold bg-slate-200 text-slate-800 px-1.5 py-0.2 rounded">
+                    <span className="text-[10px] font-mono font-bold bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">
                       PILLAR 1
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-snug">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     Strict isolation of College Claim vs. Vision AI Forensics vs. Authoritative Bank Truth to prevent silent claim overrides.
                   </p>
                 </div>
@@ -546,39 +546,39 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               </div>
 
               <div className="overflow-x-auto border border-slate-200 rounded-md">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-700 font-bold text-[10px] uppercase tracking-wider">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider">
                     <tr>
-                      <th className="py-2.5 px-3 border-b border-slate-200">Programme / Category</th>
-                      <th className="py-2.5 px-3 border-b border-slate-200">Statutory Norm</th>
-                      <th className="py-2.5 px-3 border-b border-slate-200">Statutory Lock-In</th>
-                      <th className="py-2.5 px-3 border-b border-slate-200">Lien Mandate</th>
+                      <th className="py-3 px-3.5 border-b border-slate-200">Programme / Category</th>
+                      <th className="py-3 px-3.5 border-b border-slate-200">Statutory Norm</th>
+                      <th className="py-3 px-3.5 border-b border-slate-200">Statutory Lock-In</th>
+                      <th className="py-3 px-3.5 border-b border-slate-200">Lien Mandate</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-[11px]">
+                  <tbody className="divide-y divide-slate-100 text-sm">
                     <tr className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-semibold text-slate-900">Engineering &amp; Technology (Degree)</td>
-                      <td className="py-2 px-3 font-bold font-mono text-[#1E3A8A]">₹35.0 Lakhs</td>
-                      <td className="py-2 px-3 text-slate-700">10 Years Continuous</td>
-                      <td className="py-2 px-3 text-emerald-700 font-medium">Joint AICTE Lien</td>
+                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Engineering &amp; Technology (Degree)</td>
+                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹35.0 Lakhs</td>
+                      <td className="py-2.5 px-3.5 text-slate-700">10 Years Continuous</td>
+                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
                     </tr>
                     <tr className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-semibold text-slate-900">Management (MBA / PGDM)</td>
-                      <td className="py-2 px-3 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2 px-3 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2 px-3 text-emerald-700 font-medium">Joint AICTE Lien</td>
+                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Management (MBA / PGDM)</td>
+                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
+                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
+                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
                     </tr>
                     <tr className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-semibold text-slate-900">Pharmacy (B.Pharm / M.Pharm)</td>
-                      <td className="py-2 px-3 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2 px-3 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2 px-3 text-emerald-700 font-medium">Joint AICTE Lien</td>
+                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Pharmacy (B.Pharm / M.Pharm)</td>
+                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
+                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
+                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
                     </tr>
                     <tr className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-semibold text-slate-900">Architecture &amp; Town Planning</td>
-                      <td className="py-2 px-3 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
-                      <td className="py-2 px-3 text-slate-700">8 Years Continuous</td>
-                      <td className="py-2 px-3 text-emerald-700 font-medium">Joint AICTE Lien</td>
+                      <td className="py-2.5 px-3.5 font-semibold text-slate-900">Architecture &amp; Town Planning</td>
+                      <td className="py-2.5 px-3.5 font-bold font-mono text-[#1E3A8A]">₹15.0 Lakhs</td>
+                      <td className="py-2.5 px-3.5 text-slate-700">8 Years Continuous</td>
+                      <td className="py-2.5 px-3.5 text-emerald-700 font-medium">Joint AICTE Lien</td>
                     </tr>
                   </tbody>
                 </table>
@@ -594,80 +594,80 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             <div className="bg-white rounded-lg border-2 border-[#1E3A8A] shadow-lg overflow-hidden">
               
               {/* Card Header (Jan Parichay / NSWS Theme) */}
-              <div className="bg-[#1E3A8A] text-white p-4 border-b border-amber-500">
+              <div className="bg-[#1E3A8A] text-white p-4.5 border-b border-amber-500">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Lock className="w-4 h-4 text-amber-400" />
-                    <h3 className="font-bold text-sm tracking-tight">
+                    <Lock className="w-5 h-5 text-amber-400" />
+                    <h3 className="font-bold text-base tracking-tight">
                       Jan Parichay • Unified Single Sign-On (SSO)
                     </h3>
                   </div>
-                  <span className="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-mono">
+                  <span className="text-xs font-bold bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full font-mono">
                     SECURE SSO
                   </span>
                 </div>
-                <p className="text-[11px] text-blue-100 mt-1">
+                <p className="text-xs text-blue-100 mt-1">
                   VidyaKosh • National Single Window System (NSWS) • AICTE Regulation Bureau
                 </p>
               </div>
 
               {/* 4 Role Tabs */}
-              <div className="grid grid-cols-2 bg-slate-100 border-b border-slate-300 text-xs font-semibold">
+              <div className="grid grid-cols-2 bg-slate-100 border-b border-slate-300 text-xs sm:text-sm font-semibold">
                 <button
                   type="button"
                   onClick={() => handleTabChange('INSTITUTION_NODAL_OFFICER')}
-                  className={`py-3 px-2 text-center transition cursor-pointer border-r border-b border-slate-300 flex items-center justify-center space-x-1.5 ${
+                  className={`py-3.5 px-2.5 text-center transition cursor-pointer border-r border-b border-slate-300 flex items-center justify-center space-x-1.5 ${
                     activeTab === 'INSTITUTION_NODAL_OFFICER'
                       ? 'bg-white text-slate-950 font-bold border-b-2 border-b-amber-500 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
-                  <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                  <Building2 className="w-4 h-4 text-[#1E3A8A]" />
                   <span className="truncate">Institute Login (PID)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTabChange('AICTE_SCRUTINY_OFFICER')}
-                  className={`py-3 px-2 text-center transition cursor-pointer border-b border-slate-300 flex items-center justify-center space-x-1.5 ${
+                  className={`py-3.5 px-2.5 text-center transition cursor-pointer border-b border-slate-300 flex items-center justify-center space-x-1.5 ${
                     activeTab === 'AICTE_SCRUTINY_OFFICER'
                       ? 'bg-white text-slate-950 font-bold border-b-2 border-b-amber-500 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
-                  <FileCheck2 className="w-3.5 h-3.5 text-emerald-700" />
+                  <FileCheck2 className="w-4 h-4 text-emerald-700" />
                   <span className="truncate">AICTE Scrutiny</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTabChange('COMPETENT_AUTHORITY')}
-                  className={`py-3 px-2 text-center transition cursor-pointer border-r border-slate-300 flex items-center justify-center space-x-1.5 ${
+                  className={`py-3.5 px-2.5 text-center transition cursor-pointer border-r border-slate-300 flex items-center justify-center space-x-1.5 ${
                     activeTab === 'COMPETENT_AUTHORITY'
                       ? 'bg-white text-slate-950 font-bold border-b-2 border-b-amber-500 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
-                  <Crown className="w-3.5 h-3.5 text-amber-700" />
+                  <Crown className="w-4 h-4 text-amber-700" />
                   <span className="truncate">Competent Authority</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTabChange('BANK_BRANCH_MANAGER')}
-                  className={`py-3 px-2 text-center transition cursor-pointer flex items-center justify-center space-x-1.5 ${
+                  className={`py-3.5 px-2.5 text-center transition cursor-pointer flex items-center justify-center space-x-1.5 ${
                     activeTab === 'BANK_BRANCH_MANAGER'
                       ? 'bg-white text-slate-950 font-bold border-b-2 border-b-amber-500 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
-                  <Landmark className="w-3.5 h-3.5 text-purple-700" />
+                  <Landmark className="w-4 h-4 text-purple-700" />
                   <span className="truncate">Bank Nodal Officer</span>
                 </button>
               </div>
 
               {/* Login Form Body */}
-              <form onSubmit={handleLoginSubmit} className="p-5 space-y-4">
+              <form onSubmit={handleLoginSubmit} className="p-5 sm:p-6 space-y-4">
                 
                 {loginError && (
-                  <div className="p-3 rounded-md bg-red-50 border border-red-300 flex items-start space-x-2 text-xs text-red-800 animate-in fade-in">
+                  <div className="p-3 rounded-md bg-red-50 border border-red-300 flex items-start space-x-2 text-xs sm:text-sm text-red-800 animate-in fade-in">
                     <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <span>{loginError}</span>
                   </div>
@@ -675,7 +675,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
 
                 {/* User ID Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                  <label className="block text-xs sm:text-sm font-bold text-slate-800 mb-1">
                     {getUserIdLabel()} <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -684,17 +684,17 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
                     placeholder={getUserIdPlaceholder()}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
                   />
                 </div>
 
                 {/* Password Field */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-800">
+                    <label className="block text-xs sm:text-sm font-bold text-slate-800">
                       Password / Access PIN <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-[11px] text-[#1E3A8A] font-semibold">
+                    <span className="text-xs text-[#1E3A8A] font-semibold">
                       APH Master Key
                     </span>
                   </div>
@@ -704,7 +704,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter password"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
                   />
                 </div>
 
@@ -752,34 +752,34 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     value={captchaInput}
                     onChange={(e) => setCaptchaInput(e.target.value)}
                     placeholder="Enter Captcha Code exactly as shown above"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 uppercase font-mono tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-md px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 uppercase font-mono tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
                   />
                 </div>
 
                 {/* Primary Action Button (UX4G Standard) */}
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-[#1E3A8A] hover:bg-[#172554] text-white rounded-md font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center justify-center space-x-2 mt-4"
+                  className="w-full py-3.5 bg-[#1E3A8A] hover:bg-[#172554] text-white rounded-md font-bold text-sm shadow-sm transition-colors cursor-pointer flex items-center justify-center space-x-2 mt-4"
                 >
                   <Lock className="w-4 h-4 text-amber-400" />
                   <span>Authenticate &amp; Access VidyaKosh Portal ({getRoleTabLabel(activeTab)})</span>
                 </button>
 
                 {/* Fast Evaluator 1-Click Login Shortcuts */}
-                <div className="pt-3 border-t border-slate-200 space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                <div className="pt-3.5 border-t border-slate-200 space-y-2">
+                  <span className="text-xs uppercase font-bold text-slate-500 tracking-wider block">
                     ⚡ Evaluator 1-Click SSO Shortcuts:
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {activePresets.slice(0, 4).map((preset, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => onLoginSuccess(preset.session)}
-                        className="p-2 text-left bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 rounded-md transition-colors cursor-pointer"
+                        className="p-2.5 text-left bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 rounded-md transition-colors cursor-pointer"
                       >
-                        <span className="font-bold text-[11px] text-blue-900 block truncate">{idx + 1}. {preset.label.split('(')[0].trim()}</span>
-                        <span className="text-[10px] text-slate-500 font-mono truncate block">{preset.session.userId}</span>
+                        <span className="font-bold text-xs text-blue-900 block truncate">{idx + 1}. {preset.label.split('(')[0].trim()}</span>
+                        <span className="text-[11px] text-slate-500 font-mono truncate block">{preset.session.userId}</span>
                       </button>
                     ))}
                   </div>
