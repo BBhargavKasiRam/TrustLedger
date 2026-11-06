@@ -8,7 +8,6 @@ import {
   BookOpen,
   LogOut,
   Sparkles,
-  CheckCircle2,
   Volume2,
   Bell,
   AlertTriangle,
@@ -368,12 +367,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right: Circulars, Notification Center, User Session Info */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
             
-            {/* UX4G / GIGW 3.0 Verified Badge */}
-            <div className="hidden 2xl:flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-xs font-semibold shadow-xs">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>GIGW 3.0 / UX4G Compliant</span>
-            </div>
-
             {/* Circulars & SOPs Modal Opener */}
             {onOpenCirculars && (
               <button
