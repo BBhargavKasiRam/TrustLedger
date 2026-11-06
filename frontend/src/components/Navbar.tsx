@@ -23,7 +23,7 @@ import {
   BarChart3,
   Briefcase,
   FileText,
-  Scale
+  ChevronDown
 } from 'lucide-react';
 import type { UserRole, UserSession } from '../types';
 
@@ -43,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI'>('EN');
   const [showNotificationMenu, setShowNotificationMenu] = useState<boolean>(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -228,19 +229,119 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  // Nav Links matching image.png + APH Chapter IV Deposit Norms
-  const navLinks = [
+interface NavChild {
+  id: string;
+  label: string;
+  badge?: string;
+  action?: 'NORMS' | 'CIRCULARS' | 'MODAL';
+  modalTarget?: string;
+}
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon?: any;
+  badge?: string;
+  children?: NavChild[];
+}
+
+  // Nav Links matching official AICTE navigation with sub-item dropdowns
+  const navLinks: NavItem[] = [
     { id: 'home', label: 'Home', icon: null },
-    { id: 'norms', label: 'APH Deposit Norms', icon: Scale, badge: 'CHAPTER IV' },
-    { id: 'about', label: 'About Us', icon: Info },
-    { id: 'news', label: 'NewsRoom', icon: Newspaper },
-    { id: 'bureaus', label: 'Bureaus/Cell', icon: Layers },
-    { id: 'initiatives', label: 'Initiatives', icon: Sparkles },
-    { id: 'schemes', label: 'Schemes', icon: BookOpen },
-    { id: 'education', label: 'Education', icon: GraduationCap },
-    { id: 'statistics', label: 'Statistics', icon: BarChart3 },
-    { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
-    { id: 'bulletins', label: 'Bulletins', icon: FileText },
+    { 
+      id: 'about', 
+      label: 'About Us', 
+      icon: Info,
+      children: [
+        { id: 'about-overview', label: 'Overview & Council Mandate', modalTarget: 'about' },
+        { id: 'about-norms', label: 'APH Chapter IV Deposit Norms', badge: 'STATUTORY', action: 'NORMS' },
+        { id: 'about-leadership', label: 'Organization & Leadership', modalTarget: 'about' },
+        { id: 'about-acts', label: 'Act, Statutes & Regulations', modalTarget: 'about' }
+      ]
+    },
+    { 
+      id: 'news', 
+      label: 'NewsRoom', 
+      icon: Newspaper,
+      children: [
+        { id: 'news-announcements', label: 'Official Announcements', modalTarget: 'news' },
+        { id: 'news-circulars', label: 'Regulatory Notices & Press Releases', modalTarget: 'news' },
+        { id: 'news-media', label: 'Media Gallery & Audio-Visuals', modalTarget: 'news' }
+      ]
+    },
+    { 
+      id: 'bureaus', 
+      label: 'Bureaus/Cell', 
+      icon: Layers, 
+      badge: 'REGULATION',
+      children: [
+        { id: 'bureau-reg', label: 'Regulation & Approval Bureau (Active)', badge: 'CORE', modalTarget: 'bureaus' },
+        { id: 'bureau-norms', label: 'APH Chapter IV Deposit Norms', badge: 'CHAPTER IV', action: 'NORMS' },
+        { id: 'bureau-policy', label: 'Policy & Academic Planning Bureau', modalTarget: 'bureaus' },
+        { id: 'bureau-finance', label: 'Finance & Accounts Bureau', modalTarget: 'bureaus' },
+        { id: 'bureau-inst', label: 'Institutional Development Bureau', modalTarget: 'bureaus' }
+      ]
+    },
+    { 
+      id: 'initiatives', 
+      label: 'Initiatives', 
+      icon: Sparkles,
+      children: [
+        { id: 'init-vidyakosh', label: 'VidyaKosh Centralized e-FDR Depository', badge: 'ACTIVE', modalTarget: 'initiatives' },
+        { id: 'init-cbs', label: 'Core Banking (CBS) Attestation Engine', modalTarget: 'initiatives' },
+        { id: 'init-sso', label: 'Jan Parichay Unified SSO Gateway', modalTarget: 'initiatives' }
+      ]
+    },
+    { 
+      id: 'schemes', 
+      label: 'Schemes', 
+      icon: BookOpen,
+      children: [
+        { id: 'scheme-fdr', label: 'Statutory Institutional Deposits (e-FDR)', badge: 'APH 2026-31', action: 'NORMS' },
+        { id: 'scheme-approval', label: 'Extension of Approval (EoA) Scheme', modalTarget: 'schemes' },
+        { id: 'scheme-modern', label: 'Modernization & Lab R&D Grants', modalTarget: 'schemes' }
+      ]
+    },
+    { 
+      id: 'education', 
+      label: 'Education', 
+      icon: GraduationCap,
+      children: [
+        { id: 'edu-programmes', label: 'Approved Programmes & Degree Tiers', modalTarget: 'education' },
+        { id: 'edu-curriculum', label: 'Model Curriculum & Credit Framework', modalTarget: 'education' },
+        { id: 'edu-vocational', label: 'Vocational & Polytechnic Skill Education', modalTarget: 'education' }
+      ]
+    },
+    { 
+      id: 'statistics', 
+      label: 'Statistics', 
+      icon: BarChart3,
+      children: [
+        { id: 'stat-dashboard', label: 'National Regulatory Dashboard', modalTarget: 'statistics' },
+        { id: 'stat-intake', label: 'Sanctioned Technical Intake Analytics', modalTarget: 'statistics' },
+        { id: 'stat-fdr', label: 'Total Security Deposits Monitored', modalTarget: 'statistics' }
+      ]
+    },
+    { 
+      id: 'opportunities', 
+      label: 'Opportunities', 
+      icon: Briefcase,
+      children: [
+        { id: 'opp-faculty', label: 'Faculty Development Schemes', modalTarget: 'opportunities' },
+        { id: 'opp-grants', label: 'Institutional Infrastructure Grants', modalTarget: 'opportunities' },
+        { id: 'opp-tenders', label: 'Tenders & Public Notices', modalTarget: 'opportunities' }
+      ]
+    },
+    { 
+      id: 'bulletins', 
+      label: 'Bulletins', 
+      icon: FileText,
+      children: [
+        { id: 'bull-circulars', label: 'Official Circulars & User Manuals', badge: 'SOP', action: 'CIRCULARS' },
+        { id: 'bull-gazette', label: 'Gazette Notifications', modalTarget: 'bulletins' },
+        { id: 'bull-norms', label: 'Chapter IV Deposit Norms Reference', action: 'NORMS' }
+      ]
+    },
     { id: 'search', label: 'Search', icon: Search }
   ];
 
@@ -499,75 +600,162 @@ export const Navbar: React.FC<NavbarProps> = ({
       <nav className="bg-[#002147] text-white text-xs sm:text-sm font-medium border-t border-[#001733] shadow-inner">
         <div className="w-full max-w-[97%] 2xl:max-w-[1780px] mx-auto px-2 sm:px-4 lg:px-6">
           
-          {/* Desktop Navigation Row: Spaced equally across the navbar */}
+          {/* Desktop Navigation Row: Spaced equally across the navbar with Hover/Click Dropdowns */}
           <div className="hidden lg:flex items-stretch w-full border-x border-[#001833]/70">
             {navLinks.map((item, idx) => (
-              <button
+              <div
                 key={item.id}
-                onClick={() => {
-                  if (item.id === 'home') {
-                    handleSkipToContent();
-                  } else if (item.id === 'norms') {
-                    if (onOpenDepositNorms) {
-                      onOpenDepositNorms();
-                    } else {
-                      setActiveModal('norms');
-                    }
-                  } else {
-                    setActiveModal(item.id);
-                  }
-                }}
-                className={`flex-1 min-w-0 px-2 py-3 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1.5 text-center whitespace-nowrap group ${
-                  idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
-                } ${
-                  item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
-                }`}
+                className="relative flex-1 min-w-0 flex items-stretch"
+                onMouseEnter={() => item.children && setActiveDropdown(item.id)}
+                onMouseLeave={() => setActiveDropdown(null)}
               >
-                {item.icon && item.id === 'search' && (
-                  <Search className="w-3.5 h-3.5 mr-1 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
+                <button
+                  onClick={() => {
+                    if (item.id === 'home') {
+                      handleSkipToContent();
+                    } else if (item.children) {
+                      setActiveDropdown(activeDropdown === item.id ? null : item.id);
+                    } else {
+                      setActiveModal(item.id);
+                    }
+                  }}
+                  className={`w-full h-full px-2 py-3 hover:bg-[#003870] transition-colors cursor-pointer flex items-center justify-center space-x-1 text-center whitespace-nowrap group ${
+                    idx < navLinks.length - 1 ? 'border-r border-[#001833]/70' : ''
+                  } ${
+                    item.id === 'home' ? 'bg-[#003870] font-bold text-amber-300' : ''
+                  }`}
+                >
+                  {item.icon && item.id === 'search' && (
+                    <Search className="w-3.5 h-3.5 mr-1 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
+                  )}
+                  <span className="truncate">{item.label}</span>
+                  {item.children && (
+                    <ChevronDown className={`w-3 h-3 ml-0.5 transition-transform duration-200 shrink-0 ${
+                      activeDropdown === item.id ? 'rotate-180 text-amber-400' : 'text-slate-400 group-hover:text-amber-300'
+                    }`} />
+                  )}
+                  {item.badge && (
+                    <span className="hidden xl:inline-block bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.2 rounded ml-1 tracking-tighter shrink-0">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+
+                {/* Sub-item Dropdown Menu */}
+                {item.children && activeDropdown === item.id && (
+                  <div 
+                    className="absolute top-full left-0 w-64 xl:w-72 bg-white text-slate-800 rounded-b-lg shadow-2xl border border-slate-200 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                  >
+                    <div className="px-3.5 py-1.5 bg-[#002147] text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-between border-b border-slate-700">
+                      <span>{item.label} Directory</span>
+                      <span className="text-[9px] text-amber-400 font-mono">APH COMPLIANT</span>
+                    </div>
+                    {item.children.map((child) => (
+                      <button
+                        key={child.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdown(null);
+                          if (child.action === 'NORMS') {
+                            if (onOpenDepositNorms) {
+                              onOpenDepositNorms();
+                            } else {
+                              setActiveModal('norms');
+                            }
+                          } else if (child.action === 'CIRCULARS') {
+                            if (onOpenCirculars) {
+                              onOpenCirculars();
+                            } else {
+                              setActiveModal('bulletins');
+                            }
+                          } else if (child.modalTarget) {
+                            setActiveModal(child.modalTarget);
+                          } else {
+                            setActiveModal(item.id);
+                          }
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 text-xs font-semibold text-slate-800 hover:text-[#002147] flex items-center justify-between border-b border-slate-100 last:border-b-0 transition-colors group/sub cursor-pointer"
+                      >
+                        <span className="truncate group-hover/sub:translate-x-0.5 transition-transform">{child.label}</span>
+                        {child.badge && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 group-hover/sub:bg-amber-400 group-hover/sub:text-slate-950 shrink-0 ml-1">
+                            {child.badge}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 )}
-                <span className="truncate">{item.label}</span>
-                {item.badge && (
-                  <span className="hidden xl:inline-block bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.2 rounded ml-1 tracking-tighter shrink-0">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
+              </div>
             ))}
           </div>
 
           {/* Mobile Navigation Drawer */}
           {mobileMenuOpen && (
-            <div className="lg:hidden py-3 border-t border-slate-700 space-y-1 animate-in slide-in-from-top-2 duration-150">
-              <div className="grid grid-cols-2 gap-1 pb-2">
-                {navLinks.map((item) => (
+            <div className="lg:hidden py-3 border-t border-slate-700 space-y-2 animate-in slide-in-from-top-2 duration-150 max-h-[75vh] overflow-y-auto">
+              {navLinks.map((item) => (
+                <div key={item.id} className="space-y-1">
                   <button
-                    key={item.id}
                     onClick={() => {
-                      setMobileMenuOpen(false);
                       if (item.id === 'home') {
+                        setMobileMenuOpen(false);
                         handleSkipToContent();
-                      } else if (item.id === 'norms') {
-                        if (onOpenDepositNorms) {
-                          onOpenDepositNorms();
-                        } else {
-                          setActiveModal('norms');
-                        }
+                      } else if (item.children) {
+                        setActiveDropdown(activeDropdown === item.id ? null : item.id);
                       } else {
+                        setMobileMenuOpen(false);
                         setActiveModal(item.id);
                       }
                     }}
-                    className="p-2 text-left hover:bg-[#003870] rounded text-slate-100 font-medium text-xs flex items-center justify-between"
+                    className="w-full p-2.5 text-left hover:bg-[#003870] rounded text-slate-100 font-bold text-xs flex items-center justify-between"
                   >
                     <span>{item.label}</span>
-                    {item.badge && (
-                      <span className="bg-amber-500 text-black text-[8px] font-bold px-1 rounded">
-                        {item.badge}
-                      </span>
+                    {item.children && (
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeDropdown === item.id ? 'rotate-180 text-amber-400' : 'text-slate-400'}`} />
                     )}
                   </button>
-                ))}
-              </div>
+
+                  {/* Mobile Dropdown Sub-links */}
+                  {item.children && activeDropdown === item.id && (
+                    <div className="pl-3 pr-1 py-1 space-y-1 bg-black/20 rounded">
+                      {item.children.map(child => (
+                        <button
+                          key={child.id}
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            setActiveDropdown(null);
+                            if (child.action === 'NORMS') {
+                              if (onOpenDepositNorms) {
+                                onOpenDepositNorms();
+                              } else {
+                                setActiveModal('norms');
+                              }
+                            } else if (child.action === 'CIRCULARS') {
+                              if (onOpenCirculars) {
+                                onOpenCirculars();
+                              } else {
+                                setActiveModal('bulletins');
+                              }
+                            } else if (child.modalTarget) {
+                              setActiveModal(child.modalTarget);
+                            } else {
+                              setActiveModal(item.id);
+                            }
+                          }}
+                          className="w-full text-left p-2 hover:bg-[#003870] rounded text-slate-300 hover:text-white text-[11px] font-medium flex items-center justify-between"
+                        >
+                          <span>• {child.label}</span>
+                          {child.badge && (
+                            <span className="text-[8px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.2 rounded">
+                              {child.badge}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
