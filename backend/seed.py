@@ -404,11 +404,11 @@ def seed_database(force: bool = False, custom_db = None):
         flags=[],
         tenure_months=48,
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
         digitalVault=[
             DigitalVaultItem(
                 documentType="Initial FDR Scan",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                fileUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp="2016-04-15T10:00:00Z"
             )
@@ -478,17 +478,17 @@ def seed_database(force: bool = False, custom_db = None):
         flags=[],
         tenure_months=72,
         document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        documentUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
         digitalVault=[
             DigitalVaultItem(
                 documentType="Initial FDR Scan",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                fileUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp="2020-04-15T11:00:00Z"
             ),
             DigitalVaultItem(
                 documentType="Bank Attestation PDF",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v1714000002/vidyakosh_fdrs/canara_cbs_attestation_fdr_2020_205.pdf",
+                fileUrl="/static/vault/FDR-2020-205/Bank_Attestation_FDR-2020-205.pdf",
                 uploadedBy="BANK_BRANCH_MANAGER",
                 timestamp="2020-04-16T15:30:00Z"
             )
@@ -542,12 +542,12 @@ def seed_database(force: bool = False, custom_db = None):
         tenure_violation_flag=True,
         data_mismatch_flag=True,
         lien_encumbrance_flag=True,
-        document_path="/static/sample_fdrs/sample_2_tampered_amount.jpg",
-        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000003/vidyakosh_fdrs/sample_2_tampered_amount.jpg",
+        document_path="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
+        documentUrl="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
         digitalVault=[
             DigitalVaultItem(
                 documentType="Initial FDR Scan",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000003/vidyakosh_fdrs/sample_2_tampered_amount.jpg",
+                fileUrl="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=vanguard_issue_date + "T09:30:00Z"
             )
@@ -599,12 +599,12 @@ def seed_database(force: bool = False, custom_db = None):
         flags=["TENURE_VIOLATION_FLAG"],
         tenure_months=96,
         tenure_violation_flag=True,
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        document_path="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
+        documentUrl="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
         digitalVault=[
             DigitalVaultItem(
                 documentType="Initial FDR Scan",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                fileUrl="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=deccan_issue_date + "T10:00:00Z"
             )
@@ -657,12 +657,12 @@ def seed_database(force: bool = False, custom_db = None):
         tenure_months=96,
         tenure_violation_flag=True,
         cross_registry_hold_flag=True,
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+        document_path="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
+        documentUrl="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
         digitalVault=[
             DigitalVaultItem(
                 documentType="Initial FDR Scan",
-                fileUrl="https://res.cloudinary.com/vidyakosh-aicte/image/upload/v1714000001/vidyakosh_fdrs/sample_1_genuine_sbi.jpg",
+                fileUrl="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=shivalik_issue_date + "T11:00:00Z"
             )

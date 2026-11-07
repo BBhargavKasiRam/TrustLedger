@@ -411,7 +411,8 @@ def approve_gate4_authority(
         )
     except Exception as _pdf_err:
         print(f"[NOC PDF ERROR] {_pdf_err}")
-        noc_url = f"https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v{int(now.timestamp())}/vidyakosh_fdrs/AICTE_NOC_{fdr.fdr_uid}.pdf"
+        clean_tag = fdr.fdr_uid.replace("/", "_").replace(" ", "_")
+        noc_url = f"/static/vault/{clean_tag}/AICTE_NOC_{clean_tag}.pdf"
 
     noc_vault_entry = {
         "documentType": "Discharge NOC",

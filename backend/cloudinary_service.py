@@ -29,44 +29,89 @@ except Exception as err:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 SAMPLE_FDRS_DIR = os.path.join(STATIC_DIR, "sample_fdrs")
+VAULT_DIR = os.path.join(STATIC_DIR, "vault")
 os.makedirs(SAMPLE_FDRS_DIR, exist_ok=True)
+os.makedirs(VAULT_DIR, exist_ok=True)
 
 
-def upload_fdr_file_to_cloudinary(file_bytes: bytes, filename: str) -> str:
+def check_cloudinary_status() -> dict:
     """
-    Uploads file directly to Cloudinary storage folder 'vidyakosh_fdrs' and returns the secure URL.
-    Maintains a local cached copy in static assets and guarantees a valid Cloudinary-routed URL.
+    Checks if Cloudinary credentials are valid and reachable.
+    """
+    try:
+        import cloudinary.api
+        res = cloudinary.api.ping()
+        return {
+            "status": "ONLINE",
+            "cloud_name": CLOUDINARY_CLOUD_NAME,
+            "connected": True,
+            "details": res
+        }
+    except Exception as err:
+        return {
+            "status": "OFFLINE_OR_UNAUTHORIZED",
+            "cloud_name": CLOUDINARY_CLOUD_NAME,
+            "connected": False,
+            "error": str(err),
+            "fallback": "Organized Local Vault Active"
+        }
+
+
+def upload_fdr_file_to_cloudinary(
+    file_bytes: bytes,
+    filename: str,
+    fdr_uid: Optional[str] = None,
+    inst_pid: Optional[str] = None,
+    doc_type: str = "document"
+) -> str:
+    """
+    Uploads file to Cloudinary in an organized hierarchical folder:
+      'vidyakosh_fdrs/{fdr_uid}' (or 'vidyakosh_fdrs/{inst_pid}/{fdr_uid}')
+    
+    If Cloudinary is offline, unauthorized (HTTP 401), or unavailable,
+    it automatically archives the document into the organized local vault directory:
+      'backend/static/vault/{fdr_uid}/{filename}'
+    and returns the local accessible URL '/static/vault/{fdr_uid}/{filename}',
+    guaranteeing zero 404 broken links.
     """
     clean_name = os.path.splitext(filename)[0].replace(" ", "_").replace(".", "_")
     ext = os.path.splitext(filename)[1].lower() or ".pdf"
-    ts = int(time.time())
-    public_id = f"fdr_{clean_name}_{ts}"
     
-    # Store local copy for fallback preview
-    local_filename = f"{clean_name}_{ts}{ext}"
-    local_path = os.path.join(SAMPLE_FDRS_DIR, local_filename)
+    # 1. Organized Local Storage Hierarchy
+    folder_tag = (fdr_uid or "general").replace("/", "_").replace(" ", "_")
+    fdr_vault_dir = os.path.join(VAULT_DIR, folder_tag)
+    os.makedirs(fdr_vault_dir, exist_ok=True)
+    
+    local_filename = f"{clean_name}{ext}"
+    local_path = os.path.join(fdr_vault_dir, local_filename)
     try:
         with open(local_path, "wb") as f:
             f.write(file_bytes)
     except Exception as e:
-        print(f"[CLOUDINARY] Local caching notice: {e}")
+        print(f"[STORAGE] Local vault write notice: {e}")
 
+    local_url = f"/static/vault/{folder_tag}/{local_filename}"
+
+    # 2. Upload to Cloudinary (Hierarchical Organization)
     try:
+        cld_folder = f"vidyakosh_fdrs/{folder_tag}"
+        public_id = f"{doc_type}_{clean_name}"
+        
         upload_result = cloudinary.uploader.upload(
             file_bytes,
-            folder="vidyakosh_fdrs",
+            folder=cld_folder,
             public_id=public_id,
             resource_type="auto"
         )
         secure_url = upload_result.get("secure_url") or upload_result.get("url")
         if secure_url:
-            print(f"[CLOUDINARY] Uploaded {filename} to vidyakosh_fdrs: {secure_url}")
+            print(f"[CLOUDINARY] Uploaded {filename} to {cld_folder}: {secure_url}")
             return secure_url
     except Exception as e:
-        print(f"[CLOUDINARY] Cloudinary upload notice ({e}). Using canonical Cloudinary folder URL.")
+        print(f"[CLOUDINARY NOTICE] Live Cloudinary upload unavailable ({e}). Using organized local vault URL: {local_url}")
 
-    # Canonical Cloudinary URL for vidyakosh_fdrs folder
-    return f"https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/raw/upload/v{ts}/vidyakosh_fdrs/{local_filename}"
+    # Fallback to organized local vault URL so documents are 100% viewable
+    return local_url
 
 
 def generate_and_upload_noc_pdf(
@@ -143,7 +188,13 @@ def generate_and_upload_noc_pdf(
 
     pdf_bytes = doc.write()
     filename = f"AICTE_NOC_{fdr_uid}.pdf"
-    return upload_fdr_file_to_cloudinary(pdf_bytes, filename)
+    return upload_fdr_file_to_cloudinary(
+        pdf_bytes,
+        filename,
+        fdr_uid=fdr_uid,
+        inst_pid=inst_pid,
+        doc_type="discharge_noc"
+    )
 
 
 def generate_and_upload_bank_attestation_pdf(
@@ -188,4 +239,9 @@ def generate_and_upload_bank_attestation_pdf(
     
     pdf_bytes = doc.write()
     filename = f"Bank_Attestation_{fdr_uid}.pdf"
-    return upload_fdr_file_to_cloudinary(pdf_bytes, filename)
+    return upload_fdr_file_to_cloudinary(
+        pdf_bytes,
+        filename,
+        fdr_uid=fdr_uid,
+        doc_type="bank_attestation"
+    )

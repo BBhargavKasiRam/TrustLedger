@@ -13,6 +13,7 @@ import {
   FileCheck2
 } from 'lucide-react';
 import type { FDRInstrument, DigitalVaultItem } from '../types';
+import { getAssetUrl } from '../services/api';
 
 interface DigitalVaultModalProps {
   isOpen: boolean;
@@ -232,7 +233,7 @@ export const DigitalVaultModal: React.FC<DigitalVaultModalProps> = ({
                     </div>
 
                     <a
-                      href={doc.fileUrl}
+                      href={getAssetUrl(doc.fileUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 rounded-md bg-[#1E3A8A] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition cursor-pointer shrink-0"

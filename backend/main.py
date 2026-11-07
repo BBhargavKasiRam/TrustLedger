@@ -638,6 +638,10 @@ async def submit_fdr_multipart(
         raise HTTPException(status_code=404, detail="Institution not found")
     inst = doc_to_institution(inst_doc)
 
+    total_count = db.fdr_instruments.count_documents({})
+    next_id = total_count + 1
+    fdr_uid = f"FDR-2026-{100 + next_id}"
+
     document_url = None
     file_bytes = b""
     file_hash = None
@@ -663,8 +667,14 @@ async def submit_fdr_multipart(
             f.write(file_bytes)
         local_url = f"/static/uploads/{unique_name}"
 
-        # Upload directly to Cloudinary storage folder vidyakosh_fdrs
-        cloudinary_url = upload_fdr_file_to_cloudinary(file_bytes, file.filename)
+        # Upload directly to organized Cloudinary storage folder vidyakosh_fdrs/{fdr_uid}
+        cloudinary_url = upload_fdr_file_to_cloudinary(
+            file_bytes,
+            file.filename,
+            fdr_uid=fdr_uid,
+            inst_pid=inst.pid,
+            doc_type="initial_scan"
+        )
         document_url = cloudinary_url or local_url
     else:
         document_url = "/static/sample_fdrs/sample_1_genuine_sbi.jpg"
@@ -685,10 +695,6 @@ async def submit_fdr_multipart(
             tenure_violation_flag = True
     except Exception as e:
         print(f"[TENURE MATH NOTICE] {e}")
-
-    total_count = db.fdr_instruments.count_documents({})
-    next_id = total_count + 1
-    fdr_uid = f"FDR-2026-{100 + next_id}"
 
     new_fdr = FDRInstrument(
         id=next_id,

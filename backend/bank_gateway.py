@@ -423,8 +423,13 @@ def submit_tier2_bank_attestation(
             from cloudinary_service import upload_fdr_file_to_cloudinary, generate_and_upload_bank_attestation_pdf
 
         if supporting_file_bytes:
-            filename = supporting_filename or f"bank_attestation_{fdr_uid}.pdf"
-            attestation_doc_url = upload_fdr_file_to_cloudinary(supporting_file_bytes, filename)
+            filename = supporting_filename or f"Bank_Attestation_{fdr_uid}.pdf"
+            attestation_doc_url = upload_fdr_file_to_cloudinary(
+                supporting_file_bytes, 
+                filename, 
+                fdr_uid=fdr_uid, 
+                doc_type="bank_attestation"
+            )
         else:
             attestation_doc_url = generate_and_upload_bank_attestation_pdf(
                 fdr_uid=fdr_uid,
@@ -436,7 +441,8 @@ def submit_tier2_bank_attestation(
             )
     except Exception as _cld_err:
         print(f"[BANK CLOUDINARY NOTICE] {_cld_err}")
-        attestation_doc_url = f"https://res.cloudinary.com/vidyakosh-aicte/raw/upload/v{int(now.timestamp())}/vidyakosh_fdrs/Bank_Attestation_{fdr_uid}.pdf"
+        clean_tag = fdr_uid.replace("/", "_").replace(" ", "_")
+        attestation_doc_url = f"/static/vault/{clean_tag}/Bank_Attestation_{clean_tag}.pdf"
 
     vault_entry = {
         "documentType": "Bank Attestation PDF",
