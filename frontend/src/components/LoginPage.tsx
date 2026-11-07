@@ -318,34 +318,72 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
           </div>
 
-          {/* Captcha Field */}
+          {/* Captcha Field (Classic Government Security Verification) */}
           <div className="space-y-1.5 text-left pt-1">
             <label className="text-xs font-bold text-slate-800 block">
-              Security Anti-Bot Verification
+              Security Verification (Captcha) <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center space-x-3">
-              {/* Captcha Box */}
-              <div 
-                className="h-11 px-4 rounded-lg bg-slate-900 text-amber-400 font-mono text-lg font-bold tracking-widest flex items-center justify-center select-none shadow-inner border border-slate-700"
-                style={{ letterSpacing: '0.3em', textShadow: '0 0 4px rgba(251,191,36,0.4)' }}
-              >
-                {captchaCode}
-              </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex items-center space-x-2">
+                {/* Classic Distortion Alphanumeric Display Box */}
+                <div 
+                  className="relative h-11 px-4 bg-gradient-to-r from-slate-200 via-amber-50 to-slate-200 border-2 border-slate-400 rounded-lg select-none flex items-center justify-center font-mono font-black text-lg text-slate-800 shadow-inner overflow-hidden w-44 shrink-0"
+                  style={{
+                    backgroundImage: 'radial-gradient(#94a3b8 0.75px, transparent 0.75px), radial-gradient(#cbd5e1 0.75px, #f8fafc 0.75px)',
+                    backgroundSize: '8px 8px',
+                    backgroundPosition: '0 0, 4px 4px'
+                  }}
+                >
+                  {/* Realistic SVG Distortion Lines & Noise Overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-60">
+                    <line x1="0" y1="8" x2="180" y2="36" stroke="#475569" strokeWidth="1.5" strokeDasharray="4 2" />
+                    <line x1="0" y1="34" x2="180" y2="12" stroke="#64748b" strokeWidth="1.2" />
+                    <path d="M5 22 Q 45 6, 90 22 T 175 18" fill="none" stroke="#334155" strokeWidth="1.3" />
+                    <circle cx="28" cy="14" r="7" fill="none" stroke="#94a3b8" strokeWidth="1" />
+                    <circle cx="95" cy="28" r="9" fill="none" stroke="#94a3b8" strokeWidth="0.8" />
+                    <circle cx="145" cy="16" r="6" fill="none" stroke="#94a3b8" strokeWidth="1" />
+                  </svg>
 
-              <button
-                type="button"
-                onClick={generateCaptcha}
-                title="Refresh Captcha Code"
-                className="p-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer transition"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
+                  {/* Individual Distorted Characters */}
+                  <div className="relative z-10 flex items-center space-x-1.5 tracking-wider font-extrabold italic">
+                    {captchaCode.split('').map((char, i) => {
+                      const rotations = [-6, 8, -4, 7, -8];
+                      const yOffsets = [-1, 2, -2, 1, -1];
+                      const colors = ['#1e293b', '#0f172a', '#334155', '#1e3a8a', '#0f172a'];
+                      return (
+                        <span
+                          key={i}
+                          className="inline-block"
+                          style={{
+                            transform: `rotate(${rotations[i % rotations.length]}deg) translateY(${yOffsets[i % yOffsets.length]}px)`,
+                            color: colors[i % colors.length],
+                            textShadow: '1px 1px 1px rgba(0,0,0,0.25)',
+                            fontFamily: i % 2 === 0 ? 'Courier, monospace' : 'Georgia, serif',
+                            fontSize: '1.25rem'
+                          }}
+                        >
+                          {char}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={generateCaptcha}
+                  title="Generate new Captcha"
+                  className="p-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 hover:text-slate-900 cursor-pointer transition flex items-center justify-center shrink-0"
+                >
+                  <RefreshCw className="w-4 h-4 text-[#002147]" />
+                </button>
+              </div>
 
               <input
                 type="text"
                 required
                 maxLength={5}
-                placeholder="Type characters..."
+                placeholder="Enter Captcha code..."
                 value={captchaInput}
                 onChange={(e) => setCaptchaInput(e.target.value)}
                 className="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-900 font-mono uppercase tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#002147] transition"
