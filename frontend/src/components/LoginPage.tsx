@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Lock, 
   Building2, 
@@ -7,11 +7,10 @@ import {
   Crown, 
   Landmark, 
   RefreshCw, 
-  ArrowLeft,
-  ShieldCheck,
-  AlertCircle,
-  Eye,
-  EyeOff
+  ShieldCheck, 
+  AlertCircle, 
+  Eye, 
+  EyeOff 
 } from 'lucide-react';
 import type { UserRole, UserSession, UserPreset } from '../types';
 import { DEMO_PRESETS } from './PresenterDemoBar';
@@ -171,21 +170,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   return (
     <div className="min-h-[80vh] flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-200">
       
-      {/* Top Back Breadcrumb */}
-      <div className="w-full max-w-2xl mb-4 flex items-center justify-between text-xs">
-        <Link 
-          to="/" 
-          className="flex items-center space-x-1.5 text-slate-600 hover:text-[#002147] font-semibold transition"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Return to National Portal Home</span>
-        </Link>
-
-        <span className="text-[11px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-          256-BIT SSL ENCRYPTED
-        </span>
-      </div>
-
       {/* Main Centered Login Card */}
       <div className="w-full max-w-2xl bg-white rounded-2xl border-2 border-[#002147] shadow-2xl overflow-hidden">
         
