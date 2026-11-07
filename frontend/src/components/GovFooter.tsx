@@ -8,8 +8,6 @@ import {
   Shield, 
   X,
   ExternalLink,
-  Code2,
-  Lock,
   ArrowRight
 } from 'lucide-react';
 
@@ -54,45 +52,49 @@ export const GovFooter: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 items-start">
             
             {/* ================================================================= */}
-            {/* COLUMN 1: PROJECT CHANNELS & CODEBASE (Far Left)                  */}
+            {/* COLUMN 1: PLATFORM SYMBOLS (Far Left - Matching Reference)        */}
             {/* ================================================================= */}
             <div className="lg:col-span-2 flex items-center lg:items-start lg:pt-2">
-              <div className="flex items-center space-x-3 text-slate-200">
+              <div className="flex items-center space-x-3.5 text-white">
                 
-                {/* GitHub Repository */}
-                <a
-                  href="https://github.com/BBhargavKasiRam/TrustLedger"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="TrustLedger GitHub Repository"
-                  className="hover:text-[#FFA500] transition-colors p-1 group flex items-center space-x-1"
+                {/* Facebook Icon */}
+                <span
+                  title="Facebook"
+                  aria-label="Facebook"
+                  className="p-1 text-white select-none opacity-90 hover:opacity-100 transition-opacity cursor-default flex items-center justify-center"
                 >
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.5 5H18V0h-3.808C10.596 0 9 1.583 9 4.615V8z" />
                   </svg>
-                </a>
+                </span>
 
-                <span className="text-slate-400 font-light text-base select-none">|</span>
+                {/* Vertical Divider */}
+                <span className="h-6 w-[1.5px] bg-white/70 inline-block select-none" aria-hidden="true" />
 
-                {/* API & Developer Docs */}
-                <button
-                  onClick={() => setActiveInfoModal('api')}
-                  title="REST & Webhook API Documentation"
-                  className="hover:text-[#FFA500] transition-colors p-1 cursor-pointer"
+                {/* X Icon (formerly Twitter) */}
+                <span
+                  title="X"
+                  aria-label="X"
+                  className="p-1 text-white select-none opacity-90 hover:opacity-100 transition-opacity cursor-default flex items-center justify-center"
                 >
-                  <Code2 className="w-5 h-5" />
-                </button>
+                  <svg className="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </span>
 
-                <span className="text-slate-400 font-light text-base select-none">|</span>
+                {/* Vertical Divider */}
+                <span className="h-6 w-[1.5px] bg-white/70 inline-block select-none" aria-hidden="true" />
 
-                {/* Security Architecture */}
-                <button
-                  onClick={() => setActiveInfoModal('security')}
-                  title="Cryptographic Architecture & Ledger Security"
-                  className="hover:text-[#FFA500] transition-colors p-1 cursor-pointer"
+                {/* Android Head Icon */}
+                <span
+                  title="Android"
+                  aria-label="Android"
+                  className="p-1 text-white select-none opacity-90 hover:opacity-100 transition-opacity cursor-default flex items-center justify-center"
                 >
-                  <Lock className="w-5 h-5" />
-                </button>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9979-3.4606a.416.416 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1374 1.0984L4.8403 5.4463a.416.416 0 0 0-.5676-.1521.416.416 0 0 0-.1521.5676l1.9979 3.4606C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396" />
+                  </svg>
+                </span>
 
               </div>
             </div>
