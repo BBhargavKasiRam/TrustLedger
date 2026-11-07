@@ -179,15 +179,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const scrollToLogin = () => {
-    const loginEl = document.getElementById('login-form-section') || document.querySelector('form') || document.getElementById('main-content');
-    if (loginEl) {
-      loginEl.scrollIntoView({ behavior: 'smooth' });
-      loginEl.classList.add('ring-4', 'ring-amber-500', 'transition-all');
-      setTimeout(() => loginEl.classList.remove('ring-4', 'ring-amber-500'), 2000);
-    }
-  };
-
   const getRoleIcon = (role?: UserRole) => {
     switch (role) {
       case 'INSTITUTION_NODAL_OFFICER':
@@ -429,7 +420,7 @@ interface NavItem {
             {/* Web Portal Login Button (matching yellow/orange pill in image1.png) */}
             {!currentSession ? (
               <button
-                onClick={scrollToLogin}
+                onClick={() => navigate('/login')}
                 className="flex items-center space-x-1.5 bg-[#FFA500] hover:bg-[#FF9100] text-black font-bold text-xs px-3 py-1 rounded-full shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
               >
                 <UserCircle2 className="w-3.5 h-3.5 text-black" />
@@ -515,17 +506,12 @@ interface NavItem {
               </button>
             ) : (
               <button
-                onClick={() => {
-                  if (location.pathname !== '/') {
-                    navigate('/#login');
-                  }
-                  scrollToLogin();
-                }}
+                onClick={() => navigate('/login')}
                 title="Sign in with Jan Parichay National Single Sign-On"
-                className="hidden md:inline-flex items-center space-x-1.5 bg-blue-900 hover:bg-blue-800 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer"
+                className="hidden md:inline-flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-amber-300 border border-amber-400/40 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer"
               >
                 <UserCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                <span>Jan Parichay SSO</span>
+                <span>Web Portal Login</span>
               </button>
             )}
 

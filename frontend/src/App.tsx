@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { PublicLandingPage } from './components/PublicLandingPage';
 import { AphDepositNormsPage } from './components/AphDepositNormsPage';
 import { CircularsPage } from './components/CircularsPage';
+import { LoginPage } from './components/LoginPage';
 import { PortalDirectoryPage } from './components/PortalDirectoryPage';
 import { AuthenticatedDashboard } from './components/AuthenticatedDashboard';
 import { BackendConnectionAlert } from './components/BackendConnectionAlert';
@@ -206,18 +207,31 @@ export const App: React.FC = () => {
             }
           />
 
-          {/* 2. Dedicated APH Chapter IV Deposit Norms Breakdown Page */}
+          {/* 2. Web Portal Login (Centered Jan Parichay SSO Authentication Page) */}
+          <Route
+            path="/login"
+            element={
+              <LoginPage
+                onLoginSuccess={handleLoginSuccess}
+                presets={userPresets}
+              />
+            }
+          />
+          <Route path="/signin" element={<Navigate to="/login" replace />} />
+          <Route path="/sso" element={<Navigate to="/login" replace />} />
+
+          {/* 3. Dedicated APH Chapter IV Deposit Norms Breakdown Page */}
           <Route
             path="/deposit-norms"
             element={<AphDepositNormsPage onBack={() => navigate('/')} />}
           />
           <Route path="/aph-norms" element={<Navigate to="/deposit-norms" replace />} />
 
-          {/* 3. Dedicated Gazette Circulars, SOPs & Manuals Repository */}
+          {/* 4. Dedicated Gazette Circulars, SOPs & Manuals Repository */}
           <Route path="/circulars" element={<CircularsPage />} />
           <Route path="/bulletins" element={<Navigate to="/circulars" replace />} />
 
-          {/* 4. Authenticated Workbench Dashboard */}
+          {/* 5. Authenticated Workbench Dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -254,6 +268,15 @@ export const App: React.FC = () => {
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                         Access to the AICTE e-FDR Registry, Scrutiny Desk, and Core Banking Attestation Gateway requires an active session via Jan Parichay Single Sign-On (SSO).
                       </p>
+                      <div className="pt-2">
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="w-full inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-lg bg-[#002147] hover:bg-[#1E3A8A] text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                        >
+                          <Lock className="w-4 h-4 text-amber-400" />
+                          <span>Go to Centered Login Gateway</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Fast Evaluator 1-Click Login Shortcuts */}
