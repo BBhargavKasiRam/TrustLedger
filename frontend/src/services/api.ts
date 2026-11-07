@@ -97,6 +97,23 @@ export const getApiBase = (): string => {
 
 export const getAssetUrl = (url: string | null | undefined): string => {
   if (!url) return '';
+
+  // Intercept dummy Cloudinary URLs and resolve to valid local static repository assets
+  if (url.includes('res.cloudinary.com/vidyakosh-aicte/')) {
+    const filename = url.split('/').pop() || '';
+    if (filename.includes('canara') || filename.includes('Bank_Attestation')) {
+      const match = filename.match(/FDR[-_]\d+[-_]\d+/i);
+      const fdrUid = match ? match[0].replace('_', '-') : 'FDR-2020-205';
+      url = `/static/vault/${fdrUid}/Bank_Attestation_${fdrUid}.pdf`;
+    } else if (filename.includes('AICTE_NOC') || filename.includes('Discharge_NOC')) {
+      const match = filename.match(/FDR[-_]\d+[-_]\d+/i);
+      const fdrUid = match ? match[0].replace('_', '-') : 'FDR-2020-205';
+      url = `/static/vault/${fdrUid}/AICTE_NOC_${fdrUid}.pdf`;
+    } else if (filename) {
+      url = `/static/sample_fdrs/${filename}`;
+    }
+  }
+
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
     return url;
   }

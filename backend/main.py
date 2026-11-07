@@ -1232,7 +1232,7 @@ def get_executive_summary_analytics(db: Any = Depends(get_db)):
 
 @app.get("/api/fdrs/{fdr_id}", response_model=FDRInstrumentResponse)
 def get_fdr(fdr_id: Union[int, str], db: Any = Depends(get_db)):
-    query = {"$or": [{"id": fdr_id}, {"id": str(fdr_id)}]}
+    query = {"$or": [{"id": fdr_id}, {"id": str(fdr_id)}, {"fdr_uid": str(fdr_id)}]}
     try:
         query["$or"].append({"id": int(fdr_id)})
     except Exception:
