@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
-  Lock, 
   Building2, 
   FileCheck2, 
   Landmark, 
@@ -157,19 +156,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               <BookOpen className="w-3.5 h-3.5 text-blue-700" />
               <span>Gazette Circulars</span>
             </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-amber-300 px-4 py-2 rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
-            >
-              <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Web Portal Login (Jan Parichay SSO) →</span>
-            </button>
           </div>
         </div>
 
         {/* AICTE Bureau Mandate Hero Card (Full Width) */}
         <div className="bg-white rounded-xl border border-slate-200 border-t-4 border-t-[#002147] p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+          <div className="border-b border-slate-200 pb-5">
             <div className="space-y-1.5">
               <div className="flex items-center space-x-2">
                 <span className="h-5 w-1.5 bg-amber-500 rounded-full" />
@@ -184,15 +176,6 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 Streamline and digital verification of Security Deposit / Fixed Deposit Receipt (FDR) operations across all technical institutions approved under Chapter IV of the Approval Process Handbook (APH 2026-31). Replaces manual paper verification with cryptographic, CBS-attested tripartite governance.
               </p>
             </div>
-
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center space-x-2 bg-[#002147] hover:bg-[#003870] text-amber-300 px-5 py-3 rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer self-start md:self-center shrink-0"
-            >
-              <Lock className="w-4 h-4 text-amber-400" />
-              <span>Enter Web Portal Login</span>
-              <ArrowRight className="w-4 h-4 ml-1 text-white" />
-            </button>
           </div>
 
           {/* National Governance & Compliance Metrics: 3 Balanced Cards */}
@@ -464,22 +447,22 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         {/* Directory Launchpad (Links across all sections) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            to="/login"
-            className="p-5 rounded-xl bg-[#002147] text-white hover:bg-[#003870] transition shadow-md flex flex-col justify-between group"
+            to="/about-us/overview"
+            className="p-5 rounded-xl bg-white border border-slate-200 hover:border-blue-500 hover:shadow-md transition flex flex-col justify-between group"
           >
             <div>
-              <div className="p-2 bg-amber-400 text-slate-950 rounded-lg inline-block mb-3">
-                <Lock className="w-5 h-5" />
+              <div className="p-2 bg-blue-50 text-blue-900 border border-blue-200 rounded-lg inline-block mb-3">
+                <Building2 className="w-5 h-5 text-blue-800" />
               </div>
-              <h4 className="font-extrabold text-base text-white group-hover:text-amber-300 transition">
-                Web Portal Login
+              <h4 className="font-extrabold text-base text-slate-900 group-hover:text-[#002147] transition">
+                About VidyaKosh Portal
               </h4>
-              <p className="text-xs text-blue-200 mt-1">
-                Access the 4-role Jan Parichay single sign-on gateway in center view.
+              <p className="text-xs text-slate-600 mt-1">
+                Overview of statutory tripartite governance, regulatory mandate, and council objectives.
               </p>
             </div>
-            <span className="text-xs font-bold text-amber-400 mt-4 flex items-center space-x-1">
-              <span>Open Sign-In</span>
+            <span className="text-xs font-bold text-[#002147] mt-4 flex items-center space-x-1">
+              <span>Read Overview</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </span>
           </Link>

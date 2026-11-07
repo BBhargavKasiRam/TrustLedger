@@ -494,8 +494,8 @@ interface NavItem {
               </span>
             </button>
 
-            {/* Direct Dashboard or SSO Login Button */}
-            {currentSession ? (
+            {/* Direct Dashboard Button for Authenticated Users */}
+            {currentSession && (
               <button
                 onClick={() => navigate('/dashboard')}
                 title="Open Role-Based Workbench Dashboard"
@@ -503,15 +503,6 @@ interface NavItem {
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 <span>Dashboard Desk</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate('/login')}
-                title="Sign in with Jan Parichay National Single Sign-On"
-                className="hidden md:inline-flex items-center space-x-1.5 bg-[#002147] hover:bg-[#003870] text-amber-300 border border-amber-400/40 px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer"
-              >
-                <UserCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                <span>Web Portal Login</span>
               </button>
             )}
 
