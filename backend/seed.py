@@ -403,14 +403,20 @@ def seed_database(force: bool = False, custom_db = None):
         fileHash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         flags=[],
         tenure_months=48,
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        document_path="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045255/vidyakosh_fdrs/FDR-2016-101/Original_Deposit_Certificate_FDR-2016-101.jpg",
+        documentUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045255/vidyakosh_fdrs/FDR-2016-101/Original_Deposit_Certificate_FDR-2016-101.jpg",
         digitalVault=[
             DigitalVaultItem(
-                documentType="Initial FDR Scan",
-                fileUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+                documentType="Original FDR Deposit Certificate",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045255/vidyakosh_fdrs/FDR-2016-101/Original_Deposit_Certificate_FDR-2016-101.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp="2016-04-15T10:00:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Bank Attestation PDF",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045345/vidyakosh_fdrs/FDR-2016-101/Bank_Attestation_FDR-2016-101.pdf",
+                uploadedBy="BANK_BRANCH_MANAGER",
+                timestamp="2016-04-16T15:30:00Z"
             )
         ]
     )
@@ -477,20 +483,26 @@ def seed_database(force: bool = False, custom_db = None):
         fileHash="f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
         flags=[],
         tenure_months=72,
-        document_path="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
-        documentUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+        document_path="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045347/vidyakosh_fdrs/FDR-2020-205/Original_Deposit_Certificate_FDR-2020-205.jpg",
+        documentUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045347/vidyakosh_fdrs/FDR-2020-205/Original_Deposit_Certificate_FDR-2020-205.jpg",
         digitalVault=[
             DigitalVaultItem(
-                documentType="Initial FDR Scan",
-                fileUrl="/static/sample_fdrs/sample_1_genuine_sbi.jpg",
+                documentType="Original FDR Deposit Certificate",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045347/vidyakosh_fdrs/FDR-2020-205/Original_Deposit_Certificate_FDR-2020-205.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp="2020-04-15T11:00:00Z"
             ),
             DigitalVaultItem(
                 documentType="Bank Attestation PDF",
-                fileUrl="/static/vault/FDR-2020-205/Bank_Attestation_FDR-2020-205.pdf",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045348/vidyakosh_fdrs/FDR-2020-205/Bank_Attestation_FDR-2020-205.pdf",
                 uploadedBy="BANK_BRANCH_MANAGER",
                 timestamp="2020-04-16T15:30:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Discharge NOC",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045348/vidyakosh_fdrs/FDR-2020-205/Statutory_Discharge_NOC_FDR-2020-205.pdf",
+                uploadedBy="COMPETENT_AUTHORITY",
+                timestamp="2026-10-28T16:00:00Z"
             )
         ]
     )
@@ -542,14 +554,20 @@ def seed_database(force: bool = False, custom_db = None):
         tenure_violation_flag=True,
         data_mismatch_flag=True,
         lien_encumbrance_flag=True,
-        document_path="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
-        documentUrl="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
+        document_path="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045349/vidyakosh_fdrs/FDR-2026-309/Original_Deposit_Certificate_FDR-2026-309.jpg",
+        documentUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045349/vidyakosh_fdrs/FDR-2026-309/Original_Deposit_Certificate_FDR-2026-309.jpg",
         digitalVault=[
             DigitalVaultItem(
-                documentType="Initial FDR Scan",
-                fileUrl="/static/sample_fdrs/sample_2_tampered_principal_pune.jpg",
+                documentType="Original FDR Deposit Certificate",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045349/vidyakosh_fdrs/FDR-2026-309/Original_Deposit_Certificate_FDR-2026-309.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=vanguard_issue_date + "T09:30:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Forensic Analysis Report",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045350/vidyakosh_fdrs/FDR-2026-309/Forensic_Scrutiny_Report_FDR-2026-309.pdf",
+                uploadedBy="AICTE_SCRUTINY_OFFICER",
+                timestamp=datetime.datetime.now().isoformat()
             )
         ]
     )
@@ -599,14 +617,20 @@ def seed_database(force: bool = False, custom_db = None):
         flags=["TENURE_VIOLATION_FLAG"],
         tenure_months=96,
         tenure_violation_flag=True,
-        document_path="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
-        documentUrl="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
+        document_path="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045351/vidyakosh_fdrs/FDR-2018-412/Original_Deposit_Certificate_FDR-2018-412.jpg",
+        documentUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045351/vidyakosh_fdrs/FDR-2018-412/Original_Deposit_Certificate_FDR-2018-412.jpg",
         digitalVault=[
             DigitalVaultItem(
-                documentType="Initial FDR Scan",
-                fileUrl="/static/sample_fdrs/sample_3_missing_clause_deccan.jpg",
+                documentType="Original FDR Deposit Certificate",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045351/vidyakosh_fdrs/FDR-2018-412/Original_Deposit_Certificate_FDR-2018-412.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=deccan_issue_date + "T10:00:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Bank Attestation PDF",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045352/vidyakosh_fdrs/FDR-2018-412/Bank_Attestation_FDR-2018-412.pdf",
+                uploadedBy="BANK_BRANCH_MANAGER",
+                timestamp=deccan_issue_date + "T14:00:00Z"
             )
         ]
     )
@@ -657,14 +681,20 @@ def seed_database(force: bool = False, custom_db = None):
         tenure_months=96,
         tenure_violation_flag=True,
         cross_registry_hold_flag=True,
-        document_path="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
-        documentUrl="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
+        document_path="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045353/vidyakosh_fdrs/FDR-2018-519/Original_Deposit_Certificate_FDR-2018-519.jpg",
+        documentUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045353/vidyakosh_fdrs/FDR-2018-519/Original_Deposit_Certificate_FDR-2018-519.jpg",
         digitalVault=[
             DigitalVaultItem(
-                documentType="Initial FDR Scan",
-                fileUrl="/static/sample_fdrs/sample_4_duplicate_shivalik.jpg",
+                documentType="Original FDR Deposit Certificate",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045353/vidyakosh_fdrs/FDR-2018-519/Original_Deposit_Certificate_FDR-2018-519.jpg",
                 uploadedBy="INSTITUTE_NODAL_OFFICER",
                 timestamp=shivalik_issue_date + "T11:00:00Z"
+            ),
+            DigitalVaultItem(
+                documentType="Bank Attestation PDF",
+                fileUrl="https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045354/vidyakosh_fdrs/FDR-2018-519/Bank_Attestation_FDR-2018-519.pdf",
+                uploadedBy="BANK_BRANCH_MANAGER",
+                timestamp=shivalik_issue_date + "T15:00:00Z"
             )
         ]
     )

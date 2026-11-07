@@ -1,0 +1,78 @@
+{
+  "FDR-2016-101": [
+    {
+      "documentType": "Original FDR Deposit Certificate",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045255/vidyakosh_fdrs/FDR-2016-101/Original_Deposit_Certificate_FDR-2016-101.jpg",
+      "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+      "timestamp": "2020-04-15T10:00:00Z"
+    },
+    {
+      "documentType": "Bank Attestation PDF",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045345/vidyakosh_fdrs/FDR-2016-101/Bank_Attestation_FDR-2016-101.pdf",
+      "uploadedBy": "BANK_BRANCH_MANAGER",
+      "timestamp": "2020-04-16T15:30:00Z"
+    }
+  ],
+  "FDR-2020-205": [
+    {
+      "documentType": "Original FDR Deposit Certificate",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045347/vidyakosh_fdrs/FDR-2020-205/Original_Deposit_Certificate_FDR-2020-205.jpg",
+      "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+      "timestamp": "2026-04-15T10:00:00Z"
+    },
+    {
+      "documentType": "Bank Attestation PDF",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045348/vidyakosh_fdrs/FDR-2020-205/Bank_Attestation_FDR-2020-205.pdf",
+      "uploadedBy": "BANK_BRANCH_MANAGER",
+      "timestamp": "2026-04-16T15:30:00Z"
+    },
+    {
+      "documentType": "Discharge NOC",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045348/vidyakosh_fdrs/FDR-2020-205/Statutory_Discharge_NOC_FDR-2020-205.pdf",
+      "uploadedBy": "COMPETENT_AUTHORITY",
+      "timestamp": "2026-11-07T09:55:49.054396+00:00"
+    }
+  ],
+  "FDR-2026-309": [
+    {
+      "documentType": "Original FDR Deposit Certificate",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045349/vidyakosh_fdrs/FDR-2026-309/Original_Deposit_Certificate_FDR-2026-309.jpg",
+      "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+      "timestamp": "2031-04-15T10:00:00Z"
+    },
+    {
+      "documentType": "Forensic Analysis Report",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045350/vidyakosh_fdrs/FDR-2026-309/Forensic_Scrutiny_Report_FDR-2026-309.pdf",
+      "uploadedBy": "AICTE_SCRUTINY_OFFICER",
+      "timestamp": "2026-11-07T09:55:50.960940+00:00"
+    }
+  ],
+  "FDR-2018-412": [
+    {
+      "documentType": "Original FDR Deposit Certificate",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045351/vidyakosh_fdrs/FDR-2018-412/Original_Deposit_Certificate_FDR-2018-412.jpg",
+      "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+      "timestamp": "2026-04-15T10:00:00Z"
+    },
+    {
+      "documentType": "Bank Attestation PDF",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045352/vidyakosh_fdrs/FDR-2018-412/Bank_Attestation_FDR-2018-412.pdf",
+      "uploadedBy": "BANK_BRANCH_MANAGER",
+      "timestamp": "2026-04-16T15:30:00Z"
+    }
+  ],
+  "FDR-2018-519": [
+    {
+      "documentType": "Original FDR Deposit Certificate",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/image/upload/v1794045353/vidyakosh_fdrs/FDR-2018-519/Original_Deposit_Certificate_FDR-2018-519.jpg",
+      "uploadedBy": "INSTITUTE_NODAL_OFFICER",
+      "timestamp": "2026-04-15T10:00:00Z"
+    },
+    {
+      "documentType": "Bank Attestation PDF",
+      "fileUrl": "https://res.cloudinary.com/dsptqi2w3/raw/upload/v1794045354/vidyakosh_fdrs/FDR-2018-519/Bank_Attestation_FDR-2018-519.pdf",
+      "uploadedBy": "BANK_BRANCH_MANAGER",
+      "timestamp": "2026-04-16T15:30:00Z"
+    }
+  ]
+}

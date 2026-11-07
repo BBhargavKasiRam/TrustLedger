@@ -95,13 +95,14 @@ def upload_fdr_file_to_cloudinary(
     # 2. Upload to Cloudinary (Hierarchical Organization)
     try:
         cld_folder = f"vidyakosh_fdrs/{folder_tag}"
-        public_id = f"{doc_type}_{clean_name}"
+        res_type = "raw" if ext == ".pdf" else "auto"
+        pub_id = f"{doc_type}_{clean_name}{ext}" if ext == ".pdf" else f"{doc_type}_{clean_name}"
         
         upload_result = cloudinary.uploader.upload(
             file_bytes,
             folder=cld_folder,
-            public_id=public_id,
-            resource_type="auto"
+            public_id=pub_id,
+            resource_type=res_type
         )
         secure_url = upload_result.get("secure_url") or upload_result.get("url")
         if secure_url:
